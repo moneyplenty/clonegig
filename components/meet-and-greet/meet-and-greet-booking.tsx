@@ -116,9 +116,23 @@ export function MeetAndGreetBooking({ onBookingComplete }: BookingProps) {
         createdAt: new Date(),
       }
 
+      // Send confirmation email
+      await fetch("/api/send-meetgreet-confirmation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userEmail: user.email,
+          sessionDate: selectedDate.toLocaleDateString(),
+          sessionTime: selectedTimeSlot.time,
+          sessionType: "Meet & Greet Video Call",
+        }),
+      })
+
       toast({
         title: "Booking Confirmed! 🎸",
-        description: `Your meet & greet session is booked for ${selectedDate.toLocaleDateString()} at ${selectedTimeSlot.time}`,
+        description: `Your meet & greet session is booked for ${selectedDate.toLocaleDateString()} at ${selectedTimeSlot.time}. Check your email for details!`,
       })
 
       onBookingComplete?.(booking)
