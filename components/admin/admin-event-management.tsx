@@ -1,78 +1,76 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Calendar, Plus, Edit, Trash2, Users, MapPin, DollarSign, Eye } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Calendar, Clock, MapPin, Users, DollarSign, Plus, Edit, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
-interface Event {
-  id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  price: number
-  memberPrice: number
-  maxAttendees: number
-  currentAttendees: number
-  category: string
-  tierRequired: string
-  status: "upcoming" | "live" | "completed" | "cancelled"
-}
+// Mock events data
+const mockEvents = [
+  {
+    id: "1",
+    title: "Kelvin Creekman Live Concert",
+    description: "Experience the electrifying performance in an intimate venue setting.",
+    date: "2024-02-15",
+    time: "20:00",
+    location: "The Electric Theater, Los Angeles",
+    price: 75,
+    memberPrice: 60,
+    category: "Concert",
+    tier: "Frost",
+    maxAttendees: 500,
+    currentAttendees: 342,
+    status: "upcoming",
+    revenue: 20520,
+  },
+  {
+    id: "2",
+    title: "VIP Meet & Greet Session",
+    description: "Personal meet and greet with photo opportunities.",
+    date: "2024-02-20",
+    time: "18:00",
+    location: "Studio City, Los Angeles",
+    price: 150,
+    memberPrice: 120,
+    category: "Meet & Greet",
+    tier: "Blizzard",
+    maxAttendees: 20,
+    currentAttendees: 18,
+    status: "upcoming",
+    revenue: 2160,
+  },
+  {
+    id: "3",
+    title: "Acoustic Session & Q&A",
+    description: "Intimate acoustic performance with fan Q&A session.",
+    date: "2024-03-01",
+    time: "19:00",
+    location: "The Lounge, Nashville",
+    price: 45,
+    memberPrice: 35,
+    category: "Concert",
+    tier: "Frost",
+    maxAttendees: 100,
+    currentAttendees: 67,
+    status: "upcoming",
+    revenue: 2345,
+  },
+]
 
 export function AdminEventManagement() {
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Exclusive Album Release Party",
-      description: "Be the first to hear Kelvin's new album 'Fire & Ice' in an intimate setting.",
-      date: "2025-02-15",
-      time: "19:00",
-      location: "The Diamond Club, New York",
-      price: 89.99,
-      memberPrice: 69.99,
-      maxAttendees: 150,
-      currentAttendees: 87,
-      category: "concert",
-      tierRequired: "frost",
-      status: "upcoming",
-    },
-    {
-      id: "2",
-      title: "Virtual Meet & Greet Session",
-      description: "Personal video chat session with Kelvin Creekman - limited to 20 fans only.",
-      date: "2025-02-08",
-      time: "15:00",
-      location: "Online Video Call",
-      price: 49.99,
-      memberPrice: 29.99,
-      maxAttendees: 20,
-      currentAttendees: 12,
-      category: "meet-greet",
-      tierRequired: "frost",
-      status: "upcoming",
-    },
-  ])
-
+  const [events, setEvents] = useState(mockEvents)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
-  const [newEvent, setNewEvent] = useState<Partial<Event>>({
+  const [editingEvent, setEditingEvent] = useState<any>(null)
+  const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
     date: "",
@@ -80,38 +78,27 @@ export function AdminEventManagement() {
     location: "",
     price: 0,
     memberPrice: 0,
+    category: "Concert",
+    tier: "Frost",
     maxAttendees: 0,
-    category: "concert",
-    tierRequired: "frost",
-    status: "upcoming",
   })
 
-  const { toast } = useToast()
+  const totalRevenue = events.reduce((sum, event) => sum + event.revenue, 0)
+  const totalAttendees = events.reduce((sum, event) => sum + event.currentAttendees, 0)
+  const upcomingEvents = events.filter((event) => event.status === "upcoming").length
 
   const handleCreateEvent = () => {
-    if (!newEvent.title || !newEvent.date || !newEvent.time) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
+    if (!newEvent.title || !newEvent.date || !newEvent.location) {
+      toast.error("Please fill in all required fields")
       return
     }
 
-    const event: Event = {
+    const event = {
+      ...newEvent,
       id: Date.now().toString(),
-      title: newEvent.title!,
-      description: newEvent.description || "",
-      date: newEvent.date!,
-      time: newEvent.time!,
-      location: newEvent.location || "",
-      price: newEvent.price || 0,
-      memberPrice: newEvent.memberPrice || 0,
-      maxAttendees: newEvent.maxAttendees || 0,
       currentAttendees: 0,
-      category: newEvent.category || "concert",
-      tierRequired: newEvent.tierRequired || "frost",
       status: "upcoming",
+      revenue: 0,
     }
 
     setEvents([...events, event])
@@ -123,469 +110,467 @@ export function AdminEventManagement() {
       location: "",
       price: 0,
       memberPrice: 0,
+      category: "Concert",
+      tier: "Frost",
       maxAttendees: 0,
-      category: "concert",
-      tierRequired: "frost",
-      status: "upcoming",
     })
     setIsCreateDialogOpen(false)
+    toast.success("Event created successfully!")
+  }
 
-    toast({
-      title: "Event Created! 🎉",
-      description: `${event.title} has been successfully created.`,
-    })
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event)
+    setNewEvent(event)
+    setIsCreateDialogOpen(true)
   }
 
   const handleUpdateEvent = () => {
-    if (!editingEvent) return
+    if (!newEvent.title || !newEvent.date || !newEvent.location) {
+      toast.error("Please fill in all required fields")
+      return
+    }
 
-    setEvents(events.map((event) => (event.id === editingEvent.id ? editingEvent : event)))
+    setEvents(events.map((event) => (event.id === editingEvent.id ? { ...newEvent, id: editingEvent.id } : event)))
     setEditingEvent(null)
-
-    toast({
-      title: "Event Updated! ✅",
-      description: `${editingEvent.title} has been successfully updated.`,
+    setNewEvent({
+      title: "",
+      description: "",
+      date: "",
+      time: "",
+      location: "",
+      price: 0,
+      memberPrice: 0,
+      category: "Concert",
+      tier: "Frost",
+      maxAttendees: 0,
     })
+    setIsCreateDialogOpen(false)
+    toast.success("Event updated successfully!")
   }
 
   const handleDeleteEvent = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId)
-    setEvents(events.filter((e) => e.id !== eventId))
-
-    toast({
-      title: "Event Deleted",
-      description: `${event?.title} has been removed.`,
-      variant: "destructive",
-    })
+    setEvents(events.filter((event) => event.id !== eventId))
+    toast.success("Event deleted successfully!")
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "upcoming":
-        return <Badge className="bg-blue-500/20 text-blue-400">Upcoming</Badge>
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30"
       case "live":
-        return <Badge className="bg-red-500/20 text-red-400">Live</Badge>
+        return "bg-green-500/20 text-green-300 border-green-500/30"
       case "completed":
-        return <Badge className="bg-green-500/20 text-green-400">Completed</Badge>
+        return "bg-gray-500/20 text-gray-300 border-gray-500/30"
       case "cancelled":
-        return <Badge className="bg-gray-500/20 text-gray-400">Cancelled</Badge>
+        return "bg-red-500/20 text-red-300 border-red-500/30"
       default:
-        return null
+        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
     }
   }
 
-  const getTierBadge = (tier: string) => {
+  const getTierColor = (tier: string) => {
     switch (tier) {
-      case "frost":
-        return (
-          <Badge variant="outline" className="text-blue-400 border-blue-400/50">
-            Frost
-          </Badge>
-        )
-      case "blizzard":
-        return (
-          <Badge variant="outline" className="text-purple-400 border-purple-400/50">
-            Blizzard
-          </Badge>
-        )
-      case "avalanche":
-        return (
-          <Badge variant="outline" className="text-gold-400 border-gold-400/50">
-            Avalanche
-          </Badge>
-        )
+      case "Frost":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30"
+      case "Blizzard":
+        return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
+      case "Avalanche":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30"
       default:
-        return null
+        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
     }
   }
-
-  const totalRevenue = events.reduce((sum, event) => sum + event.memberPrice * event.currentAttendees, 0)
-  const totalAttendees = events.reduce((sum, event) => sum + event.currentAttendees, 0)
-  const upcomingEvents = events.filter((e) => e.status === "upcoming").length
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-fire dark:bg-gradient-ice bg-clip-text text-transparent flex items-center gap-2">
-            <Calendar className="h-8 w-8 text-electric-500" />
-            Event Management
-          </h1>
-          <p className="text-muted-foreground">Create and manage fan club events</p>
-        </div>
-
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-electric hover:animate-electric-pulse">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
-              <DialogDescription>Set up a new event for your fan club members</DialogDescription>
-            </DialogHeader>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Event Title *</Label>
-                <Input
-                  id="title"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  placeholder="Enter event title"
-                />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-500/20 rounded-lg">
+                <Calendar className="h-6 w-6 text-blue-400" />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={newEvent.category}
-                  onValueChange={(value) => setNewEvent({ ...newEvent, category: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="concert">Concert</SelectItem>
-                    <SelectItem value="meet-greet">Meet & Greet</SelectItem>
-                    <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="exclusive">VIP Exclusive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date">Date *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="time">Time *</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={newEvent.time}
-                  onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={newEvent.location}
-                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                  placeholder="Event location or 'Online'"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="price">Regular Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={newEvent.price}
-                  onChange={(e) => setNewEvent({ ...newEvent, price: Number.parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="memberPrice">Member Price ($)</Label>
-                <Input
-                  id="memberPrice"
-                  type="number"
-                  value={newEvent.memberPrice}
-                  onChange={(e) => setNewEvent({ ...newEvent, memberPrice: Number.parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxAttendees">Max Attendees</Label>
-                <Input
-                  id="maxAttendees"
-                  type="number"
-                  value={newEvent.maxAttendees}
-                  onChange={(e) => setNewEvent({ ...newEvent, maxAttendees: Number.parseInt(e.target.value) || 0 })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tierRequired">Required Tier</Label>
-                <Select
-                  value={newEvent.tierRequired}
-                  onValueChange={(value) => setNewEvent({ ...newEvent, tierRequired: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="frost">Frost Fan</SelectItem>
-                    <SelectItem value="blizzard">Blizzard VIP</SelectItem>
-                    <SelectItem value="avalanche">Avalanche</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                  placeholder="Event description..."
-                  className="min-h-[100px]"
-                />
+              <div>
+                <p className="text-sm text-slate-400">Total Events</p>
+                <p className="text-2xl font-bold text-white">{events.length}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateEvent} className="bg-gradient-electric">
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-500/20 rounded-lg">
+                <Users className="h-6 w-6 text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Total Attendees</p>
+                <p className="text-2xl font-bold text-white">{totalAttendees}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-yellow-500/20 rounded-lg">
+                <Clock className="h-6 w-6 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Upcoming Events</p>
+                <p className="text-2xl font-bold text-white">{upcomingEvents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-500/20 rounded-lg">
+                <DollarSign className="h-6 w-6 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Total Revenue</p>
+                <p className="text-2xl font-bold text-white">${totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Tabs defaultValue="events" className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList className="bg-slate-800/50 border-slate-700">
+            <TabsTrigger value="events" className="data-[state=active]:bg-blue-600">
+              Events
+            </TabsTrigger>
+            <TabsTrigger value="bookings" className="data-[state=active]:bg-blue-600">
+              Bookings
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600">
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
+                <Plus className="h-4 w-4 mr-2" />
                 Create Event
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-electric-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-electric-400">${totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">From all events</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-electric-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-electric-400">{totalAttendees}</div>
-            <p className="text-xs text-muted-foreground">Across all events</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-electric-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-electric-400">{upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">Scheduled events</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Events List */}
-      <Card className="border-electric-700/30">
-        <CardHeader>
-          <CardTitle className="text-electric-400">All Events</CardTitle>
-          <CardDescription>Manage your fan club events</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="flex items-center justify-between p-4 border border-electric-700/30 rounded-lg"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">{event.title}</h3>
-                    {getStatusBadge(event.status)}
-                    {getTierBadge(event.tierRequired)}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {event.date} at {event.time}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {event.location}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {event.currentAttendees}/{event.maxAttendees}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />${event.memberPrice}
-                    </div>
-                  </div>
+            </DialogTrigger>
+            <DialogContent className="bg-slate-800 border-slate-700 max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-white">{editingEvent ? "Edit Event" : "Create New Event"}</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-slate-300">
+                    Event Title *
+                  </Label>
+                  <Input
+                    id="title"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="Enter event title"
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`/events/${event.id}`} target="_blank" rel="noreferrer">
-                      <Eye className="h-4 w-4" />
-                    </a>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setEditingEvent(event)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteEvent(event.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-slate-300">
+                    Category
+                  </Label>
+                  <Select
+                    value={newEvent.category}
+                    onValueChange={(value) => setNewEvent({ ...newEvent, category: value })}
+                  >
+                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="Concert">Concert</SelectItem>
+                      <SelectItem value="Meet & Greet">Meet & Greet</SelectItem>
+                      <SelectItem value="VIP Only">VIP Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date" className="text-slate-300">
+                    Date *
+                  </Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time" className="text-slate-300">
+                    Time *
+                  </Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={newEvent.time}
+                    onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="location" className="text-slate-300">
+                    Location *
+                  </Label>
+                  <Input
+                    id="location"
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="Enter event location"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-slate-300">
+                    Regular Price
+                  </Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={newEvent.price}
+                    onChange={(e) => setNewEvent({ ...newEvent, price: Number(e.target.value) })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="memberPrice" className="text-slate-300">
+                    Member Price
+                  </Label>
+                  <Input
+                    id="memberPrice"
+                    type="number"
+                    value={newEvent.memberPrice}
+                    onChange={(e) => setNewEvent({ ...newEvent, memberPrice: Number(e.target.value) })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tier" className="text-slate-300">
+                    Required Tier
+                  </Label>
+                  <Select value={newEvent.tier} onValueChange={(value) => setNewEvent({ ...newEvent, tier: value })}>
+                    <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="Frost">Frost</SelectItem>
+                      <SelectItem value="Blizzard">Blizzard</SelectItem>
+                      <SelectItem value="Avalanche">Avalanche</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maxAttendees" className="text-slate-300">
+                    Max Attendees
+                  </Label>
+                  <Input
+                    id="maxAttendees"
+                    type="number"
+                    value={newEvent.maxAttendees}
+                    onChange={(e) => setNewEvent({ ...newEvent, maxAttendees: Number(e.target.value) })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="description" className="text-slate-300">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    className="bg-slate-700/50 border-slate-600 text-white"
+                    placeholder="Enter event description"
+                    rows={3}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Edit Event Dialog */}
-      <Dialog open={!!editingEvent} onOpenChange={() => setEditingEvent(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>Update event details and settings</DialogDescription>
-          </DialogHeader>
-
-          {editingEvent && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-title">Event Title</Label>
-                <Input
-                  id="edit-title"
-                  value={editingEvent.title}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-status">Status</Label>
-                <Select
-                  value={editingEvent.status}
-                  onValueChange={(value: any) => setEditingEvent({ ...editingEvent, status: value })}
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateDialogOpen(false)
+                    setEditingEvent(null)
+                    setNewEvent({
+                      title: "",
+                      description: "",
+                      date: "",
+                      time: "",
+                      location: "",
+                      price: 0,
+                      memberPrice: 0,
+                      category: "Concert",
+                      tier: "Frost",
+                      maxAttendees: 0,
+                    })
+                  }}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="live">Live</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={editingEvent ? handleUpdateEvent : handleCreateEvent}
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                >
+                  {editingEvent ? "Update Event" : "Create Event"}
+                </Button>
               </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-date">Date</Label>
-                <Input
-                  id="edit-date"
-                  type="date"
-                  value={editingEvent.date}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
-                />
+        <TabsContent value="events" className="space-y-6">
+          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">All Events</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700">
+                    <TableHead className="text-slate-300">Event</TableHead>
+                    <TableHead className="text-slate-300">Date & Time</TableHead>
+                    <TableHead className="text-slate-300">Location</TableHead>
+                    <TableHead className="text-slate-300">Attendees</TableHead>
+                    <TableHead className="text-slate-300">Revenue</TableHead>
+                    <TableHead className="text-slate-300">Status</TableHead>
+                    <TableHead className="text-slate-300">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((event) => (
+                    <TableRow key={event.id} className="border-slate-700">
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium text-white">{event.title}</div>
+                          <div className="flex gap-2">
+                            <Badge className={getTierColor(event.tier)} variant="outline">
+                              {event.tier}
+                            </Badge>
+                            <Badge variant="outline" className="border-slate-600 text-slate-300">
+                              {event.category}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(event.date).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {event.time}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {event.location.split(",")[0]}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          {event.currentAttendees}/{event.maxAttendees}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4" />${event.revenue.toLocaleString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(event.status)} variant="outline">
+                          {event.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditEvent(event)}
+                            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="border-red-600 text-red-400 hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bookings" className="space-y-6">
+          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Recent Bookings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-slate-400">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Booking management coming soon...</p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-time">Time</Label>
-                <Input
-                  id="edit-time"
-                  type="time"
-                  value={editingEvent.time}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, time: e.target.value })}
-                />
+        <TabsContent value="analytics" className="space-y-6">
+          <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white">Event Analytics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-slate-400">
+                <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Advanced analytics coming soon...</p>
               </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="edit-location">Location</Label>
-                <Input
-                  id="edit-location"
-                  value={editingEvent.location}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-price">Regular Price ($)</Label>
-                <Input
-                  id="edit-price"
-                  type="number"
-                  value={editingEvent.price}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, price: Number.parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-memberPrice">Member Price ($)</Label>
-                <Input
-                  id="edit-memberPrice"
-                  type="number"
-                  value={editingEvent.memberPrice}
-                  onChange={(e) =>
-                    setEditingEvent({ ...editingEvent, memberPrice: Number.parseFloat(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-maxAttendees">Max Attendees</Label>
-                <Input
-                  id="edit-maxAttendees"
-                  type="number"
-                  value={editingEvent.maxAttendees}
-                  onChange={(e) =>
-                    setEditingEvent({ ...editingEvent, maxAttendees: Number.parseInt(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-currentAttendees">Current Attendees</Label>
-                <Input
-                  id="edit-currentAttendees"
-                  type="number"
-                  value={editingEvent.currentAttendees}
-                  onChange={(e) =>
-                    setEditingEvent({ ...editingEvent, currentAttendees: Number.parseInt(e.target.value) || 0 })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingEvent.description}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingEvent(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateEvent} className="bg-gradient-electric">
-              Update Event
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

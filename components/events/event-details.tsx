@@ -1,10 +1,8 @@
 "use client"
 
-import Image from "next/image"
-import { Calendar, MapPin, Clock, DollarSign, Star } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Calendar, Clock, MapPin, Users, CheckCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 
 interface Event {
@@ -12,24 +10,18 @@ interface Event {
   title: string
   description: string
   longDescription: string
-  image: string
   date: string
   time: string
-  endTime: string
   location: string
-  venue: {
-    name: string
-    address: string
-    capacity: number
-  }
   price: number
   memberPrice: number
   category: string
-  tierRequired: string
+  tier: string
   maxAttendees: number
   currentAttendees: number
-  status: string
+  image: string
   features: string[]
+  status: string
 }
 
 interface EventDetailsProps {
@@ -37,141 +29,133 @@ interface EventDetailsProps {
 }
 
 export function EventDetails({ event }: EventDetailsProps) {
-  const attendancePercentage = (event.currentAttendees / event.maxAttendees) * 100
-  const spotsLeft = event.maxAttendees - event.currentAttendees
+  const getAvailabilityPercentage = (current: number, max: number) => {
+    return (current / max) * 100
+  }
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "Frost":
+        return "bg-blue-500/20 text-blue-300 border-blue-500/30"
+      case "Blizzard":
+        return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
+      case "Avalanche":
+        return "bg-purple-500/20 text-purple-300 border-purple-500/30"
+      default:
+        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "Concert":
+        return "bg-red-500/20 text-red-300 border-red-500/30"
+      case "Meet & Greet":
+        return "bg-green-500/20 text-green-300 border-green-500/30"
+      case "VIP Only":
+        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+      default:
+        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
+    }
+  }
 
   return (
-    <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg overflow-hidden">
-      <div className="relative aspect-video md:aspect-[21/9]">
-        <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute bottom-6 left-6 right-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge className="bg-electric-500/90 text-white">
-              {event.category.charAt(0).toUpperCase() + event.category.slice(1)}
-            </Badge>
-            <Badge className="bg-gold-500/90 text-white">
-              {event.tierRequired.charAt(0).toUpperCase() + event.tierRequired.slice(1)} Tier
-            </Badge>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{event.title}</h1>
-          <p className="text-lg text-gray-200 max-w-2xl">{event.description}</p>
-        </div>
-      </div>
-
-      <CardContent className="p-8">
-        {/* Event Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-electric-500/20">
-              <Calendar className="h-5 w-5 text-electric-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Date</p>
-              <p className="font-semibold">{event.date}</p>
-            </div>
+    <div className="space-y-6">
+      {/* Event Header */}
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <CardContent className="p-6">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Badge className={getCategoryColor(event.category)}>{event.category}</Badge>
+            <Badge className={getTierColor(event.tier)}>{event.tier} Tier</Badge>
+            <Badge className="bg-green-500/20 text-green-300 border-green-500/30">{event.status}</Badge>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-frost-500/20">
-              <Clock className="h-5 w-5 text-frost-400" />
+          {/* Event Image */}
+          <div className="w-full h-64 bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg mb-6 flex items-center justify-center">
+            <div className="text-slate-500">Event Image</div>
+          </div>
+
+          {/* Title and Description */}
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold text-white">{event.title}</h1>
+            <p className="text-lg text-slate-300">{event.description}</p>
+            <p className="text-slate-400 leading-relaxed">{event.longDescription}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Event Information */}
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Event Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Date, Time, Location */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-blue-400" />
+              <div>
+                <div className="text-sm text-slate-400">Date</div>
+                <div className="text-white font-medium">
+                  {new Date(event.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Time</p>
-              <p className="font-semibold">
-                {event.time} - {event.endTime}
-              </p>
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-blue-400" />
+              <div>
+                <div className="text-sm text-slate-400">Time</div>
+                <div className="text-white font-medium">{event.time}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 text-blue-400" />
+              <div>
+                <div className="text-sm text-slate-400">Location</div>
+                <div className="text-white font-medium">{event.location}</div>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-electric-500/20">
-              <MapPin className="h-5 w-5 text-electric-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Location</p>
-              <p className="font-semibold">{event.venue.name}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gold-500/20">
-              <DollarSign className="h-5 w-5 text-gold-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Member Price</p>
-              <p className="font-semibold">${event.memberPrice}</p>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-8" />
-
-        {/* Availability */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-electric-400">Event Availability</h3>
-            <Badge variant={spotsLeft > 10 ? "default" : spotsLeft > 0 ? "secondary" : "destructive"}>
-              {spotsLeft > 0 ? `${spotsLeft} spots left` : "Sold Out"}
-            </Badge>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {event.currentAttendees} of {event.maxAttendees} attendees
+          {/* Availability */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-400" />
+                <span className="text-white font-medium">Availability</span>
+              </div>
+              <span className="text-slate-300">
+                {event.currentAttendees}/{event.maxAttendees} attendees
               </span>
-              <span className="font-medium">{Math.round(attendancePercentage)}% full</span>
             </div>
-            <Progress value={attendancePercentage} className="h-3" />
+            <Progress value={getAvailabilityPercentage(event.currentAttendees, event.maxAttendees)} className="h-3" />
+            <div className="text-sm text-slate-400">{event.maxAttendees - event.currentAttendees} spots remaining</div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator className="my-8" />
-
-        {/* Description */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-electric-400">About This Event</h3>
-          <div className="prose prose-gray dark:prose-invert max-w-none">
-            {event.longDescription.split("\n").map((paragraph, index) => (
-              <p key={index} className="mb-4 text-muted-foreground leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        <Separator className="my-8" />
-
-        {/* Features */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-electric-400">What's Included</h3>
+      {/* Event Features */}
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">What's Included</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {event.features.map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-gold-400" />
-                <span className="text-muted-foreground">{feature}</span>
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <span className="text-slate-300">{feature}</span>
               </div>
             ))}
           </div>
-        </div>
-
-        <Separator className="my-8" />
-
-        {/* Venue Info */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-electric-400">Venue Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium mb-2">{event.venue.name}</h4>
-              <p className="text-muted-foreground mb-2">{event.venue.address}</p>
-              <p className="text-sm text-muted-foreground">Capacity: {event.venue.capacity} people</p>
-            </div>
-            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

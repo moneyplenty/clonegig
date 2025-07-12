@@ -1,25 +1,26 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { CreditCard, User, Shield, Ticket } from "lucide-react"
-import { useAuth } from "@/components/auth/auth-provider"
-import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { CreditCard, Shield, Star } from "lucide-react"
+import { toast } from "sonner"
 
 interface Event {
   id: string
   title: string
   price: number
   memberPrice: number
+  tier: string
   maxAttendees: number
   currentAttendees: number
-  tierRequired: string
 }
 
 interface EventBookingProps {
@@ -28,219 +29,198 @@ interface EventBookingProps {
 
 export function EventBooking({ event }: EventBookingProps) {
   const [isBooking, setIsBooking] = useState(false)
-  const [ticketQuantity, setTicketQuantity] = useState(1)
-  const [specialRequests, setSpecialRequests] = useState("")
-  const [agreeToTerms, setAgreeToTerms] = useState(false)
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    specialRequests: "",
+  })
 
+  const isMember = true // This would come from auth context
+  const currentPrice = isMember ? event.memberPrice : event.price
+  const savings = event.price - event.memberPrice
   const spotsLeft = event.maxAttendees - event.currentAttendees
-  const totalPrice = event.memberPrice * ticketQuantity
-  const savings = (event.price - event.memberPrice) * ticketQuantity
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
 
   const handleBooking = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to book this event.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!agreeToTerms) {
-      toast({
-        title: "Terms Required",
-        description: "Please agree to the terms and conditions.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (ticketQuantity > spotsLeft) {
-      toast({
-        title: "Not Enough Spots",
-        description: `Only ${spotsLeft} spots remaining.`,
-        variant: "destructive",
-      })
+    if (!formData.name || !formData.email) {
+      toast.error("Please fill in all required fields")
       return
     }
 
     setIsBooking(true)
 
     try {
-      // Simulate booking process
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Send confirmation email (using Resend)
-      await fetch("/api/send-event-confirmation", {
+      // Send booking confirmation email
+      const response = await fetch("/api/send-event-confirmation", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userEmail: user.email,
           eventTitle: event.title,
-          ticketQuantity,
-          totalPrice,
-          specialRequests,
+          userName: formData.name,
+          userEmail: formData.email,
+          eventDate: "2024-02-15", // This would come from event data
+          eventTime: "20:00",
+          eventLocation: "The Electric Theater, Los Angeles",
+          price: currentPrice,
+          specialRequests: formData.specialRequests,
         }),
       })
 
-      toast({
-        title: "Booking Confirmed! 🎉",
-        description: `You've successfully booked ${ticketQuantity} ticket(s) for ${event.title}. Check your email for confirmation.`,
-      })
+      if (response.ok) {
+        toast.success("Booking confirmed! Check your email for details.")
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          specialRequests: "",
+        })
+      } else {
+        toast.error("Failed to send confirmation email")
+      }
     } catch (error) {
-      toast({
-        title: "Booking Failed",
-        description: "There was an error processing your booking. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Booking failed. Please try again.")
     } finally {
       setIsBooking(false)
     }
   }
 
   return (
-    <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-electric-400">
-          <Ticket className="h-5 w-5" />
-          Book Your Spot
-        </CardTitle>
-        <CardDescription>Secure your place at this exclusive event</CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Pricing Info */}
-        <div className="p-4 rounded-lg bg-electric-500/10 border border-electric-500/30">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Regular Price</span>
-            <span className="text-sm line-through text-muted-foreground">${event.price}</span>
-          </div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium">Member Price</span>
-            <span className="font-bold text-electric-400">${event.memberPrice}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-green-400">You Save</span>
-            <span className="text-sm font-medium text-green-400">${event.price - event.memberPrice}</span>
-          </div>
-        </div>
-
-        {/* Ticket Quantity */}
-        <div className="space-y-2">
-          <Label htmlFor="quantity">Number of Tickets</Label>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
-              disabled={ticketQuantity <= 1}
-            >
-              -
-            </Button>
-            <Input
-              id="quantity"
-              type="number"
-              value={ticketQuantity}
-              onChange={(e) =>
-                setTicketQuantity(Math.max(1, Math.min(spotsLeft, Number.parseInt(e.target.value) || 1)))
-              }
-              className="w-20 text-center"
-              min="1"
-              max={spotsLeft}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTicketQuantity(Math.min(spotsLeft, ticketQuantity + 1))}
-              disabled={ticketQuantity >= spotsLeft}
-            >
-              +
-            </Button>
-            <span className="text-sm text-muted-foreground ml-2">(Max: {spotsLeft} available)</span>
-          </div>
-        </div>
-
-        {/* Special Requests */}
-        <div className="space-y-2">
-          <Label htmlFor="requests">Special Requests (Optional)</Label>
-          <Textarea
-            id="requests"
-            placeholder="Any special accommodations or requests..."
-            value={specialRequests}
-            onChange={(e) => setSpecialRequests(e.target.value)}
-            className="min-h-[80px]"
-          />
-        </div>
-
-        <Separator />
-
-        {/* Order Summary */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-electric-400">Order Summary</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Tickets ({ticketQuantity}x)</span>
-              <span>${totalPrice.toFixed(2)}</span>
+    <div className="space-y-6">
+      {/* Pricing Card */}
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Event Pricing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Regular Price</span>
+              <span className="text-slate-400 line-through">${event.price}</span>
             </div>
-            <div className="flex justify-between text-green-400">
-              <span>Member Savings</span>
-              <span>-${savings.toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total</span>
-              <span className="text-electric-400">${totalPrice.toFixed(2)}</span>
-            </div>
+            {isMember && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-400" />
+                    Member Price
+                  </span>
+                  <span className="text-green-400 font-bold">${event.memberPrice}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">You Save</span>
+                  <span className="text-green-400">${savings}</span>
+                </div>
+              </>
+            )}
           </div>
-        </div>
 
-        {/* Terms Agreement */}
-        <div className="flex items-start space-x-2">
-          <Checkbox
-            id="terms"
-            checked={agreeToTerms}
-            onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
-          />
-          <Label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
-            I agree to the event terms and conditions, cancellation policy, and understand that tickets are
-            non-refundable.
-          </Label>
-        </div>
+          <Separator className="bg-slate-700" />
 
-        {/* Booking Button */}
-        <Button
-          onClick={handleBooking}
-          disabled={isBooking || !user || spotsLeft === 0 || !agreeToTerms}
-          className="w-full bg-gradient-electric hover:animate-electric-pulse"
-          size="lg"
-        >
-          {isBooking ? (
-            "Processing..."
-          ) : !user ? (
-            <>
-              <User className="h-4 w-4 mr-2" />
-              Sign In to Book
-            </>
-          ) : spotsLeft === 0 ? (
-            "Event Full"
-          ) : (
-            <>
-              <CreditCard className="h-4 w-4 mr-2" />
-              Book Now - ${totalPrice.toFixed(2)}
-            </>
+          <div className="flex items-center justify-between text-lg font-bold">
+            <span className="text-white">Total</span>
+            <span className="text-blue-400">${currentPrice}</span>
+          </div>
+
+          {spotsLeft <= 10 && (
+            <Badge variant="destructive" className="w-full justify-center">
+              Only {spotsLeft} spots left!
+            </Badge>
           )}
-        </Button>
+        </CardContent>
+      </Card>
 
-        {/* Security Badge */}
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Shield className="h-4 w-4" />
-          <span>Secure payment processing</span>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Booking Form */}
+      <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Book Your Spot</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-slate-300">
+              Full Name *
+            </Label>
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="bg-slate-700/50 border-slate-600 text-white"
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-slate-300">
+              Email Address *
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="bg-slate-700/50 border-slate-600 text-white"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-slate-300">
+              Phone Number
+            </Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="bg-slate-700/50 border-slate-600 text-white"
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="specialRequests" className="text-slate-300">
+              Special Requests
+            </Label>
+            <Textarea
+              id="specialRequests"
+              name="specialRequests"
+              value={formData.specialRequests}
+              onChange={handleInputChange}
+              className="bg-slate-700/50 border-slate-600 text-white"
+              placeholder="Any special accommodations or requests?"
+              rows={3}
+            />
+          </div>
+
+          <Button
+            onClick={handleBooking}
+            disabled={isBooking || spotsLeft === 0}
+            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+          >
+            {isBooking ? "Processing..." : spotsLeft === 0 ? "Sold Out" : `Book Now - $${currentPrice}`}
+          </Button>
+
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <Shield className="h-4 w-4" />
+            <span>Secure booking with instant confirmation</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

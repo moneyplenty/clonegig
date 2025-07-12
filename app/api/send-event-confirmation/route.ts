@@ -1,68 +1,170 @@
-import { Resend } from "resend"
 import { type NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
-    const { userEmail, eventTitle, ticketQuantity, totalPrice, specialRequests } = await request.json()
+    const { eventTitle, userName, userEmail, eventDate, eventTime, eventLocation, price, specialRequests } =
+      await request.json()
 
     const { data, error } = await resend.emails.send({
-      from: "Kelvin Creekman Fan Club <noreply@kelvincreekman.com>",
+      from: "Kelvin Creekman Fan Club <noreply@kelvinCreekman.com>",
       to: [userEmail],
       subject: `Event Booking Confirmed: ${eventTitle}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #60a5fa; margin: 0; font-size: 28px;">🎸 Booking Confirmed!</h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your spot is secured</p>
-          </div>
-          
-          <div style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 12px; margin-bottom: 25px;">
-            <h2 style="color: #60a5fa; margin: 0 0 15px 0; font-size: 22px;">${eventTitle}</h2>
-            
-            <div style="display: grid; gap: 10px; margin-bottom: 20px;">
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-                <span>Tickets:</span>
-                <span style="font-weight: bold;">${ticketQuantity}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-                <span>Total Paid:</span>
-                <span style="font-weight: bold; color: #34d399;">$${totalPrice.toFixed(2)}</span>
-              </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Event Booking Confirmation</title>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            }
+            .container {
+              background: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            .header {
+              background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+              color: white;
+              padding: 30px;
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 28px;
+              font-weight: bold;
+            }
+            .content {
+              padding: 30px;
+            }
+            .event-details {
+              background: #f8fafc;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 20px 0;
+              border-left: 4px solid #3b82f6;
+            }
+            .detail-row {
+              display: flex;
+              justify-content: space-between;
+              margin: 10px 0;
+              padding: 8px 0;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .detail-row:last-child {
+              border-bottom: none;
+            }
+            .label {
+              font-weight: bold;
+              color: #475569;
+            }
+            .value {
+              color: #1e293b;
+            }
+            .price {
+              font-size: 24px;
+              font-weight: bold;
+              color: #059669;
+            }
+            .footer {
+              background: #1e293b;
+              color: white;
+              padding: 20px;
+              text-align: center;
+            }
+            .ice-accent {
+              color: #06b6d4;
+              font-weight: bold;
+            }
+            .fire-accent {
+              color: #ef4444;
+              font-weight: bold;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎸 Event Booking Confirmed! ❄️</h1>
+              <p>Get ready for an electrifying experience with Kelvin Creekman</p>
             </div>
             
-            ${
-              specialRequests
-                ? `
-              <div style="margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
-                <h4 style="margin: 0 0 8px 0; color: #60a5fa;">Special Requests:</h4>
-                <p style="margin: 0; font-style: italic;">${specialRequests}</p>
+            <div class="content">
+              <h2>Hello ${userName}! 👋</h2>
+              <p>Your booking for <strong class="ice-accent">${eventTitle}</strong> has been confirmed! We're excited to see you there.</p>
+              
+              <div class="event-details">
+                <h3>📅 Event Details</h3>
+                <div class="detail-row">
+                  <span class="label">Event:</span>
+                  <span class="value">${eventTitle}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Date:</span>
+                  <span class="value">${new Date(eventDate).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Time:</span>
+                  <span class="value">${eventTime}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Location:</span>
+                  <span class="value">${eventLocation}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Total Paid:</span>
+                  <span class="value price">$${price}</span>
+                </div>
+                ${
+                  specialRequests
+                    ? `
+                <div class="detail-row">
+                  <span class="label">Special Requests:</span>
+                  <span class="value">${specialRequests}</span>
+                </div>
+                `
+                    : ""
+                }
               </div>
-            `
-                : ""
-            }
+              
+              <h3>🔥 What to Expect</h3>
+              <ul>
+                <li>Arrive 30 minutes early for check-in</li>
+                <li>Bring a valid ID for entry</li>
+                <li>Photography may be restricted during certain segments</li>
+                <li>Merchandise will be available for purchase</li>
+              </ul>
+              
+              <p><strong class="fire-accent">Important:</strong> Please save this email as your booking confirmation. You may be asked to present it at the venue.</p>
+              
+              <p>If you have any questions or need to make changes to your booking, please contact us at <a href="mailto:support@kelvincreekman.com">support@kelvincreekman.com</a></p>
+            </div>
+            
+            <div class="footer">
+              <p><strong>Kelvin Creekman Fan Club</strong></p>
+              <p>🔥 Fire & Ice Experience ❄️</p>
+              <p>Thank you for being an amazing fan!</p>
+            </div>
           </div>
-          
-          <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
-            <h3 style="color: #60a5fa; margin: 0 0 15px 0;">What's Next?</h3>
-            <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
-              <li>Save this email as your ticket confirmation</li>
-              <li>You'll receive event details 24 hours before</li>
-              <li>Join our Discord for event updates</li>
-              <li>Follow @KelvinCreekman for behind-the-scenes content</li>
-            </ul>
-          </div>
-          
-          <div style="text-align: center; padding: 20px 0; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-            <p style="margin: 0; font-size: 14px; opacity: 0.8;">
-              Can't wait to see you there! 🔥❄️
-            </p>
-            <p style="margin: 10px 0 0 0; font-size: 12px; opacity: 0.6;">
-              Kelvin Creekman Fan Club Team
-            </p>
-          </div>
-        </div>
+        </body>
+        </html>
       `,
     })
 
