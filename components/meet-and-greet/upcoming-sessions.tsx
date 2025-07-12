@@ -1,33 +1,38 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, Clock, Users, Video, Crown, Star, Zap } from "lucide-react"
+import { Clock, Users, Video, Crown, Star, Zap } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
+import { format } from "date-fns"
 
 interface Session {
   id: string
-  title: string
+  title?: string
   date: Date
   time: string
-  duration: number
-  participants: number
-  maxParticipants: number
-  status: "upcoming" | "live" | "completed"
-  tierRequired: "frost" | "blizzard" | "avalanche"
-  hostName: string
+  duration?: number
+  participants?: number
+  maxParticipants?: number
+  status?: "upcoming" | "live" | "completed"
+  tierRequired?: "frost" | "blizzard" | "avalanche"
+  hostName?: string
   hostAvatar?: string
   roomUrl?: string
+  attendees?: number
+  maxAttendees?: number
+  isBooked?: boolean
 }
 
 interface UpcomingSessionsProps {
   onJoinSession?: (sessionId: string) => void
+  sessions?: Session[]
+  onBookSession?: (session: Session) => void
 }
 
-export function UpcomingSessions({ onJoinSession }: UpcomingSessionsProps) {
+export function UpcomingSessions({ onJoinSession, sessions: externalSessions, onBookSession }: UpcomingSessionsProps) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
@@ -79,11 +84,16 @@ export function UpcomingSessions({ onJoinSession }: UpcomingSessionsProps) {
       },
     ]
 
-    setTimeout(() => {
-      setSessions(mockSessions)
+    if (externalSessions) {
+      setSessions(externalSessions)
       setLoading(false)
-    }, 1000)
-  }, [])
+    } else {
+      setTimeout(() => {
+        setSessions(mockSessions)
+        setLoading(false)
+      }, 1000)
+    }
+  }, [externalSessions])
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
@@ -156,6 +166,8 @@ export function UpcomingSessions({ onJoinSession }: UpcomingSessionsProps) {
     return `${Math.floor(hours / 24)}d ${hours % 24}h`
   }
 
+  const sortedSessions = sessions.sort((a, b) => a.date.getTime() - b.date.getTime())
+
   if (loading) {
     return (
       <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
@@ -179,116 +191,42 @@ export function UpcomingSessions({ onJoinSession }: UpcomingSessionsProps) {
   }
 
   return (
-    <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
+    <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-electric-400">
-          <Video className="h-5 w-5" />
-          Upcoming Sessions
-        </CardTitle>
-        <CardDescription>Join live meet & greet sessions with Kelvin Creekman</CardDescription>
+        <CardTitle className="text-electric-200">Upcoming Meet & Greet Sessions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {sessions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No upcoming sessions scheduled</p>
-              <p className="text-sm">Check back later for new sessions!</p>
-            </div>
-          ) : (
-            sessions.map((session) => (
+        {sortedSessions.length > 0 ? (
+          <div className="grid gap-4">
+            {sortedSessions.map((session) => (
               <div
                 key={session.id}
-                className={`p-4 rounded-lg border transition-all ${
-                  session.status === "live"
-                    ? "border-red-500/50 bg-red-500/5 shadow-lg shadow-red-500/20"
-                    : "border-electric-700/30 bg-background/30"
-                }`}
+                className="flex items-center justify-between rounded-md border border-electric-800 p-4 bg-electric-900/20"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-electric-500/50">
-                      <AvatarImage src={session.hostAvatar || "/placeholder.svg"} alt={session.hostName} />
-                      <AvatarFallback className="bg-electric-500/20 text-electric-400">
-                        {session.hostName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-lg">{session.title}</h3>
-                      <p className="text-sm text-muted-foreground">Hosted by {session.hostName}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(session.status)}
-                    {getTierBadge(session.tierRequired)}
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-frost-400" />
+                  <div>
+                    <p className="font-semibold text-electric-100">
+                      {format(session.date, "MMM dd, yyyy")} at {session.time}
+                    </p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Users className="h-4 w-4" /> {session.attendees}/{session.maxAttendees} spots
+                    </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {session.date.toLocaleDateString()}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    {session.time} ({session.duration}min)
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    {session.participants}/{session.maxParticipants}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    {session.status === "live" ? "Live Now" : `Starts in ${formatTimeUntil(session.date)}`}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {user?.user_metadata?.role === "admin" && (
-                      <Crown className="h-4 w-4 text-gold-400" title="Admin Host" />
-                    )}
-                    {session.participants >= session.maxParticipants && (
-                      <Badge variant="destructive" className="text-xs">
-                        Full
-                      </Badge>
-                    )}
-                  </div>
-                  <Button
-                    onClick={() => handleJoinSession(session.id)}
-                    disabled={
-                      !user ||
-                      !canJoinSession(session) ||
-                      (session.participants >= session.maxParticipants && session.status !== "live") ||
-                      session.status === "completed"
-                    }
-                    className={
-                      session.status === "live"
-                        ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                        : "bg-gradient-electric hover:animate-electric-pulse"
-                    }
-                    size="sm"
-                  >
-                    {session.status === "live" ? (
-                      <>
-                        <Video className="h-4 w-4 mr-2" />
-                        Join Live
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {canJoinSession(session) ? "Join Session" : "Upgrade Required"}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => onBookSession?.(session)}
+                  disabled={session.isBooked || session.attendees >= session.maxAttendees}
+                  className="bg-gradient-electric hover:animate-electric-pulse"
+                >
+                  {session.isBooked ? "Booked" : "Book Now"}
+                </Button>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-center py-8">No upcoming sessions at the moment. Check back soon!</p>
+        )}
       </CardContent>
     </Card>
   )

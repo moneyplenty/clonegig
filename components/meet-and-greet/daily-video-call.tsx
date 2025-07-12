@@ -1,420 +1,211 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useRef, useState, useCallback } from "react"
+import DailyIframe from "@daily-co/daily-js"
+import type { DailyCall } from "@daily-co/daily-js"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Users, Settings, Crown, MessageSquare, Share } from "lucide-react"
-import { useAuth } from "@/components/auth/auth-provider"
-import { useToast } from "@/hooks/use-toast"
-
-interface Participant {
-  id: string
-  name: string
-  avatar?: string
-  isHost: boolean
-  isMuted: boolean
-  isVideoOn: boolean
-  isAdmin: boolean
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 interface DailyVideoCallProps {
-  sessionId: string
-  roomUrl?: string
-  onLeave?: () => void
+  roomName: string
+  userName: string
 }
 
-export function DailyVideoCall({ sessionId, roomUrl, onLeave }: DailyVideoCallProps) {
-  const [isConnected, setIsConnected] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
-  const [isVideoOn, setIsVideoOn] = useState(true)
-  const [participants, setParticipants] = useState<Participant[]>([])
-  const [showChat, setShowChat] = useState(false)
-  const [chatMessages, setChatMessages] = useState<
-    Array<{ id: string; user: string; message: string; timestamp: Date }>
-  >([])
-  const [newMessage, setNewMessage] = useState("")
+export function DailyVideoCall({ roomName, userName }: DailyVideoCallProps) {
+  const callRef = useRef<DailyCall | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isJoining, setIsJoining] = useState(false)
+  const [isCallStarted, setIsCallStarted] = useState(false)
+  const [isMicMuted, setIsMicMuted] = useState(false)
+  const [isCameraOff, setIsCameraOff] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const dailyDomain = process.env.NEXT_PUBLIC_DAILY_DOMAIN
 
-  const isAdmin = user?.user_metadata?.role === "admin"
-  const isHost = isAdmin // Admin is always the host
-
-  useEffect(() => {
-    // Mock participants data
-    const mockParticipants: Participant[] = [
-      {
-        id: "host",
-        name: "Kelvin Creekman",
-        avatar: "/kelvin-logo.png",
-        isHost: true,
-        isMuted: false,
-        isVideoOn: true,
-        isAdmin: true,
-      },
-      {
-        id: "user1",
-        name: "Sarah M.",
-        isHost: false,
-        isMuted: true,
-        isVideoOn: true,
-        isAdmin: false,
-      },
-      {
-        id: "user2",
-        name: "Mike R.",
-        isHost: false,
-        isMuted: false,
-        isVideoOn: false,
-        isAdmin: false,
-      },
-    ]
-
-    // Add current user if not already in the list
-    if (user && !mockParticipants.find((p) => p.id === user.id)) {
-      mockParticipants.push({
-        id: user.id,
-        name: user.email?.split("@")[0] || "You",
-        isHost: isAdmin,
-        isMuted,
-        isVideoOn,
-        isAdmin,
-      })
-    }
-
-    setParticipants(mockParticipants)
-
-    // Mock chat messages
-    setChatMessages([
-      {
-        id: "1",
-        user: "Kelvin Creekman",
-        message: "Welcome everyone! Great to see you all here! 🎸",
-        timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      },
-      {
-        id: "2",
-        user: "Sarah M.",
-        message: "So excited to be here! Love your new album!",
-        timestamp: new Date(Date.now() - 3 * 60 * 1000),
-      },
-      {
-        id: "3",
-        user: "Mike R.",
-        message: "Can't wait to hear about the upcoming tour!",
-        timestamp: new Date(Date.now() - 1 * 60 * 1000),
-      },
-    ])
-  }, [user, isAdmin, isMuted, isVideoOn])
-
-  const handleJoinCall = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to join the video call.",
-        variant: "destructive",
-      })
+  const createRoomAndJoin = useCallback(async () => {
+    if (!dailyDomain) {
+      setError("Daily domain is not configured. Please set NEXT_PUBLIC_DAILY_DOMAIN environment variable.")
+      setIsLoading(false)
       return
     }
 
-    setIsConnecting(true)
+    setIsJoining(true)
+    setError(null)
 
     try {
-      // Simulate Daily.co connection
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // In a real application, you would create a room server-side
+      // and get a room URL with a token for security.
+      // For this example, we'll use a simple client-side room creation/joining.
+      const roomUrl = `https://${dailyDomain}.daily.co/${roomName}`
 
-      setIsConnected(true)
-      toast({
-        title: "Connected! 🎸",
-        description: "You've joined the meet & greet session.",
-      })
+      if (!callRef.current) {
+        callRef.current = DailyIframe.createFrame(iframeRef.current!, {
+          showLeaveButton: true,
+          showFullscreenButton: true,
+          iframeStyle: {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            border: "0",
+          },
+        })
 
-      // Simulate getting user media
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream
+        callRef.current.on("loaded", () => {
+          setIsLoading(false)
+        })
+
+        callRef.current.on("joined-meeting", () => {
+          setIsCallStarted(true)
+          setIsJoining(false)
+          toast({
+            title: "Joined Call",
+            description: `Welcome to the ${roomName} session!`,
+            variant: "success",
+          })
+        })
+
+        callRef.current.on("left-meeting", () => {
+          setIsCallStarted(false)
+          toast({
+            title: "Left Call",
+            description: "You have left the meet & greet session.",
+            variant: "info",
+          })
+          // Clean up Daily iframe
+          if (callRef.current) {
+            callRef.current.destroy()
+            callRef.current = null
           }
-        } catch (error) {
-          console.error("Error accessing media devices:", error)
-        }
+        })
+
+        callRef.current.on("error", (e) => {
+          console.error("Daily.co error:", e)
+          setError(`Video call error: ${e.errorMsg || "An unknown error occurred."}`)
+          setIsLoading(false)
+          setIsJoining(false)
+          toast({
+            title: "Video Call Error",
+            description: e.errorMsg || "An unknown error occurred during the call.",
+            variant: "destructive",
+          })
+        })
       }
-    } catch (error) {
+
+      await callRef.current.join({ url: roomUrl, userName: userName })
+    } catch (err: any) {
+      console.error("Failed to create or join Daily room:", err)
+      setError(`Failed to start video call: ${err.message || "Unknown error"}`)
+      setIsLoading(false)
+      setIsJoining(false)
       toast({
-        title: "Connection Failed",
-        description: "Unable to join the video call. Please try again.",
+        title: "Video Call Failed",
+        description: err.message || "Could not start the video call.",
         variant: "destructive",
       })
-    } finally {
-      setIsConnecting(false)
     }
-  }
+  }, [roomName, userName, dailyDomain])
 
-  const handleLeaveCall = () => {
-    setIsConnected(false)
-    toast({
-      title: "Left Session",
-      description: "You've left the meet & greet session.",
-    })
-    onLeave?.()
-  }
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted)
-    toast({
-      title: isMuted ? "Unmuted" : "Muted",
-      description: `Your microphone is now ${isMuted ? "on" : "off"}.`,
-    })
-  }
-
-  const toggleVideo = () => {
-    setIsVideoOn(!isVideoOn)
-    toast({
-      title: isVideoOn ? "Video Off" : "Video On",
-      description: `Your camera is now ${isVideoOn ? "off" : "on"}.`,
-    })
-  }
-
-  const sendMessage = () => {
-    if (!newMessage.trim()) return
-
-    const message = {
-      id: Date.now().toString(),
-      user: user?.email?.split("@")[0] || "You",
-      message: newMessage,
-      timestamp: new Date(),
+  const toggleMic = useCallback(() => {
+    if (callRef.current) {
+      callRef.current.setLocalAudio(!isMicMuted)
+      setIsMicMuted((prev) => !prev)
     }
+  }, [isMicMuted])
 
-    setChatMessages((prev) => [...prev, message])
-    setNewMessage("")
-  }
+  const toggleCamera = useCallback(() => {
+    if (callRef.current) {
+      callRef.current.setLocalVideo(!isCameraOff)
+      setIsCameraOff((prev) => !prev)
+    }
+  }, [isCameraOff])
 
-  if (!isConnected) {
-    return (
-      <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-electric-400">
-            <Video className="h-5 w-5" />
-            Meet & Greet Video Call
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-center py-12">
-          <div className="mb-6">
-            <Video className="h-16 w-16 mx-auto mb-4 text-electric-400 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">Ready to join?</h3>
-            <p className="text-muted-foreground mb-6">
-              Connect with Kelvin Creekman and other fans in this exclusive video session.
-            </p>
-          </div>
+  const leaveCall = useCallback(() => {
+    if (callRef.current) {
+      callRef.current.leave()
+    }
+  }, [])
 
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleMute}
-              className={isMuted ? "bg-red-500/20 border-red-500/50" : ""}
-            >
-              {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleVideo}
-              className={!isVideoOn ? "bg-red-500/20 border-red-500/50" : ""}
-            >
-              {isVideoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          <Button
-            onClick={handleJoinCall}
-            disabled={isConnecting || !user}
-            className="bg-gradient-electric hover:animate-electric-pulse"
-            size="lg"
-          >
-            {isConnecting ? "Connecting..." : user ? "Join Video Call" : "Sign In to Join"}
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
+  useEffect(() => {
+    // Cleanup on component unmount
+    return () => {
+      if (callRef.current) {
+        callRef.current.destroy()
+        callRef.current = null
+      }
+    }
+  }, [])
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[600px]">
-      {/* Main Video Area */}
-      <div className="lg:col-span-3">
-        <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg h-full">
-          <CardContent className="p-0 h-full relative">
-            <div className="grid grid-cols-2 gap-2 p-4 h-full">
-              {/* Host Video (Larger) */}
-              <div className="col-span-2 relative bg-gray-900 rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
-                />
-                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <Avatar className="h-8 w-8 border-2 border-electric-500/50">
-                    <AvatarImage src="/kelvin-logo.png" alt="Kelvin Creekman" />
-                    <AvatarFallback className="bg-electric-500/20 text-electric-400">KC</AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-gold-400" />
-                    <span className="text-white font-semibold">Kelvin Creekman (Host)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Participant Videos */}
-              {participants.slice(1, 5).map((participant) => (
-                <div key={participant.id} className="relative bg-gray-800 rounded-lg overflow-hidden aspect-video">
-                  <div className="w-full h-full flex items-center justify-center">
-                    {participant.isVideoOn ? (
-                      <div className="w-full h-full bg-gradient-to-br from-electric-500/20 to-frost-500/20 flex items-center justify-center">
-                        <Avatar className="h-16 w-16 border-2 border-electric-500/50">
-                          <AvatarImage src={participant.avatar || "/placeholder.svg"} alt={participant.name} />
-                          <AvatarFallback className="bg-electric-500/20 text-electric-400">
-                            {participant.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    ) : (
-                      <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                        <VideoOff className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute bottom-2 left-2 flex items-center gap-1">
-                    <span className="text-white text-xs font-medium">{participant.name}</span>
-                    {participant.isMuted && <MicOff className="h-3 w-3 text-red-400" />}
-                    {participant.isAdmin && <Crown className="h-3 w-3 text-gold-400" />}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Controls */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-lg rounded-full px-4 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleMute}
-                className={`rounded-full ${isMuted ? "bg-red-500 hover:bg-red-600" : "hover:bg-white/20"}`}
-              >
-                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleVideo}
-                className={`rounded-full ${!isVideoOn ? "bg-red-500 hover:bg-red-600" : "hover:bg-white/20"}`}
-              >
-                {isVideoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-              </Button>
-              {isHost && (
-                <>
-                  <Button variant="ghost" size="sm" className="rounded-full hover:bg-white/20">
-                    <Share className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="rounded-full hover:bg-white/20">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLeaveCall}
-                className="rounded-full bg-red-500 hover:bg-red-600"
-              >
-                <PhoneOff className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+    <Card className="w-full max-w-4xl h-[70vh] bg-background/50 backdrop-blur-lg border-electric-700/30 flex flex-col">
+      <CardHeader>
+        <CardTitle className="text-electric-100">
+          {isCallStarted ? `Live Session: ${roomName}` : "Preparing Video Call..."}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col items-center justify-center p-0">
+        {error && <div className="text-destructive text-center p-4">{error}</div>}
+        {(isLoading || isJoining) && !error && (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Loader2 className="h-12 w-12 animate-spin text-electric-500" />
+            <p className="mt-4 text-electric-200">{isJoining ? "Joining call..." : "Loading video call..."}</p>
+          </div>
+        )}
+        <div ref={iframeRef} className="w-full h-full relative rounded-b-lg overflow-hidden" />
+      </CardContent>
+      <div className="p-4 border-t border-electric-700 flex justify-center gap-4">
+        {!isCallStarted && !isJoining && !error && (
+          <Button
+            onClick={createRoomAndJoin}
+            disabled={isLoading || isJoining}
+            className="bg-gradient-electric hover:animate-electric-pulse"
+          >
+            {isLoading || isJoining ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              "Start Call"
+            )}
+          </Button>
+        )}
+        {isCallStarted && (
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleMic}
+              className="border-electric-700 text-electric-200 hover:bg-electric-900 hover:text-electric-100 bg-transparent"
+            >
+              {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              <span className="sr-only">{isMicMuted ? "Unmute Mic" : "Mute Mic"}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleCamera}
+              className="border-electric-700 text-electric-200 hover:bg-electric-900 hover:text-electric-100 bg-transparent"
+            >
+              {isCameraOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+              <span className="sr-only">{isCameraOff ? "Turn Camera On" : "Turn Camera Off"}</span>
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={leaveCall}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <PhoneOff className="h-5 w-5" />
+              <span className="sr-only">Leave Call</span>
+            </Button>
+          </>
+        )}
       </div>
-
-      {/* Sidebar */}
-      <div className="space-y-4">
-        {/* Participants */}
-        <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm text-electric-400">
-              <Users className="h-4 w-4" />
-              Participants ({participants.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {participants.map((participant) => (
-              <div key={participant.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-electric-500/10">
-                <Avatar className="h-6 w-6 border border-electric-500/50">
-                  <AvatarImage src={participant.avatar || "/placeholder.svg"} alt={participant.name} />
-                  <AvatarFallback className="bg-electric-500/20 text-electric-400 text-xs">
-                    {participant.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm flex-1">{participant.name}</span>
-                <div className="flex items-center gap-1">
-                  {participant.isAdmin && <Crown className="h-3 w-3 text-gold-400" />}
-                  {participant.isHost && <Badge className="text-xs bg-electric-500/20 text-electric-400">Host</Badge>}
-                  {participant.isMuted && <MicOff className="h-3 w-3 text-red-400" />}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Chat */}
-        <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg flex-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm text-electric-400">
-              <MessageSquare className="h-4 w-4" />
-              Chat
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {chatMessages.map((message) => (
-                <div key={message.id} className="text-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-electric-400">{message.user}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground">{message.message}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Type a message..."
-                className="flex-1 px-3 py-2 text-sm bg-background/50 border border-electric-700/30 rounded-lg focus:outline-none focus:border-electric-500/50"
-              />
-              <Button onClick={sendMessage} size="sm" className="bg-gradient-electric">
-                Send
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </Card>
   )
 }

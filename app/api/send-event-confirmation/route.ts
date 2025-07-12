@@ -6,29 +6,23 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const {
-      userName,
-      userEmail,
-      eventTitle,
-      eventDate,
-      eventTime,
-      eventLocation,
-      eventType,
-      ticketPrice,
-      specialRequests,
-    } = body
+    const { userEmail, eventName, eventDate, eventTime, eventLocation, quantity, totalPrice } = body
+
+    if (!userEmail || !eventName || !eventDate || !eventTime || !eventLocation || !quantity || !totalPrice) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
 
     const { data, error } = await resend.emails.send({
       from: "Kelvin Creekman Fan Club <noreply@kelvincreekman.com>",
       to: [userEmail],
-      subject: `Event Confirmation: ${eventTitle}`,
+      subject: `Your Ticket Confirmation for ${eventName}`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Event Confirmation</title>
+          <title>Ticket Confirmation</title>
           <style>
             body {
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -131,18 +125,18 @@ export async function POST(request: NextRequest) {
           <div class="container">
             <div class="header">
               <div class="logo">⚡ KELVIN CREEKMAN ⚡</div>
-              <h1 class="title">Event Confirmation</h1>
+              <h1 class="title">Ticket Confirmation</h1>
             </div>
             
-            <p>Hey ${userName}! 🎸</p>
+            <p>Dear Fan,</p>
             
-            <p>Your ticket for <strong>${eventTitle}</strong> has been confirmed! We can't wait to see you there for what's going to be an absolutely electrifying experience.</p>
+            <p>Thank you for booking your tickets for <strong>${eventName}</strong>!</p>
             
             <div class="event-details">
               <h3 style="color: #667eea; margin-top: 0;">📅 Event Details</h3>
               <div class="detail-row">
                 <span class="detail-label">Event:</span>
-                <span class="detail-value">${eventTitle}</span>
+                <span class="detail-value">${eventName}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Date:</span>
@@ -157,45 +151,19 @@ export async function POST(request: NextRequest) {
                 <span class="detail-value">${eventLocation}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Type:</span>
-                <span class="detail-value">${eventType}</span>
+                <span class="detail-label">Tickets:</span>
+                <span class="detail-value">${quantity}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Price:</span>
-                <span class="detail-value">$${ticketPrice}</span>
+                <span class="detail-label">Total Paid:</span>
+                <span class="detail-value">$${totalPrice}</span>
               </div>
             </div>
             
-            ${
-              specialRequests
-                ? `
-            <div class="important-info">
-              <h4 style="margin-top: 0; color: #856404;">📝 Your Special Requests:</h4>
-              <p style="margin-bottom: 0;">${specialRequests}</p>
-            </div>
-            `
-                : ""
-            }
+            <p>We look forward to seeing you there!</p>
             
-            <div class="important-info">
-              <h4 style="margin-top: 0; color: #856404;">🎫 Important Information:</h4>
-              <ul style="margin-bottom: 0;">
-                <li>Please arrive 30 minutes before the event starts</li>
-                <li>Bring a valid ID for entry verification</li>
-                <li>This confirmation email serves as your ticket</li>
-                <li>No outside food or drinks allowed</li>
-                <li>Merchandise will be available at the venue</li>
-              </ul>
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="https://kelvincreekman.com/events" class="button">View All Events</a>
-            </div>
-            
-            <p>If you have any questions or need to make changes to your booking, please contact us at <a href="mailto:support@kelvincreekman.com">support@kelvincreekman.com</a></p>
-            
-            <p>Rock on! 🤘<br>
-            <strong>The Kelvin Creekman Team</strong></p>
+            <p>Best regards,</p>
+            <p>The Kelvin Creekman Fan Club Team</p>
             
             <div class="footer">
               <div class="social-links">

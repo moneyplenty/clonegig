@@ -89,24 +89,23 @@ export function StoreBanner() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-gradient-to-r from-fire-500/10 to-ember-500/10 dark:from-electric-500/10 dark:to-frost-500/10 border-fire-500/30 dark:border-electric-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold mb-2">Join the Fan Club for Exclusive Discounts!</h3>
-                <p className="text-muted-foreground">
-                  Get up to 30% off merchandise, free shipping, and access to limited edition items
-                </p>
-              </div>
-              <Button asChild className="bg-gradient-fire dark:bg-gradient-electric">
-                <Link href="/join">
-                  Join Now
-                  <Star className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="relative mb-12 overflow-hidden rounded-lg bg-gradient-to-r from-electric-600 to-frost-600 p-6 text-center text-white shadow-lg">
+          <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-electric-500/20 blur-xl" />
+          <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-frost-500/20 blur-xl" />
+          <div className="relative z-10 flex flex-col items-center justify-center">
+            <Sparkles className="mb-4 h-12 w-12 animate-pulse text-white" />
+            <h2 className="mb-2 text-3xl font-bold md:text-4xl">Exclusive Merchandise Drop!</h2>
+            <p className="text-lg md:text-xl">
+              Limited edition items available now. Grab yours before they&apos;re gone!
+            </p>
+            <Button asChild className="bg-gradient-fire dark:bg-gradient-electric mt-4">
+              <Link href="/join">
+                Join Now
+                <Star className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Store Features */}

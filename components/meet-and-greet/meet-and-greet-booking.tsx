@@ -1,9 +1,11 @@
 "use client"
 
+import { CardDescription } from "@/components/ui/card"
+
 import { useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,7 +25,10 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { format } from "date-fns"
 
 interface TimeSlot {
   id: string
@@ -42,6 +47,20 @@ interface PrivateSession {
   price: number
   tierRequired: "blizzard" | "avalanche"
   description: string
+}
+
+interface Session {
+  id: string
+  date: Date
+  time: string
+  isBooked: boolean
+  attendees: number
+  maxAttendees: number
+}
+
+interface MeetAndGreetBookingProps {
+  session: Session
+  onJoinCall: () => void
 }
 
 const timeSlots: TimeSlot[] = [
@@ -110,7 +129,7 @@ const privateSessions: PrivateSession[] = [
   },
 ]
 
-export function MeetAndGreetBooking() {
+export function MeetAndGreetBooking({ session, onJoinCall }: MeetAndGreetBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null)
   const [selectedPrivateSession, setSelectedPrivateSession] = useState<PrivateSession | null>(null)
@@ -126,7 +145,8 @@ export function MeetAndGreetBooking() {
     preferredTime: "",
   })
   const { user } = useAuth()
-  const { toast } = useToast()
+  const supabase = createClient()
+  const router = useRouter()
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
@@ -349,6 +369,82 @@ export function MeetAndGreetBooking() {
     return (
       tierHierarchy[userTier as keyof typeof tierHierarchy] >= tierHierarchy[requiredTier as keyof typeof tierHierarchy]
     )
+  }
+
+  const handleConfirmBooking = async () => {
+    setIsBooking(true)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book a meet & greet session.",
+        variant: "destructive",
+      })
+      router.push("/login")
+      setIsBooking(false)
+      return
+    }
+
+    if (session.isBooked || session.attendees >= session.maxAttendees) {
+      toast({
+        title: "Session Unavailable",
+        description: "This session is already booked or full.",
+        variant: "destructive",
+      })
+      setIsBooking(false)
+      return
+    }
+
+    try {
+      // Simulate booking process
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // In a real application, you would update the database to mark the session as booked
+      // and increment attendees count. For this mock, we'll just proceed.
+
+      // Call API route to create Daily room and send confirmation email
+      const response = await fetch("/api/create-daily-room", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: session.id,
+          userEmail: user.email,
+          userName: user.user_metadata?.full_name || user.email,
+          sessionDate: format(session.date, "PPP"),
+          sessionTime: session.time,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create Daily room or send confirmation email")
+      }
+
+      const { roomUrl } = await response.json()
+
+      toast({
+        title: "Booking Confirmed!",
+        description: `You are booked for the meet & greet on ${format(session.date, "PPP")} at ${session.time}. A confirmation email with the video call link has been sent.`,
+        variant: "success",
+      })
+
+      // Optionally, store the roomUrl in state or context to pass to DailyVideoCall
+      // For now, we'll just trigger the onJoinCall which assumes a fixed room name
+      onJoinCall()
+    } catch (error: any) {
+      toast({
+        title: "Booking Failed",
+        description: error.message || "There was an error confirming your booking. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsBooking(false)
+    }
   }
 
   return (

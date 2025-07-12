@@ -1,314 +1,227 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Play, Pause, Volume2, VolumeX, ChevronLeft, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Play, Music, Zap, Star, Volume2, VolumeX } from "lucide-react"
 
-const heroSlides = [
+interface HeroSlide {
+  id: number
+  type: "video" | "image"
+  src: string
+  poster?: string
+  title: string
+  subtitle: string
+  description: string
+  cta: string
+  ctaLink: string
+}
+
+interface HeroSectionProps {
+  title: string
+  subtitle: string
+  ctaText: string
+  ctaLink: string
+  imageUrl?: string
+  videoUrl?: string
+  videoPosterUrl?: string
+}
+
+const heroSlides: HeroSlide[] = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&h=1080&fit=crop",
-    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    title: "Live Performance",
-    subtitle: "Experience the Electric Energy",
-    description: "Join Kelvin Creekman on stage for an unforgettable rock experience",
-    cta: "Watch Live",
-    ctaLink: "/events",
     type: "video",
+    src: "/videos/kelvin-performance.mp4",
+    poster: "/images/kelvin-stage.jpg",
+    title: "KELVIN CREEKMAN",
+    subtitle: "Official Fan Club",
+    description: "Join the ultimate rock and metal experience with exclusive content, meet & greets, and VIP access",
+    cta: "Join the Club",
+    ctaLink: "/join",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1920&h=1080&fit=crop",
-    title: "Studio Sessions",
-    subtitle: "Behind the Music",
-    description: "Get exclusive access to studio recordings and creative process",
+    type: "image",
+    src: "/images/kelvin-studio.jpg",
+    title: "BEHIND THE SCENES",
+    subtitle: "Exclusive Content",
+    description: "Get unprecedented access to studio sessions, songwriting process, and personal moments",
     cta: "Explore Content",
     ctaLink: "/content",
-    type: "image",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1920&h=1080&fit=crop",
-    title: "Meet & Greet",
-    subtitle: "Connect with Kelvin",
-    description: "Book personal video sessions and connect with your favorite artist",
+    type: "video",
+    src: "/videos/kelvin-backstage.mp4",
+    poster: "/images/kelvin-backstage.jpg",
+    title: "MEET & GREET",
+    subtitle: "Personal Connection",
+    description: "Book private video calls and group sessions with Kelvin for an unforgettable experience",
     cta: "Book Session",
     ctaLink: "/meet-and-greet",
-    type: "image",
   },
   {
     id: 4,
-    image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1920&h=1080&fit=crop",
-    video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    title: "Exclusive Merch",
-    subtitle: "Official Fan Gear",
-    description: "Shop limited edition merchandise and exclusive fan club items",
+    type: "image",
+    src: "/images/kelvin-merchandise.jpg",
+    title: "EXCLUSIVE MERCH",
+    subtitle: "Fan Store",
+    description: "Limited edition merchandise, signed items, and exclusive designs only for club members",
     cta: "Shop Now",
     ctaLink: "/store",
-    type: "video",
   },
 ]
 
-export function HeroSection() {
+export function HeroSection({
+  title,
+  subtitle,
+  ctaText,
+  ctaLink,
+  imageUrl,
+  videoUrl,
+  videoPosterUrl,
+}: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const [isPlaying, setIsPlaying] = useState(true)
   const [isMuted, setIsMuted] = useState(true)
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
+  const [isAutoPlay, setIsAutoPlay] = useState(true)
 
   useEffect(() => {
-    if (!isAutoPlaying) return
+    if (!isAutoPlay) return
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    }, 8000) // Longer duration for videos
+    }, 8000)
 
     return () => clearInterval(interval)
-  }, [isAutoPlaying])
+  }, [isAutoPlay])
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    setIsAutoPlaying(false)
   }
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
-    setIsAutoPlaying(false)
   }
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index)
-    setIsAutoPlaying(false)
+  }
+
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying)
+    setIsAutoPlay(!isPlaying)
   }
 
   const toggleMute = () => {
     setIsMuted(!isMuted)
   }
 
+  const currentSlideData = heroSlides[currentSlide]
+
+  const hasVideo = videoUrl && videoUrl.trim() !== ""
+  const hasImage = imageUrl && imageUrl.trim() !== ""
+
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-black">
-      {/* Background Slides */}
-      <div className="absolute inset-0">
-        {heroSlides.map((slide, index) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {slide.type === "video" && slide.video ? (
-              <video
-                className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
-                loop
-                muted={isMuted}
-                playsInline
-                onLoadedData={() => setIsVideoLoaded(true)}
-              >
-                <source src={slide.video} type="video/mp4" />
-                <Image
-                  src={slide.image || "/placeholder.svg"}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
-                />
-              </video>
-            ) : (
-              <Image
-                src={slide.image || "/placeholder.svg"}
-                alt={slide.title}
-                fill
-                className="object-cover"
-                priority={index === 0}
-              />
-            )}
-
-            {/* Gradient Overlays for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60" />
-          </div>
-        ))}
-      </div>
-
-      {/* Animated Theme Effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Light mode - Fire effects */}
-        <div className="dark:hidden">
-          <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-fire-400 rounded-full animate-ping opacity-60" />
-          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-ember-400 rounded-full animate-pulse opacity-40" />
-          <div className="absolute bottom-1/4 left-1/3 w-4 h-4 bg-fire-500 rounded-full animate-bounce opacity-30" />
-          <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-ember-300 rounded-full animate-ping opacity-50" />
-          <div className="absolute bottom-1/3 right-1/2 w-3 h-3 bg-fire-600 rounded-full animate-pulse opacity-40" />
-        </div>
-
-        {/* Dark mode - Ice effects */}
-        <div className="hidden dark:block">
-          <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-electric-400 rounded-full animate-ping opacity-60" />
-          <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-frost-400 rounded-full animate-pulse opacity-40" />
-          <div className="absolute bottom-1/4 left-1/3 w-4 h-4 bg-electric-500 rounded-full animate-bounce opacity-30" />
-          <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-frost-300 rounded-full animate-ping opacity-50" />
-          <div className="absolute bottom-1/3 right-1/2 w-3 h-3 bg-electric-600 rounded-full animate-pulse opacity-40" />
+    <section className="relative h-[calc(100vh-64px)] w-full overflow-hidden">
+      {hasVideo ? (
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          src={videoUrl || undefined}
+          poster={videoPosterUrl || undefined}
+          aria-label="Background video of Kelvin Creekman performing"
+        >
+          Your browser does not support the video tag.
+        </video>
+      ) : hasImage ? (
+        <Image
+          src={imageUrl || "/placeholder.svg"}
+          alt="Kelvin Creekman performing"
+          fill
+          priority
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-electric-950 to-background" />
+      )}
+      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-center p-4">
+        <div className="z-10 max-w-4xl space-y-6">
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg">
+            {title || currentSlideData.title}
+          </h1>
+          <p className="text-lg md:text-xl text-electric-200 drop-shadow-md">{subtitle || currentSlideData.subtitle}</p>
+          <Button asChild size="lg" className="bg-gradient-electric hover:animate-electric-pulse text-lg px-8 py-3">
+            <Link href={ctaLink || currentSlideData.ctaLink}>{ctaText || currentSlideData.cta}</Link>
+          </Button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center">
-        <div className="container mx-auto px-6 lg:px-8">
-          <div className="max-w-4xl">
-            {heroSlides.map((slide, index) => (
-              <div
-                key={slide.id}
-                className={`transition-all duration-1000 ${
-                  index === currentSlide ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8 pointer-events-none"
+      {/* Navigation Controls */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex items-center gap-4 bg-black/50 backdrop-blur-lg rounded-full px-6 py-3">
+          {/* Slide Indicators */}
+          <div className="flex gap-2">
+            {heroSlides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentSlide ? "bg-electric-400 scale-125" : "bg-white/30 hover:bg-white/50"
                 }`}
-              >
-                <div className="mb-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex items-center gap-3 text-primary">
-                      {slide.id === 1 && <Music className="h-6 w-6" />}
-                      {slide.id === 2 && <Play className="h-6 w-6" />}
-                      {slide.id === 3 && <Star className="h-6 w-6" />}
-                      {slide.id === 4 && <Zap className="h-6 w-6" />}
-                      <span className="text-lg font-bold uppercase tracking-wider text-fire-400 dark:text-electric-400">
-                        {slide.subtitle}
-                      </span>
-                    </div>
-                  </div>
-
-                  <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-none">
-                    <span className="bg-gradient-to-r from-white via-fire-200 to-fire-400 dark:from-white dark:via-electric-200 dark:to-electric-400 bg-clip-text text-transparent drop-shadow-2xl">
-                      {slide.title}
-                    </span>
-                  </h1>
-
-                  <p className="text-2xl md:text-3xl lg:text-4xl text-gray-200 mb-10 leading-relaxed max-w-3xl font-light">
-                    {slide.description}
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-6">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-gradient-to-r from-fire-500 to-ember-500 hover:from-fire-600 hover:to-ember-600 dark:from-electric-500 dark:to-frost-500 dark:hover:from-electric-600 dark:hover:to-frost-600 text-white text-xl px-10 py-8 rounded-full shadow-2xl hover:shadow-fire-500/25 dark:hover:shadow-electric-500/25 transition-all duration-300 hover:scale-105"
-                  >
-                    <Link href={slide.ctaLink} className="flex items-center gap-3">
-                      {slide.cta}
-                      <Zap className="h-6 w-6" />
-                    </Link>
-                  </Button>
-
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="border-2 border-fire-400/70 text-fire-200 hover:bg-fire-500/20 hover:border-fire-300 dark:border-electric-400/70 dark:text-electric-200 dark:hover:bg-electric-500/20 dark:hover:border-electric-300 text-xl px-10 py-8 rounded-full bg-black/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
-                  >
-                    <Link href="/join" className="flex items-center gap-3">
-                      Join Fan Club
-                      <Star className="h-6 w-6" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+                aria-label={`Go to slide ${index + 1}`}
+              />
             ))}
           </div>
+
+          {/* Media Controls */}
+          <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white/20">
+            <Button variant="ghost" size="sm" onClick={togglePlayPause} className="text-white hover:bg-white/20 p-2">
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+
+            {currentSlideData.type === "video" && (
+              <Button variant="ghost" size="sm" onClick={toggleMute} className="text-white hover:bg-white/20 p-2">
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Video Controls */}
-      {heroSlides[currentSlide].type === "video" && (
-        <button
-          onClick={toggleMute}
-          className="absolute bottom-24 right-6 z-30 p-4 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all hover:scale-110 backdrop-blur-sm"
-          aria-label={isMuted ? "Unmute video" : "Mute video"}
-        >
-          {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-        </button>
-      )}
-
-      {/* Navigation Arrows */}
-      <button
+      {/* Arrow Navigation */}
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={prevSlide}
-        className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all hover:scale-110 backdrop-blur-sm shadow-2xl"
-        aria-label="Previous slide"
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 text-white hover:bg-white/20 p-3"
       >
-        <ChevronLeft className="h-8 w-8" />
-      </button>
+        <ChevronLeft className="h-6 w-6" />
+      </Button>
 
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={nextSlide}
-        className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 rounded-full bg-black/60 hover:bg-black/80 text-white transition-all hover:scale-110 backdrop-blur-sm shadow-2xl"
-        aria-label="Next slide"
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 text-white hover:bg-white/20 p-3"
       >
-        <ChevronRight className="h-8 w-8" />
-      </button>
+        <ChevronRight className="h-6 w-6" />
+      </Button>
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-4">
-        {heroSlides.map((slide, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`relative w-4 h-4 rounded-full transition-all duration-300 ${
-              index === currentSlide
-                ? "bg-fire-400 dark:bg-electric-400 scale-125 shadow-lg shadow-fire-400/50 dark:shadow-electric-400/50"
-                : "bg-white/50 hover:bg-white/70 hover:scale-110"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          >
-            {slide.type === "video" && <Play className="absolute inset-0 w-2 h-2 m-auto text-black/60" />}
-          </button>
-        ))}
-      </div>
-
-      {/* Auto-play Controls */}
-      <div className="absolute top-6 right-6 z-20 flex gap-3">
-        <button
-          onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-          className={`p-3 rounded-full transition-all backdrop-blur-sm ${
-            isAutoPlaying
-              ? "bg-fire-500/30 text-fire-300 dark:bg-electric-500/30 dark:text-electric-300 shadow-lg"
-              : "bg-gray-500/30 text-gray-300 hover:bg-gray-400/30"
-          }`}
-          aria-label={isAutoPlaying ? "Pause slideshow" : "Play slideshow"}
+      {/* Auto-play Toggle */}
+      <div className="absolute top-4 right-4 z-20">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsAutoPlay(!isAutoPlay)}
+          className={`text-white hover:bg-white/20 ${isAutoPlay ? "bg-electric-500/20" : ""}`}
         >
-          {isAutoPlaying ? (
-            <div className="w-5 h-5 flex items-center justify-center">
-              <div className="w-1.5 h-4 bg-current mr-1" />
-              <div className="w-1.5 h-4 bg-current" />
-            </div>
-          ) : (
-            <Play className="h-5 w-5" />
-          )}
-        </button>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse" />
-        </div>
-      </div>
-
-      {/* Lightning/Flame Effect Lines */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Light mode - Flame effects */}
-        <div className="dark:hidden">
-          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-fire-400/30 to-transparent animate-pulse" />
-          <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-ember-400/30 to-transparent animate-pulse delay-1000" />
-          <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-fire-500/20 to-transparent animate-pulse delay-2000" />
-        </div>
-
-        {/* Dark mode - Lightning effects */}
-        <div className="hidden dark:block">
-          <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-electric-400/30 to-transparent animate-pulse" />
-          <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-frost-400/30 to-transparent animate-pulse delay-1000" />
-          <div className="absolute top-0 left-3/4 w-px h-full bg-gradient-to-b from-transparent via-electric-500/20 to-transparent animate-pulse delay-2000" />
-        </div>
+          {isAutoPlay ? "Auto" : "Manual"}
+        </Button>
       </div>
     </section>
   )

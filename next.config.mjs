@@ -10,27 +10,25 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: 'cdn.sanity.io',
+        port: '',
+        pathname: '**',
       },
       {
         protocol: 'https',
-        hostname: 'blob.v0.dev',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '**',
       },
       {
         protocol: 'https',
-        hostname: 'placeholder.com',
+        hostname: 'avatars.githubusercontent.com',
+        port: '',
+        pathname: '**',
       },
     ],
     unoptimized: true,
   },
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
-    },
-  },
-  env: {
-    CUSTOM_KEY: 'kelvin-creekman-fan-club',
-  },
-}
+};
 
-export default nextConfig
+export default nextConfig;

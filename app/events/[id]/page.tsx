@@ -1,79 +1,106 @@
-import { notFound } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import { EventDetails } from "@/components/events/event-details"
 import { EventBooking } from "@/components/events/event-booking"
 import { RelatedEvents } from "@/components/events/related-events"
 
-// Mock event data - in production, this would come from your database
-const mockEvents = [
+interface Event {
+  id: string
+  title: string
+  date: string
+  time: string
+  location: string
+  description: string
+  imageUrl: string
+  price: number
+  ticketsAvailable: number
+}
+
+const mockEvents: Event[] = [
   {
     id: "1",
-    title: "Kelvin Creekman Live Concert",
-    description: "Experience the electrifying performance of Kelvin Creekman in an intimate venue setting.",
-    longDescription:
-      'Join us for an unforgettable evening with rock sensation Kelvin Creekman. This exclusive concert features songs from his latest album "Frozen Thunder" plus fan favorites that have defined his career. The intimate venue setting ensures every seat has a perfect view of the stage.',
-    date: "2024-02-15",
-    time: "20:00",
-    location: "The Electric Theater, Los Angeles",
-    price: 75,
-    memberPrice: 60,
-    category: "Concert",
-    tier: "Frost",
-    maxAttendees: 500,
-    currentAttendees: 342,
-    image: "/placeholder.jpg",
-    features: ["VIP Meet & Greet Option", "Exclusive Merchandise", "Professional Recording"],
-    status: "upcoming",
+    title: "Ice Storm Album Launch Party",
+    date: "2025-08-15",
+    time: "7:00 PM",
+    location: "The Electric Venue, New York",
+    description:
+      "Join Kelvin Creekman for an electrifying night celebrating the launch of his new album, 'Ice Storm'. Expect live performances, special guests, and exclusive merchandise.",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+    price: 50.0,
+    ticketsAvailable: 150,
   },
   {
     id: "2",
-    title: "VIP Meet & Greet Session",
-    description: "Personal meet and greet with Kelvin Creekman, including photo opportunities.",
-    longDescription:
-      "Get up close and personal with Kelvin Creekman in this exclusive VIP experience. Includes a 15-minute personal conversation, professional photo session, and signed merchandise.",
-    date: "2024-02-20",
-    time: "18:00",
-    location: "Studio City, Los Angeles",
-    price: 150,
-    memberPrice: 120,
-    category: "Meet & Greet",
-    tier: "Blizzard",
-    maxAttendees: 20,
-    currentAttendees: 18,
-    image: "/placeholder.jpg",
-    features: ["15-min Personal Time", "Professional Photos", "Signed Merchandise", "Exclusive Access"],
-    status: "upcoming",
+    title: "Acoustic Set & Q&A",
+    date: "2025-09-01",
+    time: "3:00 PM",
+    location: "The Frosty Lounge, Los Angeles",
+    description:
+      "An intimate acoustic performance followed by a Q&A session with Kelvin. A rare chance to hear his hits unplugged and ask your burning questions.",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+    price: 35.0,
+    ticketsAvailable: 50,
+  },
+  {
+    id: "3",
+    title: "Winter's Embrace Tour - London",
+    date: "2025-10-20",
+    time: "8:00 PM",
+    location: "O2 Academy, London",
+    description:
+      "Kelvin Creekman brings the 'Winter's Embrace' tour to London! Prepare for a full-throttle rock experience with new tracks and fan favorites.",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+    price: 65.0,
+    ticketsAvailable: 300,
+  },
+  {
+    id: "4",
+    title: "Fan Meetup & Signing Session",
+    date: "2025-11-10",
+    time: "1:00 PM",
+    location: "Metalhead Comics, Berlin",
+    description:
+      "Meet Kelvin, get autographs, and take photos at this exclusive fan meetup. Limited entry, so arrive early!",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+    price: 0.0, // Free event
+    ticketsAvailable: 200,
   },
 ]
 
-interface EventPageProps {
-  params: {
-    id: string
-  }
-}
-
-export default function EventPage({ params }: EventPageProps) {
+export default function EventDetailPage({ params }: { params: { id: string } }) {
   const event = mockEvents.find((e) => e.id === params.id)
 
   if (!event) {
-    notFound()
+    return (
+      <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center p-4 text-center">
+        <h2 className="text-3xl font-bold text-electric-100 mb-4">Event Not Found</h2>
+        <p className="text-muted-foreground mb-8">
+          The event you are looking for does not exist or has been cancelled.
+        </p>
+        <Button asChild className="bg-gradient-electric hover:animate-electric-pulse">
+          <Link href="/events">View All Events</Link>
+        </Button>
+      </div>
+    )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <EventDetails event={event} />
-          </div>
-          <div className="lg:col-span-1">
-            <EventBooking event={event} />
-          </div>
-        </div>
+  const relatedEvents = mockEvents.filter((e) => e.id !== params.id).slice(0, 2) // Show up to 2 related events
 
-        <div className="mt-12">
-          <RelatedEvents currentEventId={event.id} />
+  return (
+    <div className="container mx-auto px-4 py-12 md:py-24">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="lg:col-span-2">
+          <EventDetails event={event} />
+        </div>
+        <div className="lg:col-span-1">
+          <EventBooking event={event} />
         </div>
       </div>
+      {relatedEvents.length > 0 && (
+        <div className="mt-24">
+          <RelatedEvents events={relatedEvents} />
+        </div>
+      )}
     </div>
   )
 }

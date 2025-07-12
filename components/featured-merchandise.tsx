@@ -1,128 +1,83 @@
-import Image from "next/image"
 import Link from "next/link"
+import Image from "next/image"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 
-const merchandise = [
+interface Product {
+  id: string
+  name: string
+  price: number
+  imageUrl: string
+}
+
+const mockProducts: Product[] = [
   {
-    id: 1,
-    name: "Ice Storm Vinyl",
-    description: "Limited edition signed vinyl with exclusive frosted artwork",
-    price: 49.99,
-    image: "/placeholder.svg?height=400&width=400",
-    exclusive: true,
-    inStock: true,
+    id: "1",
+    name: "Electric Storm T-Shirt",
+    price: 25.0,
+    imageUrl: "/merch/kelvin-tshirt.webp",
   },
   {
-    id: 2,
-    name: "Frozen Kingdom Tour Hoodie",
-    description: "Premium quality hoodie with 2025 tour dates and electric print",
-    price: 59.99,
-    image: "/placeholder.svg?height=400&width=400",
-    exclusive: true,
-    inStock: true,
+    id: "2",
+    name: "Frozen Fire Beanie",
+    price: 20.0,
+    imageUrl: "/merch/beanie.jpg",
   },
   {
-    id: 3,
-    name: "Avalanche Photobook",
-    description: "Hardcover photobook with never-before-seen images from the ice caves sessions",
-    price: 39.99,
-    image: "/placeholder.svg?height=400&width=400",
-    exclusive: false,
-    inStock: false,
+    id: "3",
+    name: "Ice Legion Mug (Black)",
+    price: 15.0,
+    imageUrl: "/merch/mug-black.webp",
+  },
+  {
+    id: "4",
+    name: "Signed Notepad",
+    price: 30.0,
+    imageUrl: "/merch/notepad.webp",
   },
 ]
 
 export function FeaturedMerchandise() {
   return (
-    <div className="grid gap-6 pt-8 md:grid-cols-2 lg:grid-cols-3">
-      {merchandise.map((item, index) => (
-        <Card
-          key={item.id}
-          className={`overflow-hidden group relative ${
-            index === 0
-              ? "ember-card dark:ice-card"
-              : index === 1
-                ? "fire-card dark:metal-card"
-                : "fire-card dark:ice-card"
-          }`}
-        >
-          {/* Theme effects */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none">
-            <div
-              className={`absolute inset-0 blur-[30px] animate-pulse ${
-                index === 0
-                  ? "bg-ember-400 dark:bg-frost-400"
-                  : index === 1
-                    ? "bg-fire-400 dark:bg-electric-400"
-                    : "bg-fire-500 dark:bg-electric-500"
-              }`}
-            />
-          </div>
-
-          <div className="relative aspect-square bg-muted">
-            <Image
-              src={item.image || "/placeholder.svg"}
-              alt={item.name}
-              fill
-              className="object-cover transition-all group-hover:scale-105"
-            />
-            {item.exclusive && (
-              <Badge className="absolute top-2 right-2 bg-gradient-fire dark:bg-gradient-electric animate-fire-pulse dark:animate-electric-pulse">
-                Ice Legion Exclusive
-              </Badge>
-            )}
-            {!item.inStock && (
-              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                <Badge
-                  variant="outline"
-                  className="text-lg font-semibold px-4 py-2 border-fire-500/50 text-fire-300 dark:border-electric-500/50 dark:text-electric-300"
-                >
-                  Coming Soon
-                </Badge>
-              </div>
-            )}
-          </div>
-
-          <CardHeader className="p-4 relative z-10">
-            <CardTitle
-              className={`text-lg ${
-                index === 0
-                  ? "ember-text dark:frost-text"
-                  : index === 1
-                    ? "fire-text dark:metal-text"
-                    : "fire-text dark:electric-text"
-              }`}
-            >
-              {item.name}
-            </CardTitle>
-            <CardDescription>{item.description}</CardDescription>
-          </CardHeader>
-
-          <CardFooter className="p-4 pt-0 flex justify-between items-center relative z-10">
-            <span className="font-bold text-primary">${item.price.toFixed(2)}</span>
-            {item.inStock ? (
-              <Button
-                asChild
-                size="sm"
-                className="rounded-full bg-gradient-fire dark:bg-gradient-electric hover:animate-fire-pulse dark:hover:animate-electric-pulse"
-              >
-                <Link href={`/store/product/${item.id}`}>{item.exclusive ? "Members Buy" : "Buy Now"}</Link>
+    <section className="container mx-auto px-4 py-12 md:py-24">
+      <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+        <span className="bg-gradient-to-r from-electric-400 to-frost-400 bg-clip-text text-transparent">
+          Featured Merchandise
+        </span>
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {mockProducts.map((product) => (
+          <Card
+            key={product.id}
+            className="group bg-background/50 backdrop-blur-lg border-electric-700/30 hover:border-electric-500/50 transition-all duration-300 hover:scale-105 overflow-hidden"
+          >
+            <div className="relative aspect-square overflow-hidden">
+              <Image
+                src={product.imageUrl || "/placeholder.svg"}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg leading-tight text-electric-100">{product.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold text-electric-400">${product.price.toFixed(2)}</div>
+            </CardContent>
+            <CardFooter>
+              <Button asChild className="w-full bg-gradient-electric hover:animate-electric-pulse">
+                <Link href="/store">View Product</Link>
               </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full border-fire-500/50 hover:border-fire-400 dark:border-electric-500/50 dark:hover:border-electric-400 bg-transparent"
-                disabled
-              >
-                Notify Me
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+      <div className="text-center mt-12">
+        <Button asChild size="lg" className="bg-gradient-electric hover:animate-electric-pulse">
+          <Link href="/store">View All Merchandise</Link>
+        </Button>
+      </div>
+    </section>
   )
 }

@@ -1,155 +1,154 @@
 "use client"
 
 import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Users, Star, Filter, X } from "lucide-react"
-
-const eventTypes = [
-  { id: "all", label: "All Events", icon: Filter },
-  { id: "concert", label: "Concerts", icon: Calendar },
-  { id: "meetgreet", label: "Meet & Greets", icon: Users },
-  { id: "virtual", label: "Virtual Events", icon: MapPin },
-  { id: "vip", label: "VIP Events", icon: Star },
-]
-
-const locations = [
-  { id: "all", label: "All Locations" },
-  { id: "new-york", label: "New York" },
-  { id: "los-angeles", label: "Los Angeles" },
-  { id: "chicago", label: "Chicago" },
-  { id: "virtual", label: "Virtual" },
-]
-
-const tiers = [
-  { id: "all", label: "All Tiers" },
-  { id: "public", label: "Public" },
-  { id: "frost", label: "Frost+" },
-  { id: "blizzard", label: "Blizzard+" },
-  { id: "avalanche", label: "Avalanche Only" },
-]
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function EventsFilters() {
-  const [selectedType, setSelectedType] = useState("all")
-  const [selectedLocation, setSelectedLocation] = useState("all")
-  const [selectedTier, setSelectedTier] = useState("all")
+  const [date, setDate] = useState<Date | undefined>(undefined)
+  const [priceRange, setPriceRange] = useState([0, 100])
+  const [eventType, setEventType] = useState({
+    live: false,
+    online: false,
+    meetup: false,
+  })
 
-  const clearFilters = () => {
-    setSelectedType("all")
-    setSelectedLocation("all")
-    setSelectedTier("all")
+  const handlePriceChange = (value: number[]) => {
+    setPriceRange(value)
   }
 
-  const hasActiveFilters = selectedType !== "all" || selectedLocation !== "all" || selectedTier !== "all"
+  const handleEventTypeChange = (type: keyof typeof eventType, checked: boolean) => {
+    setEventType((prev) => ({ ...prev, [type]: checked }))
+  }
+
+  const handleApplyFilters = () => {
+    // In a real application, you would apply these filters to your event data
+    console.log("Applied Filters:", { date, priceRange, eventType })
+    // You might pass these filters up to a parent component or use a global state management
+  }
+
+  const handleClearFilters = () => {
+    setDate(undefined)
+    setPriceRange([0, 100])
+    setEventType({ live: false, online: false, meetup: false })
+    console.log("Cleared Filters")
+  }
 
   return (
-    <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg">
-      <CardContent className="p-6">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Filter Events</h3>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                <X className="h-4 w-4 mr-2" />
-                Clear Filters
+    <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+      <CardHeader>
+        <CardTitle className="text-electric-200">Filter Events</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-6">
+        {/* Date Filter */}
+        <div>
+          <Label htmlFor="date-filter" className="mb-2 block text-electric-200">
+            Date
+          </Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-background/50 border-electric-700 text-electric-100",
+                  !date && "text-muted-foreground",
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a date</span>}
               </Button>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-background border-electric-700">
+              <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
 
-          {/* Event Type Filter */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Event Type</h4>
-            <div className="flex flex-wrap gap-2">
-              {eventTypes.map((type) => (
-                <Button
-                  key={type.id}
-                  variant={selectedType === type.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedType(type.id)}
-                  className={`flex items-center gap-2 ${
-                    selectedType === type.id
-                      ? "bg-electric-500 hover:bg-electric-600 text-white"
-                      : "border-electric-700/30 hover:border-electric-500/50"
-                  }`}
-                >
-                  <type.icon className="h-4 w-4" />
-                  {type.label}
-                </Button>
-              ))}
+        {/* Price Range Filter */}
+        <div>
+          <Label htmlFor="price-range" className="mb-4 block text-electric-200">
+            Price Range: ${priceRange[0]} - ${priceRange[1]}
+          </Label>
+          <Slider
+            id="price-range"
+            min={0}
+            max={200}
+            step={5}
+            value={priceRange}
+            onValueChange={handlePriceChange}
+            className="[&_[data-radix-slider-track]]:bg-electric-800 [&_[data-radix-slider-range]]:bg-electric-500"
+            thumbClassName="bg-electric-400 border-electric-200"
+          />
+        </div>
+
+        {/* Event Type Filter */}
+        <div>
+          <Label className="mb-2 block text-electric-200">Event Type</Label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="live"
+                checked={eventType.live}
+                onCheckedChange={(checked) => handleEventTypeChange("live", !!checked)}
+                className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
+              />
+              <label
+                htmlFor="live"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
+              >
+                Live Concerts
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="online"
+                checked={eventType.online}
+                onCheckedChange={(checked) => handleEventTypeChange("online", !!checked)}
+                className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
+              />
+              <label
+                htmlFor="online"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
+              >
+                Online Streams
+              </label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="meetup"
+                checked={eventType.meetup}
+                onCheckedChange={(checked) => handleEventTypeChange("meetup", !!checked)}
+                className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
+              />
+              <label
+                htmlFor="meetup"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
+              >
+                Meetups & Signings
+              </label>
             </div>
           </div>
+        </div>
 
-          {/* Location Filter */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Location</h4>
-            <div className="flex flex-wrap gap-2">
-              {locations.map((location) => (
-                <Button
-                  key={location.id}
-                  variant={selectedLocation === location.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedLocation(location.id)}
-                  className={`${
-                    selectedLocation === location.id
-                      ? "bg-electric-500 hover:bg-electric-600 text-white"
-                      : "border-electric-700/30 hover:border-electric-500/50"
-                  }`}
-                >
-                  {location.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tier Filter */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Access Level</h4>
-            <div className="flex flex-wrap gap-2">
-              {tiers.map((tier) => (
-                <Button
-                  key={tier.id}
-                  variant={selectedTier === tier.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedTier(tier.id)}
-                  className={`${
-                    selectedTier === tier.id
-                      ? "bg-electric-500 hover:bg-electric-600 text-white"
-                      : "border-electric-700/30 hover:border-electric-500/50"
-                  }`}
-                >
-                  {tier.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Active Filters</h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedType !== "all" && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {eventTypes.find((t) => t.id === selectedType)?.label}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedType("all")} />
-                  </Badge>
-                )}
-                {selectedLocation !== "all" && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {locations.find((l) => l.id === selectedLocation)?.label}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedLocation("all")} />
-                  </Badge>
-                )}
-                {selectedTier !== "all" && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    {tiers.find((t) => t.id === selectedTier)?.label}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedTier("all")} />
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="flex gap-2">
+          <Button onClick={handleApplyFilters} className="flex-1 bg-gradient-electric hover:animate-electric-pulse">
+            Apply Filters
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleClearFilters}
+            className="flex-1 border-electric-700 text-electric-200 hover:bg-electric-900 hover:text-electric-100 bg-transparent"
+          >
+            Clear Filters
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -4,262 +4,115 @@
 
 @layer base {
   :root {
-    /* Fire and smoke theme for light mode */
-    --background: 24 30% 95%;
-    --foreground: 20 40% 15%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 30 30% 96%;
-    --card-foreground: 20 40% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 30 30% 96%;
-    --popover-foreground: 20 40% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 12 90% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 30 90% 50%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 20 20% 90%;
-    --muted-foreground: 20 30% 30%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 12 90% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 20 30% 85%;
-    --input: 20 30% 85%;
-    --ring: 12 90% 45%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    /* Custom Electric Theme Colors */
+    --electric-50: 220 100% 98%;
+    --electric-100: 220 100% 95%;
+    --electric-200: 220 100% 90%;
+    --electric-300: 220 100% 80%;
+    --electric-400: 220 100% 70%;
+    --electric-500: 220 100% 60%; /* Main electric blue */
+    --electric-600: 220 100% 50%;
+    --electric-700: 220 100% 40%;
+    --electric-800: 220 100% 30%;
+    --electric-900: 220 100% 20%;
+    --electric-950: 220 100% 10%;
+
+    --frost-50: 190 100% 98%;
+    --frost-100: 190 100% 95%;
+    --frost-200: 190 100% 90%;
+    --frost-300: 190 100% 80%;
+    --frost-400: 190 100% 70%; /* Main frost blue */
+    --frost-500: 190 100% 60%;
+    --frost-600: 190 100% 50%;
+    --frost-700: 190 100% 40%;
+    --frost-800: 190 100% 30%;
+    --frost-900: 190 100% 20%;
+    --frost-950: 190 100% 10%;
   }
 
   .dark {
-    /* Icy electric theme for dark mode */
-    --background: 215 50% 5%;
-    --foreground: 220 60% 99%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 215 45% 8%;
-    --card-foreground: 220 60% 99%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 215 45% 8%;
-    --popover-foreground: 220 60% 99%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 202 100% 49%;
-    --primary-foreground: 220 60% 99%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 213 100% 45%;
-    --secondary-foreground: 220 60% 99%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 35% 15%;
-    --muted-foreground: 215 20% 70%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 195 100% 50%;
-    --accent-foreground: 220 60% 99%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 220 60% 99%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 215 35% 20%;
-    --input: 215 35% 20%;
-    --ring: 202 100% 49%;
-  }
-}
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 210 40% 98%;
 
-@layer utilities {
-  /* Fire and smoke utilities for light mode */
-  .fire-text {
-    text-shadow: 0 0 10px rgba(255, 100, 0, 0.5), 0 0 20px rgba(255, 60, 0, 0.3);
-    color: hsl(12, 90%, 45%);
-  }
+    /* Custom Electric Theme Colors for Dark Mode */
+    --electric-50: 220 100% 10%;
+    --electric-100: 220 100% 20%;
+    --electric-200: 220 100% 30%;
+    --electric-300: 220 100% 40%;
+    --electric-400: 220 100% 50%; /* Main electric blue */
+    --electric-500: 220 100% 60%;
+    --electric-600: 220 100% 70%;
+    --electric-700: 220 100% 80%;
+    --electric-800: 220 100% 90%;
+    --electric-900: 220 100% 95%;
+    --electric-950: 220 100% 98%;
 
-  .ember-text {
-    text-shadow: 0 0 5px rgba(255, 150, 50, 0.7);
-    color: hsl(30, 90%, 50%);
-  }
-
-  .smoke-text {
-    text-shadow: 0 0 3px rgba(100, 100, 100, 0.5);
-    color: hsl(0, 0%, 30%);
-  }
-
-  .fire-card {
-    background: linear-gradient(135deg, rgba(255, 100, 0, 0.1), rgba(255, 60, 0, 0.05));
-    border: 1px solid rgba(255, 100, 0, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-
-  .ember-card {
-    background: linear-gradient(135deg, rgba(255, 150, 50, 0.1), rgba(255, 100, 0, 0.05));
-    border: 1px solid rgba(255, 150, 50, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  }
-
-  .smoke-border {
-    border: 1px solid rgba(100, 100, 100, 0.3);
-    box-shadow: 0 0 10px rgba(100, 100, 100, 0.1);
-  }
-
-  .fire-glow {
-    box-shadow: 0 0 10px rgba(255, 100, 0, 0.3), 0 0 20px rgba(255, 60, 0, 0.2);
-  }
-
-  .ember-shine {
-    background: linear-gradient(135deg, rgba(255, 150, 50, 0.1), rgba(255, 100, 0, 0.05), rgba(255, 150, 50, 0.1));
-    background-size: 200% 100%;
-    animation: emberShine 3s ease infinite;
-  }
-
-  @keyframes emberShine {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .flame-flicker {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .flame-flicker::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 100, 0, 0.1);
-    opacity: 0;
-    z-index: 1;
-    animation: flicker 5s infinite;
-  }
-
-  @keyframes flicker {
-    0%,
-    100% {
-      opacity: 0;
-    }
-    10%,
-    30%,
-    50%,
-    70%,
-    90% {
-      opacity: 0;
-    }
-    5%,
-    25%,
-    45%,
-    65%,
-    85% {
-      opacity: 0.8;
-    }
-  }
-
-  /* Icy electric utilities for dark mode */
-  .frost-text {
-    text-shadow: 0 0 10px rgba(37, 171, 255, 0.5), 0 0 20px rgba(37, 99, 235, 0.3);
-  }
-
-  .electric-text {
-    text-shadow: 0 0 10px rgba(37, 171, 255, 0.7), 0 0 20px rgba(37, 99, 235, 0.5);
-    letter-spacing: 1px;
-  }
-
-  .metal-text {
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
-    letter-spacing: 0.5px;
-  }
-
-  .ice-card {
-    background: linear-gradient(135deg, rgba(30, 188, 255, 0.1), rgba(0, 136, 210, 0.05));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(30, 188, 255, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .metal-card {
-    background: linear-gradient(135deg, rgba(37, 35, 48, 0.9), rgba(56, 54, 70, 0.8));
-    border: 1px solid rgba(76, 73, 97, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  }
-
-  .frost-border {
-    border: 1px solid rgba(30, 188, 255, 0.3);
-    box-shadow: 0 0 10px rgba(30, 188, 255, 0.1);
-  }
-
-  .metal-border {
-    border: 1px solid rgba(76, 73, 97, 0.5);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  }
-
-  .frost-glow {
-    box-shadow: 0 0 10px rgba(30, 188, 255, 0.3), 0 0 20px rgba(0, 136, 210, 0.2);
-  }
-
-  .metal-shine {
-    background: linear-gradient(135deg, rgba(76, 73, 97, 0.1), rgba(56, 54, 70, 0.05), rgba(76, 73, 97, 0.1));
-    background-size: 200% 100%;
-    animation: metalShine 3s ease infinite;
-  }
-
-  @keyframes metalShine {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  .lightning-flash {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .lightning-flash::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(30, 188, 255, 0.1);
-    opacity: 0;
-    z-index: 1;
-    animation: flash 5s infinite;
-  }
-
-  @keyframes flash {
-    0%,
-    100% {
-      opacity: 0;
-    }
-    10%,
-    30%,
-    50%,
-    70%,
-    90% {
-      opacity: 0;
-    }
-    5%,
-    25%,
-    45%,
-    65%,
-    85% {
-      opacity: 0.8;
-    }
+    --frost-50: 190 100% 10%;
+    --frost-100: 190 100% 20%;
+    --frost-200: 190 100% 30%;
+    --frost-300: 190 100% 40%;
+    --frost-400: 190 100% 50%; /* Main frost blue */
+    --frost-500: 190 100% 60%;
+    --frost-600: 190 100% 70%;
+    --frost-700: 190 100% 80%;
+    --frost-800: 190 100% 90%;
+    --frost-900: 190 100% 95%;
+    --frost-950: 190 100% 98%;
   }
 }
 
@@ -267,24 +120,33 @@
   * {
     @apply border-border;
   }
-
-  /* Light mode (fire and smoke) background */
   body {
     @apply bg-background text-foreground;
   }
+}
 
-  body:not(.dark) {
-    background-image: radial-gradient(circle at 25% 10%, rgba(255, 100, 0, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(255, 150, 50, 0.05) 0%, transparent 50%),
-      url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ff6400' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-    background-attachment: fixed;
-  }
+/* Custom gradients and animations */
+.bg-gradient-electric {
+  background: linear-gradient(to right, hsl(var(--electric-500)), hsl(var(--frost-500)));
+}
 
-  /* Dark mode (icy electric) background */
-  .dark body {
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%230990ff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E"),
-      radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.25) 0%, transparent 50%),
-      radial-gradient(circle at 0% 100%, rgba(6, 166, 241, 0.15) 0%, transparent 50%);
-    background-attachment: fixed;
+.hover\:animate-electric-pulse:hover {
+  animation: electric-pulse 1.5s infinite;
+}
+
+@keyframes electric-pulse {
+  0% {
+    box-shadow: 0 0 0px 0px rgba(var(--electric-500-rgb), 0.7);
   }
+  70% {
+    box-shadow: 0 0 0px 10px rgba(var(--electric-500-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0px 0px rgba(var(--electric-500-rgb), 0);
+  }
+}
+
+/* Ensure video covers its container */
+video {
+  object-fit: cover;
 }

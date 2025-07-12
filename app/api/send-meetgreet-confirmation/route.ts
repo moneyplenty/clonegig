@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
       contactInfo,
       specialRequests,
       preferredTime,
+      roomUrl,
     } = body
+
+    if (!userEmail || !userName || !sessionDate || !sessionTime || !roomUrl) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
 
     const isPrivateSession =
       sessionType.includes("WHATSAPP") || sessionType.includes("FACETIME") || sessionType.includes("Private")
@@ -236,6 +241,10 @@ export async function POST(request: NextRequest) {
               `
                   : ""
               }
+              <div class="detail-row">
+                <span class="detail-label">Join Link:</span>
+                <span class="detail-value"><a href="${roomUrl}">${roomUrl}</a></span>
+              </div>
             </div>
             
             ${

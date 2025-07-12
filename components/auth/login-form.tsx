@@ -1,132 +1,91 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useAuth } from "@/components/auth/auth-provider"
-import { useToast } from "@/hooks/use-toast"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/components/ui/use-toast"
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Enter a valid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+})
 
 export function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
 
-  const { signIn } = useAuth()
-  const { toast } = useToast()
-  const router = useRouter()
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    })
 
-    try {
-      await signIn(email, password)
-
-      // Check if admin
-      if (email === "cloudyzaddy@gmail.com") {
-        router.push("/admin")
-        toast({
-          title: "Welcome back, Admin! 👑",
-          description: "You have been signed in with admin privileges.",
-        })
-      } else {
-        router.push("/dashboard")
-        toast({
-          title: "Welcome back! 🎸",
-          description: "You have been signed in successfully.",
-        })
-      }
-    } catch (error: any) {
+    if (error) {
       toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid email or password.",
+        title: "Login Failed",
+        description: error.message,
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
+    } else {
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+        variant: "success",
+      })
+      router.push("/dashboard") // Redirect to dashboard or home page
     }
+    setIsLoading(false)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="your@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="border-fire-500/20 dark:border-ice-500/20 focus:border-fire-500 dark:focus:border-ice-500"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="you@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <div className="relative">
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="border-fire-500/20 dark:border-ice-500/20 focus:border-fire-500 dark:focus:border-ice-500 pr-10"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            )}
-          </Button>
-        </div>
-      </div>
-
-      <Button
-        type="submit"
-        className="w-full bg-gradient-fire dark:bg-gradient-ice hover:opacity-90 transition-opacity"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          "Sign In"
-        )}
-      </Button>
-
-      <div className="text-center">
-        <Button
-          type="button"
-          variant="link"
-          className="text-sm text-fire-600 dark:text-ice-400 hover:text-fire-700 dark:hover:text-ice-300"
-          onClick={() => {
-            // Handle forgot password
-            toast({
-              title: "Password Reset",
-              description: "Password reset functionality will be implemented soon.",
-            })
-          }}
-        >
-          Forgot your password?
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full bg-gradient-electric hover:animate-electric-pulse" disabled={isLoading}>
+          {isLoading ? "Logging in..." : "Login"}
         </Button>
-      </div>
-    </form>
+      </form>
+    </Form>
   )
 }

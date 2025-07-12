@@ -1,149 +1,68 @@
-"use client"
-
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, MapPin } from "lucide-react"
+import { CardFooter } from "@/components/ui/card"
 import Link from "next/link"
+import Image from "next/image"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { CalendarDays, MapPin } from "lucide-react"
+import { format } from "date-fns"
 
-// Mock related events data
-const relatedEvents = [
-  {
-    id: "3",
-    title: "Acoustic Session & Q&A",
-    description: "Intimate acoustic performance with fan Q&A session.",
-    date: "2024-03-01",
-    time: "19:00",
-    location: "The Lounge, Nashville",
-    price: 45,
-    memberPrice: 35,
-    category: "Concert",
-    tier: "Frost",
-  },
-  {
-    id: "5",
-    title: "Fan Club Meetup",
-    description: "Connect with fellow fans and enjoy exclusive content.",
-    date: "2024-03-15",
-    time: "17:00",
-    location: "Community Center, Chicago",
-    price: 25,
-    memberPrice: 15,
-    category: "Meet & Greet",
-    tier: "Frost",
-  },
-  {
-    id: "6",
-    title: "Behind the Scenes Tour",
-    description: "Exclusive tour of recording studio and equipment.",
-    date: "2024-03-25",
-    time: "14:00",
-    location: "Creekman Studios, Nashville",
-    price: 100,
-    memberPrice: 80,
-    category: "VIP Only",
-    tier: "Blizzard",
-  },
-]
-
-interface RelatedEventsProps {
-  currentEventId: string
+interface Event {
+  id: string
+  title: string
+  date: string
+  time: string
+  location: string
+  description: string
+  imageUrl: string
+  price: number
+  ticketsAvailable: number
 }
 
-export function RelatedEvents({ currentEventId }: RelatedEventsProps) {
-  const filteredEvents = relatedEvents.filter((event) => event.id !== currentEventId)
+interface RelatedEventsProps {
+  events: Event[]
+}
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "Frost":
-        return "bg-blue-500/20 text-blue-300 border-blue-500/30"
-      case "Blizzard":
-        return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30"
-      case "Avalanche":
-        return "bg-purple-500/20 text-purple-300 border-purple-500/30"
-      default:
-        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
-    }
-  }
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Concert":
-        return "bg-red-500/20 text-red-300 border-red-500/30"
-      case "Meet & Greet":
-        return "bg-green-500/20 text-green-300 border-green-500/30"
-      case "VIP Only":
-        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-      default:
-        return "bg-slate-500/20 text-slate-300 border-slate-500/30"
-    }
-  }
-
-  if (filteredEvents.length === 0) {
-    return null
-  }
-
+export function RelatedEvents({ events }: RelatedEventsProps) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">You Might Also Like</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEvents.map((event) => (
+    <div className="mt-12">
+      <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+        <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">
+          More Events
+        </span>
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {events.map((event) => (
           <Card
             key={event.id}
-            className="bg-slate-800/50 backdrop-blur-sm border-slate-700 hover:border-blue-500/50 transition-all duration-300"
+            className="group bg-background/50 backdrop-blur-lg border-electric-700/30 hover:border-electric-500/50 transition-all duration-300 hover:scale-105 overflow-hidden"
           >
-            <CardContent className="p-6">
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge className={getCategoryColor(event.category)}>{event.category}</Badge>
-                <Badge className={getTierColor(event.tier)}>{event.tier}</Badge>
+            <div className="relative aspect-video overflow-hidden">
+              <Image
+                src={event.imageUrl || "/placeholder.svg"}
+                alt={event.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg leading-tight text-electric-100">{event.title}</CardTitle>
+              <CardDescription className="line-clamp-2 text-muted-foreground">{event.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-2 text-sm text-electric-200 mb-2">
+                <CalendarDays className="h-4 w-4 text-frost-400" />
+                {format(new Date(event.date), "MMM dd, yyyy")}
               </div>
-
-              {/* Event Details */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-bold text-white">{event.title}</h3>
-                <p className="text-slate-300 text-sm">{event.description}</p>
-
-                {/* Date, Time, Location */}
-                <div className="space-y-2 text-sm text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-400" />
-                    <span>
-                      {new Date(event.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-400" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-blue-400" />
-                    <span>{event.location.split(",")[1]?.trim() || event.location}</span>
-                  </div>
-                </div>
-
-                {/* Pricing */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-700">
-                  <div>
-                    <div className="text-lg font-bold text-white">
-                      ${event.memberPrice}
-                      <span className="text-sm text-slate-400 ml-1">member</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Button */}
-                <Link href={`/events/${event.id}`} className="block mt-4">
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
-                    View Event
-                  </Button>
-                </Link>
+              <div className="flex items-center gap-2 text-sm text-electric-200">
+                <MapPin className="h-4 w-4 text-frost-400" />
+                {event.location}
               </div>
             </CardContent>
+            <CardFooter>
+              <Button asChild className="w-full bg-gradient-electric hover:animate-electric-pulse">
+                <Link href={`/events/${event.id}`}>View Details</Link>
+              </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>
