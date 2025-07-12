@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star } from "lucide-react"
 
 interface Testimonial {
   id: string
@@ -93,6 +92,32 @@ const testimonials: Testimonial[] = [
     avatar: "/avatars/david.jpg",
     rating: 5,
   },
+  {
+    id: "10",
+    quote: "Kelvin's music is pure energy! His live shows are an electrifying experience you won't forget.",
+    author: "Alex R.",
+    role: "Verified Fan",
+    avatar: "/placeholder-user.jpg",
+    rating: 5,
+  },
+  {
+    id: "11",
+    quote:
+      "The fan club is amazing! Exclusive content and early access to tickets make it a must-join for any true fan.",
+    author: "Sarah L.",
+    role: "Verified Fan",
+    avatar: "/placeholder-user.jpg",
+    rating: 5,
+  },
+  {
+    id: "12",
+    quote:
+      "I've been following Kelvin for years, and this fan club takes it to the next level. The community is fantastic!",
+    author: "Mark T.",
+    role: "Verified Fan",
+    avatar: "/placeholder-user.jpg",
+    rating: 5,
+  },
 ]
 
 export function Testimonials() {
@@ -116,119 +141,54 @@ export function Testimonials() {
   ]
 
   return (
-    <section className="py-24 bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-electric-400 to-frost-400 bg-clip-text text-transparent">
-              What Fans Are Saying
-            </span>
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Real stories from real fans who've experienced the magic of being part of Kelvin's community.
-          </p>
-        </div>
-
-        <div className="max-w-6xl mx-auto">
-          {/* Featured Testimonial */}
-          <Card className="border-electric-700/30 bg-background/50 backdrop-blur-lg mb-12">
-            <CardContent className="p-8">
-              <div className="flex items-start gap-6">
-                <div className="flex-1">
-                  <p className="text-lg md:text-xl leading-relaxed mb-6 text-foreground">
-                    "{testimonials[currentIndex].quote}"
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12 border-2 border-electric-500/50">
-                        <AvatarImage
-                          src={testimonials[currentIndex].avatar || "/placeholder.svg"}
-                          alt={testimonials[currentIndex].author}
-                        />
-                        <AvatarFallback className="bg-electric-500/20 text-electric-400">
-                          {testimonials[currentIndex].author[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{testimonials[currentIndex].author}</h4>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-muted-foreground">{testimonials[currentIndex].role}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: testimonials[currentIndex].rating }).map((_, i) => (
-                        <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
+    <section className="py-12 md:py-24 bg-electric-950/20">
+      <div className="container mx-auto px-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold mb-8">
+          <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">
+            What Fans Are Saying
+          </span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {visibleTestimonials.map((testimonial, index) => (
+            <Card key={testimonial.id} className="bg-background/50 backdrop-blur-lg border-frost-700/30">
+              <CardContent className="p-6">
+                <p className="text-lg italic mb-4 text-electric-100">"{testimonial.quote}"</p>
+                <div className="flex items-center justify-center">
+                  <Avatar className="h-12 w-12 mr-4">
+                    <AvatarImage src={testimonial.avatar || "/placeholder-user.jpg"} alt={testimonial.author} />
+                    <AvatarFallback>{testimonial.author.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-frost-300">{testimonial.author}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Testimonial Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {visibleTestimonials.slice(1).map((testimonial, index) => (
-              <Card
-                key={testimonial.id}
-                className="border-electric-700/30 bg-background/50 backdrop-blur-lg hover:border-electric-500/50 transition-all duration-300 cursor-pointer"
-                onClick={() => setCurrentIndex((currentIndex + index + 1) % testimonials.length)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 mb-3">
-                    {Array.from({ length: testimonial.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">"{testimonial.quote}"</p>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 border border-electric-500/50">
-                      <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.author} />
-                      <AvatarFallback className="bg-electric-500/20 text-electric-400 text-xs">
-                        {testimonial.author[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{testimonial.author}</div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{testimonial.role}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Navigation Dots */}
-          <div className="flex justify-center gap-2 mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setCurrentIndex(index)
-                  setIsAutoPlaying(false)
-                }}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentIndex ? "bg-electric-400 scale-125" : "bg-gray-300 hover:bg-gray-400"
-                }`}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
-          </div>
-
-          {/* Auto-play Toggle */}
-          <div className="text-center mt-6">
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="flex justify-center gap-2 mt-8">
+          {testimonials.map((_, index) => (
             <button
-              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isAutoPlaying ? "Pause" : "Resume"} Auto-play
-            </button>
-          </div>
+              key={index}
+              onClick={() => {
+                setCurrentIndex(index)
+                setIsAutoPlaying(false)
+              }}
+              className={`w-3 h-3 rounded-full transition-all ${
+                index === currentIndex ? "bg-electric-400 scale-125" : "bg-gray-300 hover:bg-gray-400"
+              }`}
+              aria-label={`Go to testimonial ${index + 1}`}
+            />
+          ))}
+        </div>
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isAutoPlaying ? "Pause" : "Resume"} Auto-play
+          </button>
         </div>
       </div>
     </section>

@@ -5,114 +5,101 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
     --radius: 0.5rem;
 
-    /* Custom Electric Theme Colors */
-    --electric-50: 220 100% 98%;
-    --electric-100: 220 100% 95%;
-    --electric-200: 220 100% 90%;
-    --electric-300: 220 100% 80%;
-    --electric-400: 220 100% 70%;
-    --electric-500: 220 100% 60%; /* Main electric blue */
-    --electric-600: 220 100% 50%;
-    --electric-700: 220 100% 40%;
-    --electric-800: 220 100% 30%;
-    --electric-900: 220 100% 20%;
-    --electric-950: 220 100% 10%;
+    /* Custom colors for icy, electrifying feel */
+    --electric-50: 210 100% 98%;
+    --electric-100: 210 100% 95%;
+    --electric-200: 210 100% 90%;
+    --electric-300: 210 100% 80%;
+    --electric-400: 210 100% 70%; /* Main electric blue */
+    --electric-500: 210 100% 60%;
+    --electric-600: 210 100% 50%;
+    --electric-700: 210 100% 40%;
+    --electric-800: 210 100% 30%;
+    --electric-900: 210 100% 20%;
+    --electric-950: 210 100% 10%;
 
-    --frost-50: 190 100% 98%;
-    --frost-100: 190 100% 95%;
-    --frost-200: 190 100% 90%;
-    --frost-300: 190 100% 80%;
-    --frost-400: 190 100% 70%; /* Main frost blue */
-    --frost-500: 190 100% 60%;
-    --frost-600: 190 100% 50%;
-    --frost-700: 190 100% 40%;
-    --frost-800: 190 100% 30%;
-    --frost-900: 190 100% 20%;
-    --frost-950: 190 100% 10%;
+    --frost-50: 270 100% 98%;
+    --frost-100: 270 100% 95%;
+    --frost-200: 270 100% 90%;
+    --frost-300: 270 100% 80%;
+    --frost-400: 270 100% 70%; /* Main frost purple */
+    --frost-500: 270 100% 60%;
+    --frost-600: 270 100% 50%;
+    --frost-700: 270 100% 40%;
+    --frost-800: 270 100% 30%;
+    --frost-900: 270 100% 20%;
+    --frost-950: 270 100% 10%;
+
+    --gold-400: 40 96% 60%; /* For premium/admin highlights */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 210 40% 98%;
+    /* Custom colors for icy, electrifying feel in dark mode */
+    --electric-50: 210 100% 5%;
+    --electric-100: 210 100% 10%;
+    --electric-200: 210 100% 20%; /* Main electric blue for dark mode */
+    --electric-300: 210 100% 30%;
+    --electric-400: 210 100% 40%;
+    --electric-500: 210 100% 50%;
+    --electric-600: 210 100% 60%;
+    --electric-700: 210 100% 70%;
+    --electric-800: 210 100% 80%;
+    --electric-900: 210 100% 90%;
+    --electric-950: 210 100% 95%;
 
-    /* Custom Electric Theme Colors for Dark Mode */
-    --electric-50: 220 100% 10%;
-    --electric-100: 220 100% 20%;
-    --electric-200: 220 100% 30%;
-    --electric-300: 220 100% 40%;
-    --electric-400: 220 100% 50%; /* Main electric blue */
-    --electric-500: 220 100% 60%;
-    --electric-600: 220 100% 70%;
-    --electric-700: 220 100% 80%;
-    --electric-800: 220 100% 90%;
-    --electric-900: 220 100% 95%;
-    --electric-950: 220 100% 98%;
+    --frost-50: 270 100% 5%;
+    --frost-100: 270 100% 10%;
+    --frost-200: 270 100% 20%; /* Main frost purple for dark mode */
+    --frost-300: 270 100% 30%;
+    --frost-400: 270 100% 40%;
+    --frost-500: 270 100% 50%;
+    --frost-600: 270 100% 60%;
+    --frost-700: 170 100% 70%;
+    --frost-800: 270 100% 80%;
+    --frost-900: 270 100% 90%;
+    --frost-950: 270 100% 95%;
 
-    --frost-50: 190 100% 10%;
-    --frost-100: 190 100% 20%;
-    --frost-200: 190 100% 30%;
-    --frost-300: 190 100% 40%;
-    --frost-400: 190 100% 50%; /* Main frost blue */
-    --frost-500: 190 100% 60%;
-    --frost-600: 190 100% 70%;
-    --frost-700: 190 100% 80%;
-    --frost-800: 190 100% 90%;
-    --frost-900: 190 100% 95%;
-    --frost-950: 190 100% 98%;
+    --gold-400: 40 96% 60%; /* For premium/admin highlights */
   }
 }
 
@@ -127,26 +114,25 @@
 
 /* Custom gradients and animations */
 .bg-gradient-electric {
-  background: linear-gradient(to right, hsl(var(--electric-500)), hsl(var(--frost-500)));
+  background: linear-gradient(to right, hsl(var(--electric-400)), hsl(var(--frost-400)));
 }
 
-.hover\:animate-electric-pulse:hover {
-  animation: electric-pulse 1.5s infinite;
+.bg-gradient-electric-dark {
+  background: linear-gradient(to right, hsl(var(--electric-200)), hsl(var(--frost-200)));
 }
 
 @keyframes electric-pulse {
   0% {
-    box-shadow: 0 0 0px 0px rgba(var(--electric-500-rgb), 0.7);
+    box-shadow: 0 0 5px hsl(var(--electric-400)), 0 0 10px hsl(var(--frost-400));
   }
-  70% {
-    box-shadow: 0 0 0px 10px rgba(var(--electric-500-rgb), 0);
+  50% {
+    box-shadow: 0 0 15px hsl(var(--electric-400)), 0 0 30px hsl(var(--frost-400));
   }
   100% {
-    box-shadow: 0 0 0px 0px rgba(var(--electric-500-rgb), 0);
+    box-shadow: 0 0 5px hsl(var(--electric-400)), 0 0 10px hsl(var(--frost-400));
   }
 }
 
-/* Ensure video covers its container */
-video {
-  object-fit: cover;
+.hover\:animate-electric-pulse:hover {
+  animation: electric-pulse 1.5s infinite;
 }

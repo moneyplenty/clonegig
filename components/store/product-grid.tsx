@@ -1,17 +1,17 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { useCart } from "@/components/store/cart-context"
-import { toast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCart } from "./cart-context"
+import { toast } from "@/hooks/use-toast"
 
 interface Product {
-  id: string
+  id: number
   name: string
-  description: string
   price: number
-  imageUrl: string
+  image: string
+  description: string
 }
 
 interface ProductGridProps {
@@ -24,39 +24,34 @@ export function ProductGrid({ products }: ProductGridProps) {
   const handleAddToCart = (product: Product) => {
     addToCart(product)
     toast({
-      title: "Added to Cart",
+      title: "Added to Cart!",
       description: `${product.name} has been added to your cart.`,
       variant: "success",
     })
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {products.map((product) => (
-        <Card
-          key={product.id}
-          className="group bg-background/50 backdrop-blur-lg border-electric-700/30 hover:border-electric-500/50 transition-all duration-300 hover:scale-105 overflow-hidden"
-        >
-          <div className="relative aspect-square overflow-hidden">
-            <Image
-              src={product.imageUrl || "/placeholder.svg"}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
-            />
-          </div>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg leading-tight text-electric-100">{product.name}</CardTitle>
-            <CardDescription className="line-clamp-2 text-muted-foreground">{product.description}</CardDescription>
+        <Card key={product.id} className="flex flex-col">
+          <CardHeader className="p-0">
+            <div className="relative w-full h-48">
+              <Image
+                src={product.image || "/placeholder.svg"}
+                alt={product.name}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-t-lg"
+              />
+            </div>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-2xl font-bold text-electric-400 mb-4">${product.price.toFixed(2)}</div>
+          <CardContent className="flex-grow p-4">
+            <CardTitle className="text-lg font-semibold mb-2">{product.name}</CardTitle>
+            <p className="text-muted-foreground text-sm line-clamp-2">{product.description}</p>
+            <p className="text-xl font-bold mt-2">${product.price.toFixed(2)}</p>
           </CardContent>
-          <CardFooter>
-            <Button
-              onClick={() => handleAddToCart(product)}
-              className="w-full bg-gradient-electric hover:animate-electric-pulse"
-            >
+          <CardFooter className="p-4 pt-0">
+            <Button className="w-full" onClick={() => handleAddToCart(product)}>
               Add to Cart
             </Button>
           </CardFooter>

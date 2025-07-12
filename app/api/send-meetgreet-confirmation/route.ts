@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
       specialRequests,
       preferredTime,
       roomUrl,
+      userQuestion,
     } = body
 
-    if (!userEmail || !userName || !sessionDate || !sessionTime || !roomUrl) {
+    if (!userEmail || !userName || !roomUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -28,9 +29,9 @@ export async function POST(request: NextRequest) {
       sessionType.includes("WHATSAPP") || sessionType.includes("FACETIME") || sessionType.includes("Private")
 
     const { data, error } = await resend.emails.send({
-      from: "Kelvin Creekman Fan Club <noreply@kelvincreekman.com>",
+      from: "Kelvin Creekman Fan Club <onboarding@resend.dev>", // Replace with your verified Resend domain
       to: [userEmail],
-      subject: `Meet & Greet Confirmation: ${sessionType}`,
+      subject: `Meet & Greet Confirmation: ${userName}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -245,6 +246,7 @@ export async function POST(request: NextRequest) {
                 <span class="detail-label">Join Link:</span>
                 <span class="detail-value"><a href="${roomUrl}">${roomUrl}</a></span>
               </div>
+              ${userQuestion ? `<div class="detail-row"><span class="detail-label">Your Question:</span><span class="detail-value">${userQuestion}</span></div>` : ""}
             </div>
             
             ${

@@ -1,169 +1,131 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
-
-interface Event {
-  id: string
-  title: string
-  date: string
-  time: string
-  location: string
-  description: string
-  imageUrl: string
-  price: number
-  ticketsAvailable: number
-}
 
 interface EventBookingProps {
-  event: Event
+  event: {
+    id: number
+    title: string
+    date: string
+    time: string
+    location: string
+    price: number
+    isPremium: boolean
+  }
 }
 
 export function EventBooking({ event }: EventBookingProps) {
   const [quantity, setQuantity] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const supabase = createClient()
-  const router = useRouter()
 
-  const handleQuantityChange = (value: string) => {
-    const num = Number.parseInt(value)
-    if (!isNaN(num) && num > 0 && num <= event.ticketsAvailable) {
-      setQuantity(num)
-    } else if (num > event.ticketsAvailable) {
-      toast({
-        title: "Quantity Limit",
-        description: `Only ${event.ticketsAvailable} tickets available.`,
-        variant: "warning",
-      })
-      setQuantity(event.ticketsAvailable)
-    } else {
-      setQuantity(1) // Default to 1 if invalid input
-    }
-  }
+  const handleBooking = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
 
-  const handleBookTickets = async () => {
-    setIsLoading(true)
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (userError || !user) {
       toast({
         title: "Authentication Required",
         description: "Please log in to book tickets.",
         variant: "destructive",
       })
-      router.push("/login")
-      setIsLoading(false)
+      setLoading(false)
       return
     }
 
-    if (quantity > event.ticketsAvailable) {
+    // Simulate booking process
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    // Simulate email confirmation
+    const emailResponse = await fetch("/api/send-event-confirmation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userEmail: user.email,
+        eventName: event.title,
+        eventDate: event.date,
+        eventTime: event.time,
+        eventLocation: event.location,
+        quantity: quantity,
+        totalPrice: (event.price * quantity).toFixed(2),
+      }),
+    })
+
+    if (emailResponse.ok) {
       toast({
-        title: "Not Enough Tickets",
-        description: `Only ${event.ticketsAvailable} tickets are available.`,
-        variant: "destructive",
-      })
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      // Simulate booking process
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Send confirmation email via API route
-      const response = await fetch("/api/send-event-confirmation", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userEmail: user.email,
-          eventName: event.title,
-          eventDate: event.date,
-          eventTime: event.time,
-          eventLocation: event.location,
-          quantity: quantity,
-          totalPrice: (event.price * quantity).toFixed(2),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to send confirmation email")
-      }
-
-      toast({
-        title: "Tickets Booked!",
-        description: `You have successfully booked ${quantity} ticket(s) for ${event.title}. A confirmation email has been sent.`,
+        title: "Booking Confirmed!",
+        description: `You have booked ${quantity} ticket(s) for ${event.title}. A confirmation email has been sent.`,
         variant: "success",
       })
-      // In a real app, you'd update the database for ticketsAvailable
-      // For this mock, we'll just show success
-    } catch (error: any) {
+    } else {
       toast({
-        title: "Booking Failed",
-        description: error.message || "There was an error booking your tickets. Please try again.",
-        variant: "destructive",
+        title: "Booking Confirmed (Email Failed)",
+        description: "Your booking is confirmed, but there was an issue sending the confirmation email.",
+        variant: "warning",
       })
-    } finally {
-      setIsLoading(false)
     }
+
+    setLoading(false)
   }
 
-  const totalPrice = (event.price * quantity).toFixed(2)
-
   return (
-    <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-electric-200">Book Your Tickets</CardTitle>
+        <CardTitle>Book Your Tickets</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        <div>
-          <Label htmlFor="quantity">Number of Tickets</Label>
-          <Select value={String(quantity)} onValueChange={handleQuantityChange}>
-            <SelectTrigger className="w-full bg-background/50 border-electric-700 text-electric-100">
-              <SelectValue placeholder="Select quantity" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border-electric-700">
-              {Array.from({ length: event.ticketsAvailable }, (_, i) => i + 1).map((num) => (
-                <SelectItem key={num} value={String(num)} className="focus:bg-electric-900 focus:text-electric-100">
-                  {num}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex justify-between font-bold text-electric-100">
-          <span>Total Price</span>
-          <span>${totalPrice}</span>
-        </div>
+      <CardContent>
+        <form onSubmit={handleBooking} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="price" className="text-lg font-semibold">
+              Price per ticket:
+            </Label>
+            <span id="price" className="text-lg font-bold">
+              ${event.price.toFixed(2)}
+            </span>
+          </div>
+          <div>
+            <Label htmlFor="quantity">Quantity</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Number.parseInt(e.target.value))}
+              required
+            />
+          </div>
+          <div className="flex items-center justify-between font-bold text-xl">
+            <span>Total:</span>
+            <span>${(event.price * quantity).toFixed(2)}</span>
+          </div>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Booking...
+              </>
+            ) : (
+              "Book Now"
+            )}
+          </Button>
+        </form>
       </CardContent>
-      <CardFooter>
-        <Button
-          onClick={handleBookTickets}
-          className="w-full bg-gradient-electric hover:animate-electric-pulse"
-          disabled={isLoading || quantity === 0 || event.ticketsAvailable === 0}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Booking...
-            </>
-          ) : event.ticketsAvailable === 0 ? (
-            "Sold Out"
-          ) : (
-            "Book Now"
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   )
 }

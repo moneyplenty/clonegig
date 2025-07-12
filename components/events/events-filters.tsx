@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export function EventsFilters() {
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -20,6 +21,7 @@ export function EventsFilters() {
     online: false,
     meetup: false,
   })
+  const [accessLevel, setAccessLevel] = useState("all")
 
   const handlePriceChange = (value: number[]) => {
     setPriceRange(value)
@@ -31,7 +33,7 @@ export function EventsFilters() {
 
   const handleApplyFilters = () => {
     // In a real application, you would apply these filters to your event data
-    console.log("Applied Filters:", { date, priceRange, eventType })
+    console.log("Applied Filters:", { date, priceRange, eventType, accessLevel })
     // You might pass these filters up to a parent component or use a global state management
   }
 
@@ -39,15 +41,16 @@ export function EventsFilters() {
     setDate(undefined)
     setPriceRange([0, 100])
     setEventType({ live: false, online: false, meetup: false })
+    setAccessLevel("all")
     console.log("Cleared Filters")
   }
 
   return (
-    <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+    <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30 w-full md:w-1/4 shrink-0">
       <CardHeader>
         <CardTitle className="text-electric-200">Filter Events</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-6">
+      <CardContent className="grid gap-6 space-y-6">
         {/* Date Filter */}
         <div>
           <Label htmlFor="date-filter" className="mb-2 block text-electric-200">
@@ -91,7 +94,7 @@ export function EventsFilters() {
 
         {/* Event Type Filter */}
         <div>
-          <Label className="mb-2 block text-electric-200">Event Type</Label>
+          <h3 className="font-semibold mb-2">Event Type</h3>
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -100,12 +103,12 @@ export function EventsFilters() {
                 onCheckedChange={(checked) => handleEventTypeChange("live", !!checked)}
                 className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
               />
-              <label
+              <Label
                 htmlFor="live"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
               >
                 Live Concerts
-              </label>
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -114,12 +117,12 @@ export function EventsFilters() {
                 onCheckedChange={(checked) => handleEventTypeChange("online", !!checked)}
                 className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
               />
-              <label
+              <Label
                 htmlFor="online"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
               >
                 Online Streams
-              </label>
+              </Label>
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -128,14 +131,33 @@ export function EventsFilters() {
                 onCheckedChange={(checked) => handleEventTypeChange("meetup", !!checked)}
                 className="border-electric-700 data-[state=checked]:bg-electric-500 data-[state=checked]:text-electric-100"
               />
-              <label
+              <Label
                 htmlFor="meetup"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-electric-200"
               >
                 Meetups & Signings
-              </label>
+              </Label>
             </div>
           </div>
+        </div>
+
+        {/* Access Level Filter */}
+        <div>
+          <h3 className="font-semibold mb-2">Access Level</h3>
+          <RadioGroup defaultValue="all" className="space-y-2" value={accessLevel} onValueChange={setAccessLevel}>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="all" id="access-all" className="border-electric-700" />
+              <Label htmlFor="access-all" className="text-sm font-medium leading-none text-electric-200">
+                All Events
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="premium" id="access-premium" className="border-electric-700" />
+              <Label htmlFor="access-premium" className="text-sm font-medium leading-none text-electric-200">
+                Premium Only
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
 
         <div className="flex gap-2">

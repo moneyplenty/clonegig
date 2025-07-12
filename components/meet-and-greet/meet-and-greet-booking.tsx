@@ -1,7 +1,8 @@
 "use client"
 
-import { CardDescription } from "@/components/ui/card"
+import type React from "react"
 
+import { CardDescription } from "@/components/ui/card"
 import { useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
@@ -25,10 +26,11 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
+import { DailyVideoCall } from "./daily-video-call"
 
 interface TimeSlot {
   id: string
@@ -147,6 +149,7 @@ export function MeetAndGreetBooking({ session, onJoinCall }: MeetAndGreetBooking
   const { user } = useAuth()
   const supabase = createClient()
   const router = useRouter()
+  const [roomUrl, setRoomUrl] = useState<string | null>(null)
 
   const getTierBadge = (tier: string) => {
     switch (tier) {
@@ -442,6 +445,84 @@ export function MeetAndGreetBooking({ session, onJoinCall }: MeetAndGreetBooking
         description: error.message || "There was an error confirming your booking. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsBooking(false)
+    }
+  }
+
+  const handleBooking = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsBooking(true)
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book a meet & greet.",
+        variant: "destructive",
+      })
+      setIsBooking(false)
+      return
+    }
+
+    // Simulate booking process
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    // Create Daily.co room
+    try {
+      const roomResponse = await fetch("/api/create-daily-room", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userName: formData.name, userEmail: formData.email }),
+      })
+
+      if (!roomResponse.ok) {
+        throw new Error("Failed to create Daily.co room")
+      }
+
+      const { url } = await roomResponse.json()
+      setRoomUrl(url)
+
+      // Simulate email confirmation
+      const emailResponse = await fetch("/api/send-meetgreet-confirmation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userEmail: formData.email,
+          userName: formData.name,
+          userQuestion: formData.specialRequests,
+          roomUrl: url,
+        }),
+      })
+
+      if (emailResponse.ok) {
+        toast({
+          title: "Meet & Greet Booked!",
+          description: "Your session has been booked. Check your email for details and the meeting link.",
+          variant: "success",
+        })
+      } else {
+        toast({
+          title: "Booking Confirmed (Email Failed)",
+          description: "Your booking is confirmed, but there was an issue sending the confirmation email.",
+          variant: "warning",
+        })
+      }
+    } catch (error: any) {
+      toast({
+        title: "Booking Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      })
+      setRoomUrl(null) // Clear room URL on failure
     } finally {
       setIsBooking(false)
     }
@@ -823,6 +904,25 @@ export function MeetAndGreetBooking({ session, onJoinCall }: MeetAndGreetBooking
           )}
         </TabsContent>
       </Tabs>
+
+      {roomUrl && (
+        <div className="mt-4 p-4 border rounded-md bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200">
+          <p className="font-semibold mb-2">Your session is booked!</p>
+          <p>You can join the call using this link:</p>
+          <a
+            href={roomUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline break-all"
+          >
+            {roomUrl}
+          </a>
+          <p className="mt-2">Please check your email for confirmation and the meeting link.</p>
+          <div className="mt-4">
+            <DailyVideoCall roomName={roomUrl.split("/").pop() || ""} userName={formData.name} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

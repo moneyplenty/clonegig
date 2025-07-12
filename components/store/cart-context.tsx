@@ -2,13 +2,14 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 
 interface Product {
-  id: string
+  id: number
   name: string
   price: number
-  imageUrl: string
+  image: string
+  description: string
 }
 
 interface CartItem extends Product {
@@ -17,11 +18,11 @@ interface CartItem extends Product {
 
 interface CartContextType {
   cartItems: CartItem[]
-  addToCart: (product: Product, quantity?: number) => void
-  removeFromCart: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  clearCart: () => void
+  addToCart: (product: Product) => void
+  removeFromCart: (productId: number) => void
+  updateQuantity: (productId: number, quantity: number) => void
   getTotalPrice: () => number
+  clearCart: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -31,7 +32,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Load cart from localStorage on initial mount
   useEffect(() => {
-    const storedCart = localStorage.getItem("kelvin_creekman_cart")
+    const storedCart = localStorage.getItem("cartItems")
     if (storedCart) {
       setCartItems(JSON.parse(storedCart))
     }
@@ -39,32 +40,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("kelvin_creekman_cart", JSON.stringify(cartItems))
+    localStorage.setItem("cartItems", JSON.stringify(cartItems))
   }, [cartItems])
 
-  const addToCart = useCallback((product: Product, quantityToAdd = 1) => {
+  const addToCart = useCallback((product: Product) => {
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id)
       if (existingItem) {
-        return prevItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + quantityToAdd } : item,
-        )
+        return prevItems.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
       } else {
-        return [...prevItems, { ...product, quantity: quantityToAdd }]
+        return [...prevItems, { ...product, quantity: 1 }]
       }
     })
   }, [])
 
-  const removeFromCart = useCallback((productId: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== productId))
-    toast({
-      title: "Item Removed",
-      description: "Product removed from cart.",
-      variant: "info",
+  const removeFromCart = useCallback((productId: number) => {
+    setCartItems((prevItems) => {
+      const updatedItems = prevItems.filter((item) => item.id !== productId)
+      toast({
+        title: "Removed from Cart",
+        description: "Item has been removed from your cart.",
+        variant: "info",
+      })
+      return updatedItems
     })
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number) => {
     setCartItems((prevItems) => {
       if (quantity <= 0) {
         return prevItems.filter((item) => item.id !== productId)
@@ -73,13 +75,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  const clearCart = useCallback(() => {
-    setCartItems([])
-  }, [])
-
   const getTotalPrice = useCallback(() => {
     return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
   }, [cartItems])
+
+  const clearCart = useCallback(() => {
+    setCartItems([])
+  }, [])
 
   return (
     <CartContext.Provider
@@ -88,8 +90,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
-        clearCart,
         getTotalPrice,
+        clearCart,
       }}
     >
       {children}
@@ -97,7 +99,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useCart() {
+export const useCart = () => {
   const context = useContext(CartContext)
   if (context === undefined) {
     throw new Error("useCart must be used within a CartProvider")

@@ -1,43 +1,39 @@
 import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { MainNav } from "@/components/main-nav"
-import { MobileNav } from "@/components/mobile-nav"
+import "@/app/globals.css"
+import { Mona_Sans as FontSans } from "next/font/google"
+import { cn } from "@/lib/utils"
+import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { CartProvider } from "@/components/store/cart-context"
 
-const inter = Inter({ subsets: ["latin"] })
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+})
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Kelvin Creekman Fan Club",
-  description:
-    "The official fan club website for rock and metal musician Kelvin Creekman. Exclusive content, merchandise, events, and community.",
+  description: "Official fan club website for Kelvin Creekman",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <CartProvider>
-              <div className="flex min-h-screen flex-col">
-                <header className="sticky top-0 z-40 w-full border-b border-electric-700 bg-background/80 backdrop-blur-lg">
-                  <div className="container flex h-16 items-center">
-                    <MainNav />
-                    <MobileNav />
-                  </div>
-                </header>
-                <main className="flex-1">{children}</main>
+              <div className="relative flex min-h-screen flex-col">
+                <SiteHeader />
+                <div className="flex-1">{children}</div>
                 <SiteFooter />
               </div>
               <Toaster />

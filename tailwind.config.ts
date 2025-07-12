@@ -26,32 +26,32 @@ const config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          default: "hsl(var(--primary))",
+          DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          default: "hsl(var(--secondary))",
+          DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
-          default: "hsl(var(--muted))",
+          DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          default: "hsl(var(--accent))",
+          DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
         destructive: {
-          default: "hsl(var(--destructive))",
+          DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        card: {
-          default: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
         popover: {
-          default: "hsl(var(--popover))",
+          DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         electric: {
           50: "hsl(var(--electric-50))",
@@ -94,16 +94,10 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "electric-pulse": {
-          "0%": { boxShadow: "0 0 0px 0px rgba(var(--electric-500-rgb), 0.7)" },
-          "70%": { boxShadow: "0 0 0px 10px rgba(var(--electric-500-rgb), 0)" },
-          "100%": { boxShadow: "0 0 0px 0px rgba(var(--electric-500-rgb), 0)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "electric-pulse": "electric-pulse 1.5s infinite",
       },
     },
   },

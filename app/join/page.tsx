@@ -4,20 +4,11 @@ import Link from "next/link"
 
 export default function JoinPage() {
   return (
-    <div className="container mx-auto px-4 py-12 md:py-24">
-      <section className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          <span className="bg-gradient-to-r from-electric-400 to-frost-400 bg-clip-text text-transparent">
-            Join the Kelvin Creekman Fan Club
-          </span>
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Become a part of the Ice Legion and unlock exclusive access to content, merchandise, events, and more!
-        </p>
-      </section>
-
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Join the Fan Club</h1>
       <MembershipTiers />
 
+      {/* Ready to Join section */}
       <section className="mt-24 text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">
           <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">

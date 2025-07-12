@@ -11,12 +11,12 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <HeroSection
-        title="Unleash the Storm"
-        subtitle="Join the official Kelvin Creekman Fan Club and get exclusive access to music, merch, and events."
-        ctaText="Join the Ice Legion"
+        title="Kelvin Creekman Fan Club"
+        description="Join the official fan club for exclusive content, early access, and a vibrant community."
+        ctaText="Join Now"
         ctaLink="/join"
-        videoUrl="/placeholder.mp4" // Replace with actual video URL
-        videoPosterUrl="/placeholder.jpg" // Replace with actual video poster image
+        videoSrc="/placeholder.svg" // Replace with actual video URL
+        videoPoster="/placeholder.jpg" // Replace with actual video poster image
       />
       <FeaturedMerchandise />
       <UpcomingEvents />

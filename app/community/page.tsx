@@ -1,52 +1,60 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MessageCircle, Users, ExternalLink } from "lucide-react"
 import Link from "next/link"
+import { MessageCircle, Users, ExternalLink } from "lucide-react"
 
 export default function CommunityPage() {
   return (
-    <div className="container mx-auto px-4 py-12 md:py-24">
-      <section className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          <span className="bg-gradient-to-r from-electric-400 to-frost-400 bg-clip-text text-transparent">
-            Join the Ice Legion Community
-          </span>
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Connect with fellow Kelvin Creekman fans, share your passion, and get exclusive updates in our private
-          community spaces.
-        </p>
-      </section>
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Join the Kelvin Creekman Community</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30 p-6 text-center">
+      <div className="grid md:grid-cols-2 gap-8">
+        <Card>
           <CardHeader>
-            <MessageCircle className="h-16 w-16 text-electric-400 mx-auto mb-4" />
-            <CardTitle className="text-2xl font-bold text-electric-100">Discord Server</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-6 w-6" />
+              Official Discord Server
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-6">
-              Dive into real-time discussions, participate in fan events, and chat directly with Kelvin's team.
+          <CardContent className="space-y-4">
+            <p>
+              Connect with fellow fans, discuss Kelvin's music, share fan art, and get the latest updates directly from
+              the community managers.
             </p>
-            <Button asChild size="lg" className="bg-gradient-electric hover:animate-electric-pulse">
-              <Link href="https://discord.com/invite/your-discord-invite" target="_blank" rel="noopener noreferrer">
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>Live chat with other fans</li>
+              <li>Exclusive announcements</li>
+              <li>Fan events and game nights</li>
+              <li>Dedicated channels for different topics</li>
+            </ul>
+            <Button asChild className="w-full">
+              <Link href="https://discord.com/" target="_blank" rel="noopener noreferrer">
                 Join Discord <ExternalLink className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30 p-6 text-center">
+        <Card>
           <CardHeader>
-            <Users className="h-16 w-16 text-frost-400 mx-auto mb-4" />
-            <CardTitle className="text-2xl font-bold text-electric-100">Private Forum</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-6 w-6" />
+              Private Fan Forum
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-6">
-              Engage in deeper conversations, share fan art, and access exclusive forum-only content.
+          <CardContent className="space-y-4">
+            <p>
+              Our private forum is a dedicated space for in-depth discussions, sharing thoughts, and connecting with the
+              most passionate Kelvin Creekman fans.
             </p>
-            <Button asChild size="lg" className="bg-gradient-electric hover:animate-electric-pulse">
-              <Link href="https://community.circle.so/your-community-link" target="_blank" rel="noopener noreferrer">
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+              <li>Long-form discussions and theories</li>
+              <li>Archive of fan content and discussions</li>
+              <li>Direct feedback channels to the team</li>
+              <li>Moderated and safe environment</li>
+            </ul>
+            <Button asChild className="w-full">
+              <Link href="/forum" target="_blank" rel="noopener noreferrer">
                 Access Forum <ExternalLink className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -54,20 +62,13 @@ export default function CommunityPage() {
         </Card>
       </div>
 
-      <section className="mt-24 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">
-            Community Guidelines
-          </span>
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          To ensure a positive and respectful environment for all fans, please adhere to our community guidelines. Let's
-          keep the Ice Legion a welcoming place for everyone!
+      <div className="mt-12 text-center">
+        <h2 className="text-3xl font-bold mb-4">Why Join Our Community?</h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Being part of the official Kelvin Creekman community means more than just being a fan – it means being part of
+          the family. Get closer to the music, the artist, and other dedicated fans.
         </p>
-        <Button variant="link" className="mt-4 text-electric-400 hover:text-electric-300" asChild>
-          <Link href="/community/guidelines">Read Guidelines</Link>
-        </Button>
-      </section>
+      </div>
     </div>
   )
 }

@@ -3,21 +3,21 @@
 import Link from "next/link"
 
 import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/components/store/cart-context"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 
 export default function CheckoutPage() {
   const { cartItems, getTotalPrice, clearCart } = useCart()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [shippingInfo, setShippingInfo] = useState({
     fullName: "",
@@ -26,70 +26,80 @@ export default function CheckoutPage() {
     zip: "",
     country: "",
   })
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-  })
+
+  useEffect(() => {
+    if (searchParams.get("success")) {
+      toast({
+        title: "Order Placed!",
+        description: "Your order has been successfully placed. Thank you for your purchase!",
+        variant: "success",
+      })
+      clearCart()
+      // Optionally redirect after a short delay or show a confirmation message
+      // router.push("/dashboard");
+    } else if (searchParams.get("canceled")) {
+      toast({
+        title: "Checkout Canceled",
+        description: "Your checkout process was canceled. You can try again.",
+        variant: "info",
+      })
+    }
+  }, [searchParams, clearCart])
 
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value })
   }
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPaymentInfo({ ...paymentInfo, [e.target.name]: e.target.value })
-  }
-
   const handlePlaceOrder = async () => {
     setIsLoading(true)
-    // Simulate API call for order processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Basic validation
+    // Basic validation for shipping info
     if (
       !shippingInfo.fullName ||
       !shippingInfo.address ||
       !shippingInfo.city ||
       !shippingInfo.zip ||
-      !shippingInfo.country ||
-      !paymentInfo.cardNumber ||
-      !paymentInfo.expiryDate ||
-      !paymentInfo.cvv
+      !shippingInfo.country
     ) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all shipping and payment details.",
+        description: "Please fill in all shipping details.",
         variant: "destructive",
       })
       setIsLoading(false)
       return
     }
 
-    // Here you would integrate with a payment gateway (e.g., Stripe)
-    // For now, we'll just simulate success
-    const orderSuccessful = true // Replace with actual payment processing result
-
-    if (orderSuccessful) {
-      toast({
-        title: "Order Placed!",
-        description: "Your order has been successfully placed. Thank you for your purchase!",
-        variant: "success",
+    try {
+      const response = await fetch("/api/stripe-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cartItems }),
       })
-      clearCart() // Clear cart after successful order
-      router.push("/dashboard") // Redirect to a confirmation page or dashboard
-    } else {
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to create checkout session")
+      }
+
+      const { url } = await response.json()
+      window.location.href = url // Redirect to Stripe Checkout
+    } catch (error: any) {
       toast({
-        title: "Order Failed",
-        description: "There was an issue processing your payment. Please try again.",
+        title: "Checkout Error",
+        description: error.message || "An unexpected error occurred during checkout.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   const totalPrice = getTotalPrice()
 
-  if (cartItems.length === 0 && !isLoading) {
+  if (cartItems.length === 0 && !searchParams.get("success") && !searchParams.get("canceled")) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center p-4 text-center">
         <h2 className="text-3xl font-bold text-electric-100 mb-4">Your Cart is Empty</h2>
@@ -190,46 +200,23 @@ export default function CheckoutPage() {
             </div>
 
             <h3 className="text-lg font-semibold mt-6 mb-4 text-electric-200">Payment Information</h3>
-            <div>
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <Input
-                id="cardNumber"
-                name="cardNumber"
-                value={paymentInfo.cardNumber}
-                onChange={handlePaymentChange}
-                placeholder="•••• •••• •••• ••••"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input
-                  id="expiryDate"
-                  name="expiryDate"
-                  value={paymentInfo.expiryDate}
-                  onChange={handlePaymentChange}
-                  placeholder="MM/YY"
-                />
-              </div>
-              <div>
-                <Label htmlFor="cvv">CVV</Label>
-                <Input id="cvv" name="cvv" value={paymentInfo.cvv} onChange={handlePaymentChange} placeholder="123" />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              You will be redirected to a secure Stripe page to complete your purchase.
+            </p>
           </CardContent>
           <CardFooter>
             <Button
               onClick={handlePlaceOrder}
               className="w-full bg-gradient-electric hover:animate-electric-pulse"
-              disabled={isLoading}
+              disabled={isLoading || cartItems.length === 0}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  Redirecting to Payment...
                 </>
               ) : (
-                "Place Order"
+                "Proceed to Payment"
               )}
             </Button>
           </CardFooter>

@@ -1,76 +1,40 @@
 import Link from "next/link"
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react"
+import { Icons } from "@/components/icons"
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto w-full border-t border-electric-700 bg-background/80 backdrop-blur-lg py-8">
-      <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-4 md:flex-row">
-        <div className="text-center md:text-left">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Kelvin Creekman Fan Club. All rights reserved.
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Built with{" "}
-            <Link href="https://nextjs.org/" className="underline hover:text-electric-400">
-              Next.js
-            </Link>{" "}
-            and{" "}
-            <Link href="https://ui.shadcn.com/" className="underline hover:text-electric-400">
-              shadcn/ui
-            </Link>
+    <footer className="py-6 md:py-0 border-t bg-background/50 backdrop-blur-lg border-electric-700/30">
+      <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+        <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+          <Icons.logo className="hidden h-6 w-6 md:inline-block" />
+          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+            Built by{" "}
+            <a
+              href="https://vercel.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium underline underline-offset-4"
+            >
+              Vercel
+            </a>
+            . The source code is available on{" "}
+            <a
+              href="https://github.com/vercel/v0"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium underline underline-offset-4"
+            >
+              GitHub
+            </a>
             .
           </p>
         </div>
-        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium">
-          <Link href="/privacy" className="text-electric-200 hover:text-electric-400">
+        <div className="flex gap-4">
+          <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
             Privacy Policy
           </Link>
-          <Link href="/terms" className="text-electric-200 hover:text-electric-400">
+          <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
             Terms of Service
-          </Link>
-          <Link href="/contact" className="text-electric-200 hover:text-electric-400">
-            Contact
-          </Link>
-          <Link href="/faq" className="text-electric-200 hover:text-electric-400">
-            FAQ
-          </Link>
-        </nav>
-        <div className="flex gap-4">
-          <Link
-            href="https://facebook.com/kelvincreekman"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-electric-200 hover:text-electric-400"
-          >
-            <Facebook className="h-6 w-6" />
-            <span className="sr-only">Facebook</span>
-          </Link>
-          <Link
-            href="https://instagram.com/kelvincreekman"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-electric-200 hover:text-electric-400"
-          >
-            <Instagram className="h-6 w-6" />
-            <span className="sr-only">Instagram</span>
-          </Link>
-          <Link
-            href="https://twitter.com/kelvincreekman"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-electric-200 hover:text-electric-400"
-          >
-            <Twitter className="h-6 w-6" />
-            <span className="sr-only">Twitter</span>
-          </Link>
-          <Link
-            href="https://youtube.com/kelvincreekman"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-electric-200 hover:text-electric-400"
-          >
-            <Youtube className="h-6 w-6" />
-            <span className="sr-only">YouTube</span>
           </Link>
         </div>
       </div>
