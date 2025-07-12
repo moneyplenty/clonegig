@@ -1,97 +1,86 @@
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
-import { toast } from "@/hooks/use-toast"
+import { createContext, useState, useContext, useEffect, type ReactNode } from "react"
 
-interface Product {
-  id: number
+interface CartItem {
+  id: string
   name: string
   price: number
-  image: string
-  description: string
-}
-
-interface CartItem extends Product {
   quantity: number
+  image: string
 }
 
 interface CartContextType {
-  cartItems: CartItem[]
-  addToCart: (product: Product) => void
-  removeFromCart: (productId: number) => void
-  updateQuantity: (productId: number, quantity: number) => void
-  getTotalPrice: () => number
+  cart: CartItem[]
+  addToCart: (item: CartItem) => void
+  removeFromCart: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
+  getTotalItems: () => number
+  getTotalPrice: () => number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const [cart, setCart] = useState<CartItem[]>([])
 
-  // Load cart from localStorage on initial mount
   useEffect(() => {
-    const storedCart = localStorage.getItem("cartItems")
+    const storedCart = localStorage.getItem("cart")
     if (storedCart) {
-      setCartItems(JSON.parse(storedCart))
+      setCart(JSON.parse(storedCart))
     }
   }, [])
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(cartItems))
-  }, [cartItems])
+    localStorage.setItem("cart", JSON.stringify(cart))
+  }, [cart])
 
-  const addToCart = useCallback((product: Product) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id)
+  const addToCart = (item: CartItem) => {
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id)
       if (existingItem) {
-        return prevItems.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+        return prevCart.map((cartItem) =>
+          cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + item.quantity } : cartItem,
+        )
       } else {
-        return [...prevItems, { ...product, quantity: 1 }]
+        return [...prevCart, item]
       }
     })
-  }, [])
+  }
 
-  const removeFromCart = useCallback((productId: number) => {
-    setCartItems((prevItems) => {
-      const updatedItems = prevItems.filter((item) => item.id !== productId)
-      toast({
-        title: "Removed from Cart",
-        description: "Item has been removed from your cart.",
-        variant: "info",
-      })
-      return updatedItems
-    })
-  }, [])
+  const removeFromCart = (id: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
+  }
 
-  const updateQuantity = useCallback((productId: number, quantity: number) => {
-    setCartItems((prevItems) => {
-      if (quantity <= 0) {
-        return prevItems.filter((item) => item.id !== productId)
-      }
-      return prevItems.map((item) => (item.id === productId ? { ...item, quantity } : item))
-    })
-  }, [])
+  const updateQuantity = (id: string, quantity: number) => {
+    setCart((prevCart) =>
+      prevCart.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item)),
+    )
+  }
 
-  const getTotalPrice = useCallback(() => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  }, [cartItems])
+  const clearCart = () => {
+    setCart([])
+  }
 
-  const clearCart = useCallback(() => {
-    setCartItems([])
-  }, [])
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0)
+  }
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0)
+  }
 
   return (
     <CartContext.Provider
       value={{
-        cartItems,
+        cart,
         addToCart,
         removeFromCart,
         updateQuantity,
-        getTotalPrice,
         clearCart,
+        getTotalItems,
+        getTotalPrice,
       }}
     >
       {children}

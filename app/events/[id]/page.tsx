@@ -1,56 +1,36 @@
 import { EventDetails } from "@/components/events/event-details"
 import { EventBooking } from "@/components/events/event-booking"
 import { RelatedEvents } from "@/components/events/related-events"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-interface EventPageProps {
-  params: {
-    id: string
-  }
-}
+export const dynamic = "force-dynamic"
 
-export default function EventPage({ params }: EventPageProps) {
-  const eventId = Number.parseInt(params.id)
+export default async function EventDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-  // Mock data for a single event
-  const event = {
-    id: eventId,
-    title: `Electrifying Live Show ${eventId}`,
-    date: "October 26, 2024",
-    time: "8:00 PM PST",
-    location: "The Electric Venue, Los Angeles, CA",
-    description: `Join Kelvin Creekman for an unforgettable live performance! This will be an electrifying night filled with new hits and fan favorites. Don't miss out on the most anticipated rock event of the year.`,
-    image: "/placeholder.svg?height=400&width=600",
-    price: 50.0,
-    isPremium: eventId % 2 === 0, // Example: even IDs are premium
+  const { data: event, error } = await supabase.from("Event").select("*").eq("id", id).single()
+
+  if (error) {
+    console.error("Error fetching event:", error)
+    return <div>Event not found.</div>
   }
 
-  // Mock data for related events
-  const relatedEvents = [
-    {
-      id: 101,
-      title: "Acoustic Night with Kelvin",
-      date: "November 10, 2024",
-      location: "The Cozy Cafe",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-    {
-      id: 102,
-      title: "Rockumentary Premiere",
-      date: "December 1, 2024",
-      location: "Local Cinema",
-      image: "/placeholder.svg?height=200&width=300",
-    },
-  ]
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-8">
+    <div className="container mx-auto py-8 px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
           <EventDetails event={event} />
-          <EventBooking event={event} />
+          <EventBooking event={event} userId={user?.id || null} />
         </div>
-        <div className="md:col-span-1">
-          <RelatedEvents events={relatedEvents} />
+        <div className="lg:col-span-1">
+          <RelatedEvents currentEventId={event.id} />
         </div>
       </div>
     </div>

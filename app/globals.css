@@ -4,98 +4,135 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.4% 17.3%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.4% 17.3%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.4% 17.3%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.4% 37.3%;
-    --input: 217.2 32.4% 37.3%;
-    --ring: 217.2 91.2% 59.8%;
+
+    --border: 214.3 31.6% 91.4%;
+    --input: 214.3 31.6% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
     --radius: 0.5rem;
 
-    /* Custom Electric/Frost Theme Colors */
-    --electric-50: 220 100% 98%;
-    --electric-100: 220 100% 95%;
-    --electric-200: 220 100% 90%;
-    --electric-300: 220 100% 80%;
-    --electric-400: 220 100% 70%;
-    --electric-500: 220 100% 60%; /* Main electric blue */
-    --electric-600: 220 100% 50%;
-    --electric-700: 220 100% 40%;
-    --electric-800: 220 100% 30%;
-    --electric-900: 220 100% 20%;
-    --electric-950: 220 100% 10%;
+    /* Custom colors for icy/electrifying theme */
+    --ice-blue: 200 80% 70%; /* Light blue */
+    --electric-purple: 270 80% 60%; /* Vibrant purple */
+    --dark-charcoal: 240 5% 15%; /* Dark background */
+    --light-gray: 240 4% 85%; /* For text/details */
+    --kelvin-primary: 200 80% 70%; /* Primary button/accent */
+    --kelvin-primary-foreground: 240 5% 15%; /* Text on primary */
+    --kelvin-secondary: 270 80% 60%; /* Secondary button/accent */
+    --kelvin-secondary-foreground: 0 0% 98%; /* Text on secondary */
+    --kelvin-border: 200 10% 30%; /* Border color */
+    --kelvin-input: 240 5% 20%; /* Input background */
+    --kelvin-ring: 200 80% 70%; /* Focus ring */
+    --kelvin-background: 240 5% 10%; /* Main background */
+    --kelvin-foreground: 200 80% 90%; /* Main text */
+    --kelvin-card: 240 5% 15%; /* Card background */
+    --kelvin-card-foreground: 200 80% 90%; /* Card text */
+    --kelvin-popover: 240 5% 15%; /* Popover background */
+    --kelvin-popover-foreground: 200 80% 90%; /* Popover text */
+    --kelvin-muted: 240 5% 20%; /* Muted background */
+    --kelvin-muted-foreground: 200 10% 60%; /* Muted text */
+    --kelvin-accent: 270 80% 60%; /* Accent background */
+    --kelvin-accent-foreground: 0 0% 98%; /* Accent text */
+    --kelvin-destructive: 0 84.2% 60.2%; /* Destructive color */
+    --kelvin-destructive-foreground: 0 0% 98%; /* Destructive text */
 
-    --frost-50: 180 100% 98%;
-    --frost-100: 180 100% 95%;
-    --frost-200: 180 100% 90%;
-    --frost-300: 180 100% 80%;
-    --frost-400: 180 100% 70%;
-    --frost-500: 180 100% 60%; /* Main frost cyan */
-    --frost-600: 180 100% 50%;
-    --frost-700: 180 100% 40%;
-    --frost-800: 180 100% 30%;
-    --frost-900: 180 100% 20%;
-    --frost-950: 180 100% 10%;
+    /* Sidebar specific colors */
+    --sidebar-background: var(--kelvin-card);
+    --sidebar-foreground: var(--kelvin-card-foreground);
+    --sidebar-primary: var(--kelvin-primary);
+    --sidebar-primary-foreground: var(--kelvin-primary-foreground);
+    --sidebar-accent: var(--kelvin-muted);
+    --sidebar-accent-foreground: var(--kelvin-foreground);
+    --sidebar-border: var(--kelvin-border);
+    --sidebar-ring: var(--kelvin-ring);
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.4% 17.3%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.4% 17.3%;
+
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.4% 17.3%;
+
+    --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.4% 37.3%;
-    --input: 217.2 32.4% 37.3%;
-    --ring: 217.2 91.2% 59.8%;
 
-    /* Custom Electric/Frost Theme Colors for Dark Mode */
-    --electric-50: 220 100% 98%;
-    --electric-100: 220 100% 95%;
-    --electric-200: 220 100% 90%;
-    --electric-300: 220 100% 80%;
-    --electric-400: 220 100% 70%;
-    --electric-500: 220 100% 60%; /* Main electric blue */
-    --electric-600: 220 100% 50%;
-    --electric-700: 220 100% 40%;
-    --electric-800: 220 100% 30%;
-    --electric-900: 220 100% 20%;
-    --electric-950: 220 100% 10%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 210 40% 98%;
 
-    --frost-50: 180 100% 98%;
-    --frost-100: 180 100% 95%;
-    --frost-200: 180 100% 90%;
-    --frost-300: 180 100% 80%;
-    --frost-400: 180 100% 70%;
-    --frost-500: 180 100% 60%; /* Main frost cyan */
-    --frost-600: 180 100% 50%;
-    --frost-700: 180 100% 40%;
-    --frost-800: 180 100% 30%;
-    --frost-900: 180 100% 20%;
-    --frost-950: 180 100% 10%;
+    /* Custom colors for icy/electrifying theme in dark mode */
+    --ice-blue: 200 80% 70%; /* Light blue */
+    --electric-purple: 270 80% 60%; /* Vibrant purple */
+    --dark-charcoal: 240 5% 15%; /* Dark background */
+    --light-gray: 240 4% 85%; /* For text/details */
+    --kelvin-primary: 200 80% 70%; /* Primary button/accent */
+    --kelvin-primary-foreground: 240 5% 15%; /* Text on primary */
+    --kelvin-secondary: 270 80% 60%; /* Secondary button/accent */
+    --kelvin-secondary-foreground: 0 0% 98%; /* Text on secondary */
+    --kelvin-border: 200 10% 30%; /* Border color */
+    --kelvin-input: 240 5% 20%; /* Input background */
+    --kelvin-ring: 200 80% 70%; /* Focus ring */
+    --kelvin-background: 240 5% 10%; /* Main background */
+    --kelvin-foreground: 200 80% 90%; /* Main text */
+    --kelvin-card: 240 5% 15%; /* Card background */
+    --kelvin-card-foreground: 200 80% 90%; /* Card text */
+    --kelvin-popover: 240 5% 15%; /* Popover background */
+    --kelvin-popover-foreground: 200 80% 90%; /* Popover text */
+    --kelvin-muted: 240 5% 20%; /* Muted background */
+    --kelvin-muted-foreground: 200 10% 60%; /* Muted text */
+    --kelvin-accent: 270 80% 60%; /* Accent background */
+    --kelvin-accent-foreground: 0 0% 98%; /* Accent text */
+    --kelvin-destructive: 0 62.8% 30.6%; /* Destructive color */
+    --kelvin-destructive-foreground: 0 0% 98%; /* Destructive text */
+
+    /* Sidebar specific colors */
+    --sidebar-background: var(--kelvin-card);
+    --sidebar-foreground: var(--kelvin-card-foreground);
+    --sidebar-primary: var(--kelvin-primary);
+    --sidebar-primary-foreground: var(--kelvin-primary-foreground);
+    --sidebar-accent: var(--kelvin-muted);
+    --sidebar-accent-foreground: var(--kelvin-foreground);
+    --sidebar-border: var(--kelvin-border);
+    --sidebar-ring: var(--kelvin-ring);
   }
 }
 
@@ -106,32 +143,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Custom animations */
-@keyframes electric-pulse {
-  0% {
-    box-shadow: 0 0 5px var(--electric-500), 0 0 10px var(--electric-500);
-  }
-  50% {
-    box-shadow: 0 0 15px var(--electric-500), 0 0 30px var(--electric-500);
-  }
-  100% {
-    box-shadow: 0 0 5px var(--electric-500), 0 0 10px var(--electric-500);
-  }
-}
-
-.hover\:animate-electric-pulse:hover {
-  animation: electric-pulse 1.5s infinite;
-}
-
-/* Custom gradients */
-.bg-gradient-electric {
-  background: linear-gradient(to right, var(--electric-500), var(--frost-500));
-}
-
-.text-gradient-electric {
-  background: linear-gradient(to right, var(--electric-500), var(--frost-500));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }

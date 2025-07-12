@@ -1,39 +1,36 @@
 import type React from "react"
-import "@/app/globals.css"
-import { Mona_Sans as FontSans } from "next/font/google"
-import { cn } from "@/lib/utils"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { CartProvider } from "@/components/store/cart-context"
 
-const fontSans = FontSans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-})
+const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Kelvin Creekman Fan Club",
-  description: "Official fan club website for Kelvin Creekman",
+  description: "Official fan club website for rock and metal musician Kelvin Creekman",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+      <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <CartProvider>
-              <div className="relative flex min-h-screen flex-col">
+              <div className="flex min-h-screen flex-col">
                 <SiteHeader />
-                <div className="flex-1">{children}</div>
+                <main className="flex-1">{children}</main>
                 <SiteFooter />
               </div>
               <Toaster />

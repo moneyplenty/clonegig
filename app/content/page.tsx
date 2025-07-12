@@ -1,124 +1,41 @@
-import { ContentPreview } from "@/components/content-preview"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ContentPreview } from "@/components/content-preview"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-export default function ContentPage() {
-  const mockContent = [
-    {
-      id: 1,
-      title: "Behind the Scenes: Recording 'Electric Dreams'",
-      type: "video",
-      category: "Exclusive",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "Go behind the scenes of Kelvin's latest album recording.",
-      isPremium: true,
-    },
-    {
-      id: 2,
-      title: "Kelvin's Top 5 Guitar Riffs",
-      type: "blog",
-      category: "Public",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "Kelvin shares his favorite guitar riffs and how they influenced him.",
-      isPremium: false,
-    },
-    {
-      id: 3,
-      title: "Fan Art Showcase: August 2024",
-      type: "gallery",
-      category: "Public",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "A collection of amazing fan art submitted by the community.",
-      isPremium: false,
-    },
-    {
-      id: 4,
-      title: "Unreleased Demo: 'Frozen Fire'",
-      type: "audio",
-      category: "Exclusive",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "Listen to an exclusive unreleased demo track.",
-      isPremium: true,
-    },
-    {
-      id: 5,
-      title: "Live Q&A Transcript with Kelvin",
-      type: "text",
-      category: "Exclusive",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "Read the full transcript from the latest live Q&A session.",
-      isPremium: true,
-    },
-    {
-      id: 6,
-      title: "Tour Diary: Road to Electrify",
-      type: "blog",
-      category: "Public",
-      image: "/placeholder.svg?height=200&width=300",
-      description: "Follow Kelvin's journey on his latest tour.",
-      isPremium: false,
-    },
-  ]
+export const dynamic = "force-dynamic"
+
+export default async function ContentPage() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: content, error } = await supabase.from("Content").select("*")
+
+  if (error) {
+    console.error("Error fetching content:", error)
+    return <div>Error loading content.</div>
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-        <h1 className="text-4xl font-bold">Fan Content</h1>
-        <div className="relative flex-1 md:flex-grow-0 md:w-1/3">
-          <Input placeholder="Search content..." className="pl-8" />
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex flex-col items-center justify-center text-center space-y-4 mb-8">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Exclusive Content</h1>
+        <p className="max-w-xl text-lg text-gray-600 dark:text-gray-400">
+          Dive deep into Kelvin Creekman&apos;s world with behind-the-scenes footage, unreleased tracks, and exclusive
+          interviews.
+        </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <Card className="w-full md:w-1/4 shrink-0">
-          <CardHeader>
-            <CardTitle>Filter Content</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-2">Content Type</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="videos" />
-                  <Label htmlFor="videos">Videos</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="blogs" />
-                  <Label htmlFor="blogs">Blog Posts</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="audio" />
-                  <Label htmlFor="audio">Audio</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="galleries" />
-                  <Label htmlFor="galleries">Galleries</Label>
-                </div>
-              </div>
-            </div>
+      <div className="relative mb-8 max-w-md mx-auto">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Input type="text" placeholder="Search content..." className="pl-10 pr-4 py-2 rounded-md w-full" />
+      </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Access Level</h3>
-              <RadioGroup defaultValue="all" className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="access-all" />
-                  <Label htmlFor="access-all">All Content</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="premium" id="access-premium" />
-                  <Label htmlFor="access-premium">Premium Only</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </CardContent>
-        </Card>
-
-        <ContentPreview content={mockContent} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {content.map((item: any) => (
+          <ContentPreview key={item.id} content={item} />
+        ))}
       </div>
     </div>
   )

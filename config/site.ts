@@ -1,14 +1,10 @@
 export const siteConfig = {
   name: "Kelvin Creekman Fan Club",
-  description: "Official fan club website for Kelvin Creekman",
+  description: "Official fan club website for rock and metal musician Kelvin Creekman",
   mainNav: [
     {
-      title: "Home",
-      href: "/",
-    },
-    {
-      title: "Content",
-      href: "/content",
+      title: "Store",
+      href: "/store",
     },
     {
       title: "Events",
@@ -19,8 +15,8 @@ export const siteConfig = {
       href: "/meet-and-greet",
     },
     {
-      title: "Store",
-      href: "/store",
+      title: "Content",
+      href: "/content",
     },
     {
       title: "Community",
@@ -30,12 +26,14 @@ export const siteConfig = {
       title: "Dashboard",
       href: "/dashboard",
     },
+    {
+      title: "Admin",
+      href: "/admin",
+    },
   ],
   links: {
     twitter: "https://twitter.com/vercel",
-    github: "https://github.com/vercel/next.js",
-    docs: "https://nextjs.org",
+    github: "https://github.com/vercel/v0",
+    docs: "https://v0.dev",
   },
 }
-
-export type SiteConfig = typeof siteConfig

@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { OTPInput, type Slot, type OTPInputProps } from "input-otp"
-import { MinusIcon } from "@radix-ui/react-icons"
+import { OTPInput, Slot, type OTPInputProps } from "input-otp"
+import { Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -18,7 +18,7 @@ const InputOTP = React.forwardRef<React.ElementRef<typeof OTPInput>, OTPInputPro
 )
 InputOTP.displayName = "InputOTP"
 
-const InputOTPGroup = React.forwardRef<React.ElementRef<typeof Slot>, React.ComponentPropsWithoutRef<typeof Slot>>(
+const InputOTPGroup = React.forwardRef<React.ElementRef<"div">, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => <div ref={ref} className={cn("flex items-center", className)} {...props} />,
 )
 InputOTPGroup.displayName = "InputOTPGroup"
@@ -27,28 +27,23 @@ const InputOTPSlot = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot> & { index: number }
 >(({ index, className, ...props }, ref) => (
-  <div
+  <Slot
     ref={ref}
+    index={index}
     className={cn(
       "relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-      "focus-within:z-10",
-      {
-        "border-l border-input": index === 0,
-        "border-r border-input": index === 0,
-      },
+      "focus-within:z-10 focus-within:ring-1 focus-within:ring-ring",
       className,
     )}
     {...props}
-  >
-    {props.children}
-  </div>
+  />
 ))
 InputOTPSlot.displayName = "InputOTPSlot"
 
-const InputOTPSeparator = React.forwardRef<React.ElementRef<typeof Slot>, React.ComponentPropsWithoutRef<typeof Slot>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex items-center justify-center", className)} {...props}>
-      <MinusIcon />
+const InputOTPSeparator = React.forwardRef<React.ElementRef<"div">, React.HTMLAttributes<HTMLDivElement>>(
+  ({ ...props }, ref) => (
+    <div ref={ref} role="separator" {...props}>
+      <Minus />
     </div>
   ),
 )

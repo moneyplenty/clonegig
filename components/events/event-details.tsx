@@ -1,19 +1,19 @@
-import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, MapPin } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Calendar, MapPin, DollarSign } from "lucide-react"
+import { format } from "date-fns"
+
+interface Event {
+  id: string
+  title: string
+  description: string
+  date: string
+  location: string
+  price: number
+  isMeetGreet: boolean
+}
 
 interface EventDetailsProps {
-  event: {
-    id: number
-    title: string
-    date: string
-    time: string
-    location: string
-    description: string
-    image: string
-    price: number
-    isPremium: boolean
-  }
+  event: Event
 }
 
 export function EventDetails({ event }: EventDetailsProps) {
@@ -21,24 +21,22 @@ export function EventDetails({ event }: EventDetailsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-3xl">{event.title}</CardTitle>
-        <div className="flex items-center text-muted-foreground text-sm mt-2">
-          <Calendar className="h-4 w-4 mr-1" /> {event.date}
-          <Clock className="h-4 w-4 mr-1 ml-4" /> {event.time}
-          <MapPin className="h-4 w-4 mr-1 ml-4" /> {event.location}
-        </div>
+        <CardDescription>{event.isMeetGreet ? "Exclusive Meet & Greet Session" : "Concert Event"}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="relative w-full h-64 mb-4">
-          <Image
-            src={event.image || "/placeholder.svg"}
-            alt={event.title}
-            layout="fill"
-            objectFit="cover"
-            className="rounded-lg"
-          />
+      <CardContent className="space-y-4">
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <Calendar className="h-5 w-5" />
+          <span>{format(new Date(event.date), "PPPp")}</span>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <MapPin className="h-5 w-5" />
+          <span>{event.location}</span>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+          <DollarSign className="h-5 w-5" />
+          <span>{event.price === 0 ? "Free" : `$${event.price.toFixed(2)}`}</span>
         </div>
         <p className="text-lg leading-relaxed">{event.description}</p>
-        {event.isPremium && <p className="mt-4 text-primary font-semibold">This is a Premium Fan exclusive event.</p>}
       </CardContent>
     </Card>
   )

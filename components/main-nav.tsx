@@ -11,30 +11,75 @@ export function MainNav() {
   const pathname = usePathname()
 
   return (
-    <div className="hidden md:flex gap-6">
-      <Link href="/" className="flex items-center space-x-2">
-        <Icons.logo className="h-6 w-6 text-electric-400" />
-        <span className="hidden font-bold sm:inline-block text-electric-100">{siteConfig.name}</span>
+    <div className="mr-4 hidden md:flex">
+      <Link href="/" className="mr-6 flex items-center space-x-2">
+        <Icons.logo className="h-6 w-6" />
+        <span className="hidden font-bold sm:inline-block">{siteConfig.name}</span>
       </Link>
       <nav className="flex items-center gap-6 text-sm">
-        {siteConfig.mainNav.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "transition-colors hover:text-electric-400",
-              pathname === item.href ? "text-electric-400" : "text-electric-200",
-              item.disabled && "cursor-not-allowed opacity-80",
-            )}
-          >
-            {item.title}
-            {item.title === "Store" && (
-              <Badge variant="secondary" className="ml-2 bg-frost-500 text-white">
-                New
-              </Badge>
-            )}
-          </Link>
-        ))}
+        <Link
+          href="/store"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/store" ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Store
+        </Link>
+        <Link
+          href="/events"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname?.startsWith("/events") ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Events
+        </Link>
+        <Link
+          href="/meet-and-greet"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/meet-and-greet" ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Meet & Greet
+        </Link>
+        <Link
+          href="/content"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/content" ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Content
+        </Link>
+        <Link
+          href="/community"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/community" ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Community
+        </Link>
+        <Link
+          href="/dashboard"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname === "/dashboard" ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Dashboard
+        </Link>
+        <Link
+          href="/admin"
+          className={cn(
+            "transition-colors hover:text-foreground/80",
+            pathname?.startsWith("/admin") ? "text-foreground" : "text-foreground/60",
+          )}
+        >
+          Admin <Badge className="ml-1">Pro</Badge>
+        </Link>
       </nav>
     </div>
   )

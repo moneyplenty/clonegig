@@ -1,79 +1,69 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { toast } from "@/hooks/use-toast"
+
+const formSchema = z.object({
+  email: z.string().email({ message: "Enter a valid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+})
+
+type LoginFormValues = z.infer<typeof formSchema>
 
 export function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
+
+  const onSubmit = async (values: LoginFormValues) => {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: values.email,
+      password: values.password,
     })
+
     if (error) {
-      toast({
-        title: "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      })
+      toast.error(error.message)
     } else {
-      toast({
-        title: "Login Successful",
-        description: "You have been logged in.",
-        variant: "success",
-      })
-      router.push("/dashboard")
+      toast.success("Logged in successfully!")
+      router.push("/dashboard") // Redirect to dashboard or desired page
     }
     setLoading(false)
   }
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="email">Email address</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email@example.com"
-        />
+        <Label htmlFor="email">Email</Label>
+        <Input id="email" type="email" placeholder="m@example.com" {...form.register("email")} disabled={loading} />
+        {form.formState.errors.email && <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>}
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="********"
-        />
+        <Input id="password" type="password" placeholder="******" {...form.register("password")} disabled={loading} />
+        {form.formState.errors.password && (
+          <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+        )}
       </div>
-      <div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing In..." : "Sign In"}
-        </Button>
-      </div>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Logging in..." : "Login"}
+      </Button>
     </form>
   )
 }

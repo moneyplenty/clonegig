@@ -1,17 +1,17 @@
 "use client"
 
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCart } from "./cart-context"
-import { toast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import Image from "next/image"
+import { useCart } from "@/components/store/cart-context"
+import { toast } from "sonner"
 
 interface Product {
-  id: number
+  id: string
   name: string
+  description: string
   price: number
   image: string
-  description: string
 }
 
 interface ProductGridProps {
@@ -22,16 +22,12 @@ export function ProductGrid({ products }: ProductGridProps) {
   const { addToCart } = useCart()
 
   const handleAddToCart = (product: Product) => {
-    addToCart(product)
-    toast({
-      title: "Added to Cart!",
-      description: `${product.name} has been added to your cart.`,
-      variant: "success",
-    })
+    addToCart({ ...product, quantity: 1 })
+    toast.success(`${product.name} added to cart!`)
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
         <Card key={product.id} className="flex flex-col">
           <CardHeader className="p-0">
@@ -45,15 +41,13 @@ export function ProductGrid({ products }: ProductGridProps) {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-grow p-4">
+          <CardContent className="flex-1 p-4">
             <CardTitle className="text-lg font-semibold mb-2">{product.name}</CardTitle>
-            <p className="text-muted-foreground text-sm line-clamp-2">{product.description}</p>
-            <p className="text-xl font-bold mt-2">${product.price.toFixed(2)}</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3">{product.description}</p>
           </CardContent>
-          <CardFooter className="p-4 pt-0">
-            <Button className="w-full" onClick={() => handleAddToCart(product)}>
-              Add to Cart
-            </Button>
+          <CardFooter className="flex justify-between items-center p-4 border-t">
+            <span className="text-xl font-bold">${product.price.toFixed(2)}</span>
+            <Button onClick={() => handleAddToCart(product)}>Add to Cart</Button>
           </CardFooter>
         </Card>
       ))}

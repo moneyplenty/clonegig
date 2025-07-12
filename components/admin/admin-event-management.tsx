@@ -1,210 +1,215 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { format } from "date-fns"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { toast } from "@/hooks/use-toast"
-import { Loader2, Edit, Trash } from "lucide-react"
+import { Pencil, Trash } from "lucide-react"
+
+const eventSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  date: z.string().min(1, "Date is required"),
+  location: z.string().min(1, "Location is required"),
+  price: z.preprocess((val) => Number.parseFloat(String(val)), z.number().min(0, "Price must be non-negative")),
+  isMeetGreet: z.boolean().default(false),
+})
+
+type EventFormValues = z.infer<typeof eventSchema>
 
 interface Event {
-  id: number
+  id: string
   title: string
+  description: string | null
   date: string
-  time: string
   location: string
-  description: string
   price: number
-  isPremium: boolean
+  isMeetGreet: boolean
 }
 
 export function AdminEventManagement() {
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: 1,
-      title: "Electrifying Live Show 1",
-      date: "2024-10-26",
-      time: "20:00",
-      location: "The Electric Venue, Los Angeles, CA",
-      description: "Join Kelvin Creekman for an unforgettable live performance!",
-      price: 50.0,
-      isPremium: false,
-    },
-    {
-      id: 2,
-      title: "Premium Fan Meetup",
-      date: "2024-11-15",
-      time: "18:00",
-      location: "Online (Zoom)",
-      description: "Exclusive Q&A session for Premium Fans.",
-      price: 0.0,
-      isPremium: true,
-    },
-  ])
-  const [newEvent, setNewEvent] = useState<Omit<Event, "id">>({
-    title: "",
-    date: "",
-    time: "",
-    location: "",
-    description: "",
-    price: 0,
-    isPremium: false,
-  })
-  const [editingEventId, setEditingEventId] = useState<number | null>(null)
+  const supabase = createClient()
+  const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement
-    setNewEvent((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }))
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      price: 0,
+      isMeetGreet: false,
+    },
+  })
+
+  useEffect(() => {
+    fetchEvents()
+  }, [])
+
+  const fetchEvents = async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from("Event").select("*").order("date", { ascending: true })
+    if (error) {
+      toast.error("Error fetching events: " + error.message)
+    } else {
+      setEvents(data || [])
+    }
+    setLoading(false)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const onSubmit = async (values: EventFormValues) => {
     setLoading(true)
+    if (editingEvent) {
+      // Update event
+      const { error } = await supabase
+        .from("Event")
+        .update({
+          title: values.title,
+          description: values.description,
+          date: values.date,
+          location: values.location,
+          price: values.price,
+          isMeetGreet: values.isMeetGreet,
+        })
+        .eq("id", editingEvent.id)
 
-    if (editingEventId) {
-      // Update existing event
-      setEvents((prev) =>
-        prev.map((event) => (event.id === editingEventId ? { ...newEvent, id: editingEventId } : event)),
-      )
-      toast({
-        title: "Event Updated",
-        description: `${newEvent.title} has been updated.`,
-        variant: "success",
-      })
+      if (error) {
+        toast.error("Error updating event: " + error.message)
+      } else {
+        toast.success("Event updated successfully!")
+        setEditingEvent(null)
+        form.reset()
+        fetchEvents()
+      }
     } else {
-      // Add new event
-      const id = events.length > 0 ? Math.max(...events.map((e) => e.id)) + 1 : 1
-      setEvents((prev) => [...prev, { ...newEvent, id }])
-      toast({
-        title: "Event Added",
-        description: `${newEvent.title} has been added.`,
-        variant: "success",
-      })
-    }
+      // Create new event
+      const { error } = await supabase.from("Event").insert([
+        {
+          title: values.title,
+          description: values.description,
+          date: values.date,
+          location: values.location,
+          price: values.price,
+          isMeetGreet: values.isMeetGreet,
+        },
+      ])
 
-    setNewEvent({
-      title: "",
-      date: "",
-      time: "",
-      location: "",
-      description: "",
-      price: 0,
-      isPremium: false,
-    })
-    setEditingEventId(null)
+      if (error) {
+        toast.error("Error creating event: " + error.message)
+      } else {
+        toast.success("Event created successfully!")
+        form.reset()
+        fetchEvents()
+      }
+    }
     setLoading(false)
   }
 
   const handleEdit = (event: Event) => {
-    setNewEvent(event)
-    setEditingEventId(event.id)
-  }
-
-  const handleDelete = (id: number) => {
-    setEvents((prev) => prev.filter((event) => event.id !== id))
-    toast({
-      title: "Event Deleted",
-      description: "The event has been removed.",
-      variant: "destructive",
+    setEditingEvent(event)
+    form.reset({
+      id: event.id,
+      title: event.title,
+      description: event.description || "",
+      date: format(new Date(event.date), "yyyy-MM-dd'T'HH:mm"), // Format for datetime-local input
+      location: event.location,
+      price: event.price,
+      isMeetGreet: event.isMeetGreet,
     })
   }
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this event?")) return
+
+    setLoading(true)
+    const { error } = await supabase.from("Event").delete().eq("id", id)
+    if (error) {
+      toast.error("Error deleting event: " + error.message)
+    } else {
+      toast.success("Event deleted successfully!")
+      fetchEvents()
+    }
+    setLoading(false)
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <Card>
         <CardHeader>
-          <CardTitle>{editingEventId ? "Edit Event" : "Add New Event"}</CardTitle>
+          <CardTitle>{editingEvent ? "Edit Event" : "Create New Event"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="title">Event Title</Label>
-              <Input id="title" name="title" value={newEvent.title} onChange={handleInputChange} required />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input id="date" name="date" type="date" value={newEvent.date} onChange={handleInputChange} required />
-              </div>
-              <div>
-                <Label htmlFor="time">Time</Label>
-                <Input id="time" name="time" type="time" value={newEvent.time} onChange={handleInputChange} required />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="location">Location</Label>
-              <Input id="location" name="location" value={newEvent.location} onChange={handleInputChange} required />
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" {...form.register("title")} disabled={loading} />
+              {form.formState.errors.title && (
+                <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={newEvent.description}
-                onChange={handleInputChange}
-                required
-              />
+              <Textarea id="description" {...form.register("description")} disabled={loading} />
+              {form.formState.errors.description && (
+                <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="date">Date & Time</Label>
+              <Input id="date" type="datetime-local" {...form.register("date")} disabled={loading} />
+              {form.formState.errors.date && (
+                <p className="text-sm text-red-500">{form.formState.errors.date.message}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="location">Location</Label>
+              <Input id="location" {...form.register("location")} disabled={loading} />
+              {form.formState.errors.location && (
+                <p className="text-sm text-red-500">{form.formState.errors.location.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                name="price"
-                type="number"
-                step="0.01"
-                value={newEvent.price}
-                onChange={handleInputChange}
-                required
-              />
+              <Input id="price" type="number" step="0.01" {...form.register("price")} disabled={loading} />
+              {form.formState.errors.price && (
+                <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
+              )}
             </div>
             <div className="flex items-center space-x-2">
-              <Input
-                id="isPremium"
-                name="isPremium"
-                type="checkbox"
-                checked={newEvent.isPremium}
-                onChange={handleInputChange}
-                className="h-4 w-4"
+              <Checkbox
+                id="isMeetGreet"
+                checked={form.watch("isMeetGreet")}
+                onCheckedChange={(checked) => form.setValue("isMeetGreet", !!checked)}
+                disabled={loading}
               />
-              <Label htmlFor="isPremium">Premium Event</Label>
+              <Label htmlFor="isMeetGreet">Is this a Meet & Greet session?</Label>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : editingEventId ? (
-                "Update Event"
-              ) : (
-                "Add Event"
-              )}
+              {loading ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
             </Button>
-            {editingEventId && (
+            {editingEvent && (
               <Button
                 variant="outline"
                 className="w-full mt-2 bg-transparent"
                 onClick={() => {
-                  setEditingEventId(null)
-                  setNewEvent({
-                    title: "",
-                    date: "",
-                    time: "",
-                    location: "",
-                    description: "",
-                    price: 0,
-                    isPremium: false,
-                  })
+                  setEditingEvent(null)
+                  form.reset()
                 }}
+                disabled={loading}
               >
                 Cancel Edit
               </Button>
@@ -218,41 +223,47 @@ export function AdminEventManagement() {
           <CardTitle>Existing Events</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Premium</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {events.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium">{event.title}</TableCell>
-                  <TableCell>{event.date}</TableCell>
-                  <TableCell>{event.time}</TableCell>
-                  <TableCell>{event.location}</TableCell>
-                  <TableCell>${event.price.toFixed(2)}</TableCell>
-                  <TableCell>{event.isPremium ? "Yes" : "No"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(event)} className="mr-2">
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button variant="destructive" size="icon" onClick={() => handleDelete(event.id)}>
-                      <Trash className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {loading ? (
+            <p>Loading events...</p>
+          ) : events.length === 0 ? (
+            <p>No events found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell className="font-medium">{event.title}</TableCell>
+                      <TableCell>{format(new Date(event.date), "MMM dd, yyyy HH:mm")}</TableCell>
+                      <TableCell>{event.location}</TableCell>
+                      <TableCell>${event.price.toFixed(2)}</TableCell>
+                      <TableCell>{event.isMeetGreet ? "Meet & Greet" : "Concert"}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="icon" onClick={() => handleEdit(event)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="destructive" size="icon" onClick={() => handleDelete(event.id)}>
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

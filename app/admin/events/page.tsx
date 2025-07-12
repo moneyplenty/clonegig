@@ -1,11 +1,22 @@
-import { AdminEventManagement } from "@/components/admin/admin-event-management"
 import { AdminProtection } from "@/components/admin/admin-protection"
+import { AdminEventManagement } from "@/components/admin/admin-event-management"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-export default function AdminEventsPage() {
+export const dynamic = "force-dynamic"
+
+export default async function AdminEventsPage() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   return (
-    <AdminProtection>
-      <div className="container mx-auto py-8">
-        <h1 className="text-4xl font-bold mb-8 text-center">Event Management</h1>
+    <AdminProtection user={user}>
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-4xl font-bold text-center mb-8">Event Management</h1>
         <AdminEventManagement />
       </div>
     </AdminProtection>

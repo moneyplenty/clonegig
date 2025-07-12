@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -11,7 +11,7 @@ import { Calendar, MapPin } from "lucide-react"
 import { format } from "date-fns"
 
 interface Event {
-  id: number
+  id: string
   title: string
   description?: string
   date: string
@@ -26,11 +26,13 @@ interface Event {
   image?: string
   featured?: boolean
   imageUrl: string
+  ticketPrice?: number
+  isMeetGreet?: boolean
 }
 
 const mockEvents: Event[] = [
   {
-    id: 1,
+    id: "1",
     title: "Electric Storm Tour - NYC",
     description: "Experience Kelvin's most electrifying performance yet in the heart of New York City",
     date: "2024-02-15",
@@ -47,7 +49,7 @@ const mockEvents: Event[] = [
     imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
   },
   {
-    id: 2,
+    id: "2",
     title: "Intimate Meet & Greet",
     description: "Personal conversation with Kelvin in a small group setting",
     date: "2024-02-10",
@@ -64,7 +66,7 @@ const mockEvents: Event[] = [
     imageUrl: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&h=600&fit=crop",
   },
   {
-    id: 3,
+    id: "3",
     title: "Virtual Acoustic Session",
     description: "Exclusive acoustic performance streamed live to fan club members",
     date: "2024-02-08",
@@ -81,7 +83,7 @@ const mockEvents: Event[] = [
     imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
   },
   {
-    id: 4,
+    id: "4",
     title: "VIP Backstage Experience",
     description: "Ultimate fan experience with backstage access and exclusive merchandise",
     date: "2024-02-20",
@@ -98,7 +100,7 @@ const mockEvents: Event[] = [
     imageUrl: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&h=600&fit=crop",
   },
   {
-    id: 5,
+    id: "5",
     title: "Chicago Rock Festival",
     description: "Kelvin headlines the biggest rock festival in the Midwest",
     date: "2024-03-01",
@@ -115,7 +117,7 @@ const mockEvents: Event[] = [
     imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
   },
   {
-    id: 6,
+    id: "6",
     title: "Songwriting Workshop",
     description: "Learn songwriting techniques directly from Kelvin in this interactive session",
     date: "2024-02-25",
@@ -131,58 +133,67 @@ const mockEvents: Event[] = [
     featured: false,
     imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
   },
-  {
-    id: 7,
-    title: "Ice Storm Album Launch Party",
-    date: "2025-08-15",
-    time: "7:00 PM",
-    location: "The Electric Venue, New York",
-    imageUrl: "/placeholder.svg?height=400&width=600",
-  },
-  {
-    id: 8,
-    title: "Acoustic Set & Q&A",
-    date: "2025-09-01",
-    time: "3:00 PM",
-    location: "The Frosty Lounge, Los Angeles",
-    imageUrl: "/placeholder.svg?height=400&width=600",
-  },
-  {
-    id: 9,
-    title: "Winter's Embrace Tour - London",
-    date: "2025-10-20",
-    time: "8:00 PM",
-    location: "O2 Academy, London",
-    imageUrl: "/placeholder.svg?height=400&width=600",
-  },
 ]
 
 const additionalEvents = [
   {
-    id: 1,
-    title: "Electrifying Live Show - Los Angeles",
-    date: "October 26, 2024",
-    location: "The Electric Venue, Los Angeles, CA",
+    id: "1",
+    title: "Kelvin Creekman Live in Concert",
+    date: "2024-10-26T20:00:00Z",
+    location: "The Electric Venue, New York, NY",
     image: "/placeholder.svg?height=200&width=300",
+    ticketPrice: 75.0,
+    isMeetGreet: false,
   },
   {
-    id: 2,
-    title: "Exclusive Fan Q&A - Online",
-    date: "November 15, 2024",
-    location: "Online (Premium Members Only)",
+    id: "2",
+    title: "Acoustic Set & Storytelling",
+    date: "2024-11-10T18:00:00Z",
+    location: "The Blue Note, Chicago, IL",
     image: "/placeholder.svg?height=200&width=300",
+    ticketPrice: 50.0,
+    isMeetGreet: true,
   },
   {
-    id: 3,
-    title: "Album Listening Party - New York",
-    date: "December 10, 2024",
-    location: "The Sonic Hall, New York, NY",
+    id: "3",
+    title: "Album Release Party",
+    date: "2024-12-05T19:00:00Z",
+    location: "Online Stream",
     image: "/placeholder.svg?height=200&width=300",
+    ticketPrice: 20.0,
+    isMeetGreet: false,
+  },
+]
+
+const upcomingEvents = [
+  {
+    id: "4",
+    title: "Electric Dreams Tour: New York",
+    date: "2025-08-15T20:00:00Z",
+    location: "Madison Square Garden, NYC",
+    description: "Join Kelvin Creekman for an unforgettable night of rock and metal.",
+    isMeetGreet: false,
+  },
+  {
+    id: "5",
+    title: "Exclusive Fan Meet & Greet",
+    date: "2025-09-01T18:00:00Z",
+    location: "Online (Virtual Session)",
+    description: "A rare opportunity to chat live with Kelvin Creekman. Limited spots!",
+    isMeetGreet: true,
+  },
+  {
+    id: "6",
+    title: "Album Launch Party: London",
+    date: "2025-10-20T19:30:00Z",
+    location: "O2 Arena, London",
+    description: "Celebrate the launch of Kelvin's new album with a spectacular show.",
+    isMeetGreet: false,
   },
 ]
 
 export function UpcomingEvents() {
-  const [events] = useState<Event[]>([...mockEvents, ...additionalEvents])
+  const [events] = useState<Event[]>([...mockEvents, ...additionalEvents, ...upcomingEvents])
 
   const getEventTypeIcon = (type: string) => {
     switch (type) {
@@ -249,17 +260,24 @@ export function UpcomingEvents() {
   const nextEvent = sortedEvents.find((event) => new Date(event.date) > new Date())
 
   return (
-    <section className="py-12 md:py-24 bg-electric-950/10">
-      <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-8">
-          <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">
-            Upcoming Events
-          </span>
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+    <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800">
+      <div className="container px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Upcoming Events</h2>
+            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
+              Mark your calendars! Don&apos;t miss these electrifying events.
+            </p>
+          </div>
+        </div>
+        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-12">
           {sortedEvents.map((event) => (
-            <Card key={event.id} className="flex flex-col bg-background/50 backdrop-blur-lg border-electric-700/30">
-              <CardHeader className="p-0">
+            <Card key={event.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-xl">{event.title}</CardTitle>
+                <CardDescription>{event.isMeetGreet ? "Meet & Greet" : "Concert"}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-2">
                 <div className="relative w-full h-48">
                   <Image
                     src={event.image || event.imageUrl}
@@ -269,23 +287,17 @@ export function UpcomingEvents() {
                     className="rounded-t-lg"
                   />
                 </div>
-              </CardHeader>
-              <CardContent className="flex-grow p-4">
-                <CardTitle className="text-lg font-semibold mb-2 text-electric-100">{event.title}</CardTitle>
-                {event.description && <p className="text-muted-foreground text-sm mb-4">{event.description}</p>}
-                <p className="text-muted-foreground text-sm flex items-center gap-1">
-                  <Calendar className="h-4 w-4" /> {formatDate(event.date)}
-                </p>
-                {event.time && (
-                  <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
-                    <span className="sr-only">Time:</span> {event.time}
-                  </p>
+                <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                  <Calendar className="h-4 w-4" />
+                  <span>{format(new Date(event.date), "PPPp")}</span>
+                </div>
+                <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                  <MapPin className="h-4 w-4" />
+                  <span>{event.location}</span>
+                </div>
+                {event.description && (
+                  <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{event.description}</p>
                 )}
-                <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
-                  <MapPin className="h-4 w-4" /> {event.location}
-                </p>
-              </CardContent>
-              <CardFooter className="p-4 pt-0">
                 {event.capacity && event.registered && (
                   <div className="space-y-1 mb-4">
                     <div className="flex items-center justify-between text-xs">
@@ -310,20 +322,27 @@ export function UpcomingEvents() {
                     </Button>
                   </div>
                 )}
-                <Button className="w-full bg-gradient-electric hover:animate-electric-pulse" asChild>
-                  <Link href={`/events/${event.id}`}>View Details</Link>
-                </Button>
+                {event.ticketPrice && (
+                  <p className="text-xl font-bold mt-2 text-kelvin-foreground">${event.ticketPrice.toFixed(2)}</p>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Link href={`/events/${event.id}`} className="w-full">
+                  <Button className="w-full bg-kelvin-primary text-kelvin-primary-foreground hover:bg-kelvin-primary/90">
+                    View Details
+                  </Button>
+                </Link>
               </CardFooter>
             </Card>
           ))}
         </div>
-        <Button
-          variant="outline"
-          className="mt-12 bg-electric-900/30 border-electric-700 text-electric-200 hover:bg-electric-800/50"
-          asChild
-        >
-          <Link href="/events">View All Events</Link>
-        </Button>
+        <div className="flex justify-center mt-8">
+          <Link href="/events">
+            <Button size="lg" className="bg-kelvin-primary text-kelvin-primary-foreground hover:bg-kelvin-primary/90">
+              View All Events
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   )

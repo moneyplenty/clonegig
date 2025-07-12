@@ -7,23 +7,24 @@ import { cn } from "@/lib/utils"
 
 const Collapsible = CollapsiblePrimitive.Root
 
-const CollapsibleTrigger = CollapsiblePrimitive.Trigger
+const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
 
 const CollapsibleContent = React.forwardRef<
-  React.ElementRef<typeof CollapsiblePrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Content>
+  React.ElementRef<typeof CollapsiblePrimitive.CollapsibleContent>,
+  React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.CollapsibleContent>
 >(({ className, children, ...props }, ref) => (
-  <CollapsiblePrimitive.Content
+  <CollapsiblePrimitive.CollapsibleContent
     ref={ref}
     className={cn(
-      "overflow-hidden text-sm data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down",
+      "overflow-hidden text-sm transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down",
       className,
     )}
     {...props}
   >
-    <div className="flex flex-col space-y-2">{children}</div>
-  </CollapsiblePrimitive.Content>
+    {children}
+  </CollapsiblePrimitive.CollapsibleContent>
 ))
-CollapsibleContent.displayName = CollapsiblePrimitive.Content.displayName
+
+CollapsibleContent.displayName = CollapsiblePrimitive.CollapsibleContent.displayName
 
 export { Collapsible, CollapsibleTrigger, CollapsibleContent }

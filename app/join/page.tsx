@@ -4,24 +4,29 @@ import Link from "next/link"
 
 export default function JoinPage() {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-bold mb-8 text-center">Join the Fan Club</h1>
-      <MembershipTiers />
-
-      {/* Ready to Join section */}
-      <section className="mt-24 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-frost-400 to-electric-400 bg-clip-text text-transparent">
-            Ready to Join?
-          </span>
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
-          Choose your tier and start your journey with the Ice Legion today.
-        </p>
-        <Button asChild size="lg" className="bg-gradient-electric hover:animate-electric-pulse">
-          <Link href="/signup">Sign Up Now</Link>
-        </Button>
-      </section>
+    <div className="flex flex-col min-h-[100dvh]">
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-purple-700 to-indigo-700 text-white text-center">
+          <div className="container px-4 md:px-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-4">
+              Become a Part of the Inner Circle
+            </h1>
+            <p className="text-lg md:text-xl lg:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+              Unlock exclusive access, connect with Kelvin, and get the ultimate fan experience by choosing your
+              membership tier.
+            </p>
+            <Link href="/signup">
+              <Button
+                size="lg"
+                className="bg-white text-purple-700 hover:bg-gray-100 hover:text-purple-800 text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Get Started
+              </Button>
+            </Link>
+          </div>
+        </section>
+        <MembershipTiers />
+      </main>
     </div>
   )
 }

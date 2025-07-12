@@ -10,11 +10,23 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'misc.daily.co',
+        hostname: 'cdn.shopify.com',
       },
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'v0.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'blob.v0.dev',
       },
     ],
     unoptimized: true,

@@ -1,17 +1,17 @@
-import Image from "next/image"
-import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Calendar, MapPin, DollarSign } from "lucide-react"
+import { format } from "date-fns"
+import Link from "next/link"
 
 interface Event {
-  id: number
+  id: string
   title: string
+  description: string
   date: string
   location: string
-  image: string
-  isPremium: boolean
+  price: number
+  isMeetGreet: boolean
 }
 
 interface EventsGridProps {
@@ -20,39 +20,39 @@ interface EventsGridProps {
 
 export function EventsGrid({ events }: EventsGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-      {events.map((event) => (
-        <Card key={event.id} className="flex flex-col">
-          <CardHeader className="p-0">
-            <div className="relative w-full h-48">
-              <Image
-                src={event.image || "/placeholder.svg"}
-                alt={event.title}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-t-lg"
-              />
-              {event.isPremium && (
-                <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">Premium</Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="flex-grow p-4">
-            <CardTitle className="text-lg font-semibold mb-2">{event.title}</CardTitle>
-            <p className="text-muted-foreground text-sm flex items-center gap-1">
-              <Calendar className="h-4 w-4" /> {event.date}
-            </p>
-            <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
-              <MapPin className="h-4 w-4" /> {event.location}
-            </p>
-          </CardContent>
-          <CardFooter className="p-4 pt-0">
-            <Button className="w-full" asChild>
-              <Link href={`/events/${event.id}`}>View Details</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {events.length === 0 ? (
+        <p className="col-span-full text-center text-gray-500">No events found matching your criteria.</p>
+      ) : (
+        events.map((event) => (
+          <Card key={event.id} className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-xl">{event.title}</CardTitle>
+              <CardDescription>{event.isMeetGreet ? "Meet & Greet" : "Concert"}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-2">
+              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                <Calendar className="h-4 w-4" />
+                <span>{format(new Date(event.date), "PPPp")}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                <MapPin className="h-4 w-4" />
+                <span>{event.location}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
+                <DollarSign className="h-4 w-4" />
+                <span>{event.price === 0 ? "Free" : `$${event.price.toFixed(2)}`}</span>
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{event.description}</p>
+            </CardContent>
+            <CardFooter>
+              <Link href={`/events/${event.id}`} className="w-full">
+                <Button className="w-full">View Details</Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        ))
+      )}
     </div>
   )
 }

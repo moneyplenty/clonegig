@@ -4,14 +4,12 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { type VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
-import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -131,66 +129,48 @@ const SidebarProvider = React.forwardRef<
 })
 SidebarProvider.displayName = "SidebarProvider"
 
-const Sidebar = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    variant?: "sidebar" | "floating" | "inset"
-    collapsible?: "offcanvas" | "icon" | "none"
-  }
->(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
+const sidebarVariants = cva("flex h-full flex-col overflow-hidden border-r bg-background", {
+  variants: {
+    size: {
+      default: "w-64",
+      sm: "w-48",
+      lg: "w-80",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+})
+
+export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof sidebarVariants> {
+  asChild?: boolean
+}
+
+const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(({ className, size, ...props }, ref) => {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
-  if (collapsible === "none") {
-    return (
-      <div
-        className={cn("flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground", className)}
-        ref={ref}
-        {...props}
-      >
-        {children}
-      </div>
-    )
-  }
-
-  if (isMobile) {
-    return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
-          data-sidebar="sidebar"
-          data-mobile="true"
-          className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          side={side}
-        >
-          <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return (
-    <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel
-        defaultSize={20}
-        minSize={15}
-        maxSize={25}
-        className={cn(
-          "hidden md:flex flex-col border-r border-electric-700/30 bg-background/50 backdrop-blur-lg",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  )
+  return <div ref={ref} className={cn(sidebarVariants({ size, className }))} {...props} />
 })
 Sidebar.displayName = "Sidebar"
+
+const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex items-center justify-between p-4", className)} {...props} />
+  ),
+)
+SidebarHeader.displayName = "SidebarHeader"
+
+const SidebarContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => <div ref={ref} className={cn("flex-1 p-4", className)} {...props} />,
+)
+SidebarContent.displayName = "SidebarContent"
+
+const SidebarFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("flex items-center justify-between p-4 border-t", className)} {...props} />
+  ),
+)
+SidebarFooter.displayName = "SidebarFooter"
 
 const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentProps<typeof Button>>(
   ({ className, onClick, ...props }, ref) => {
@@ -277,16 +257,6 @@ const SidebarInput = React.forwardRef<React.ElementRef<typeof Input>, React.Comp
 )
 SidebarInput.displayName = "SidebarInput"
 
-const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
-  return <div ref={ref} data-sidebar="header" className={cn("flex flex-col gap-2 p-2", className)} {...props} />
-})
-SidebarHeader.displayName = "SidebarHeader"
-
-const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
-  return <div ref={ref} data-sidebar="footer" className={cn("flex flex-col gap-2 p-2", className)} {...props} />
-})
-SidebarFooter.displayName = "SidebarFooter"
-
 const SidebarSeparator = React.forwardRef<React.ElementRef<typeof Separator>, React.ComponentProps<typeof Separator>>(
   ({ className, ...props }, ref) => {
     return (
@@ -300,21 +270,6 @@ const SidebarSeparator = React.forwardRef<React.ElementRef<typeof Separator>, Re
   },
 )
 SidebarSeparator.displayName = "SidebarSeparator"
-
-const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      data-sidebar="content"
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-        className,
-      )}
-      {...props}
-    />
-  )
-})
-SidebarContent.displayName = "SidebarContent"
 
 const SidebarGroup = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
   return (
