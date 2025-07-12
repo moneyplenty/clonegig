@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Calendar, Clock, MapPin, Users, Star, Zap, Crown, Music, Video } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { Calendar, MapPin, Users, Clock, Star, Crown, Zap, Ticket } from "lucide-react"
 
 interface Event {
   id: string
@@ -14,289 +15,340 @@ interface Event {
   description: string
   date: string
   time: string
-  venue: string
   location: string
-  category: "concert" | "meetgreet" | "exclusive"
-  tierRequired: "frost" | "blizzard" | "avalanche" | null
+  type: "concert" | "meetgreet" | "virtual" | "vip"
+  tierRequired: "public" | "frost" | "blizzard" | "avalanche"
   price: number
   memberPrice: number
-  availableSpots: number
-  totalSpots: number
+  capacity: number
+  registered: number
   image: string
   featured: boolean
 }
 
-export function EventsGrid() {
-  // Mock events data
-  const [events] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Electric Storm Tour - Chicago",
-      description: "Experience Kelvin's electrifying performance with full band and special effects.",
-      date: "2024-02-15",
-      time: "8:00 PM",
-      venue: "Chicago Theatre",
-      location: "Chicago, IL",
-      category: "concert",
-      tierRequired: null,
-      price: 85,
-      memberPrice: 68,
-      availableSpots: 45,
-      totalSpots: 200,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: true,
-    },
-    {
-      id: "2",
-      title: "Intimate Acoustic Session",
-      description: "A rare acoustic performance in an intimate setting with Q&A session.",
-      date: "2024-02-22",
-      time: "7:30 PM",
-      venue: "Blue Note",
-      location: "New York, NY",
-      category: "exclusive",
-      tierRequired: "blizzard",
-      price: 150,
-      memberPrice: 120,
-      availableSpots: 8,
-      totalSpots: 50,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: false,
-    },
-    {
-      id: "3",
-      title: "Virtual Meet & Greet",
-      description: "Personal video call session with Kelvin - ask questions and get autographs!",
-      date: "2024-02-28",
-      time: "6:00 PM",
-      venue: "Online",
-      location: "Virtual Event",
-      category: "meetgreet",
-      tierRequired: "frost",
-      price: 45,
-      memberPrice: 35,
-      availableSpots: 12,
-      totalSpots: 20,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: false,
-    },
-    {
-      id: "4",
-      title: "Avalanche VIP Experience",
-      description: "Exclusive backstage access, private performance, and dinner with Kelvin.",
-      date: "2024-03-05",
-      time: "5:00 PM",
-      venue: "Private Venue",
-      location: "Los Angeles, CA",
-      category: "exclusive",
-      tierRequired: "avalanche",
-      price: 500,
-      memberPrice: 350,
-      availableSpots: 2,
-      totalSpots: 10,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: true,
-    },
-    {
-      id: "5",
-      title: "Ice & Fire Festival",
-      description: "Kelvin headlines this epic outdoor festival with multiple artists.",
-      date: "2024-03-12",
-      time: "4:00 PM",
-      venue: "Grant Park",
-      location: "Chicago, IL",
-      category: "concert",
-      tierRequired: null,
-      price: 95,
-      memberPrice: 76,
-      availableSpots: 156,
-      totalSpots: 500,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: false,
-    },
-    {
-      id: "6",
-      title: "Songwriting Workshop",
-      description: "Learn Kelvin's creative process and write a song together in this interactive session.",
-      date: "2024-03-18",
-      time: "2:00 PM",
-      venue: "Music Academy",
-      location: "Nashville, TN",
-      category: "exclusive",
-      tierRequired: "blizzard",
-      price: 200,
-      memberPrice: 160,
-      availableSpots: 5,
-      totalSpots: 15,
-      image: "/placeholder.svg?height=300&width=400",
-      featured: false,
-    },
-  ])
+const mockEvents: Event[] = [
+  {
+    id: "1",
+    title: "Electric Storm Tour - NYC",
+    description: "Experience Kelvin's most electrifying performance yet in the heart of New York City",
+    date: "2024-02-15",
+    time: "8:00 PM",
+    location: "Madison Square Garden, New York",
+    type: "concert",
+    tierRequired: "public",
+    price: 75,
+    memberPrice: 60,
+    capacity: 20000,
+    registered: 18500,
+    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+    featured: true,
+  },
+  {
+    id: "2",
+    title: "Intimate Meet & Greet",
+    description: "Personal conversation with Kelvin in a small group setting",
+    date: "2024-02-10",
+    time: "3:00 PM",
+    location: "Private Studio, Los Angeles",
+    type: "meetgreet",
+    tierRequired: "blizzard",
+    price: 200,
+    memberPrice: 160,
+    capacity: 15,
+    registered: 12,
+    image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&h=600&fit=crop",
+    featured: false,
+  },
+  {
+    id: "3",
+    title: "Virtual Acoustic Session",
+    description: "Exclusive acoustic performance streamed live to fan club members",
+    date: "2024-02-08",
+    time: "7:00 PM",
+    location: "Virtual Event",
+    type: "virtual",
+    tierRequired: "frost",
+    price: 25,
+    memberPrice: 20,
+    capacity: 1000,
+    registered: 750,
+    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+    featured: false,
+  },
+  {
+    id: "4",
+    title: "VIP Backstage Experience",
+    description: "Ultimate fan experience with backstage access and exclusive merchandise",
+    date: "2024-02-20",
+    time: "6:00 PM",
+    location: "The Forum, Los Angeles",
+    type: "vip",
+    tierRequired: "avalanche",
+    price: 500,
+    memberPrice: 350,
+    capacity: 50,
+    registered: 45,
+    image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=800&h=600&fit=crop",
+    featured: true,
+  },
+  {
+    id: "5",
+    title: "Chicago Rock Festival",
+    description: "Kelvin headlines the biggest rock festival in the Midwest",
+    date: "2024-03-01",
+    time: "9:00 PM",
+    location: "Grant Park, Chicago",
+    type: "concert",
+    tierRequired: "public",
+    price: 85,
+    memberPrice: 68,
+    capacity: 50000,
+    registered: 42000,
+    image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+    featured: false,
+  },
+  {
+    id: "6",
+    title: "Songwriting Workshop",
+    description: "Learn songwriting techniques directly from Kelvin in this interactive session",
+    date: "2024-02-25",
+    time: "2:00 PM",
+    location: "Virtual Event",
+    type: "virtual",
+    tierRequired: "blizzard",
+    price: 100,
+    memberPrice: 80,
+    capacity: 100,
+    registered: 85,
+    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+    featured: false,
+  },
+]
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
+export function EventsGrid() {
+  const [events] = useState<Event[]>(mockEvents)
+
+  const getEventTypeIcon = (type: string) => {
+    switch (type) {
       case "concert":
-        return <Music className="h-4 w-4" />
+        return <Calendar className="h-4 w-4" />
       case "meetgreet":
-        return <Video className="h-4 w-4" />
-      case "exclusive":
+        return <Users className="h-4 w-4" />
+      case "virtual":
+        return <MapPin className="h-4 w-4" />
+      case "vip":
         return <Star className="h-4 w-4" />
       default:
         return <Calendar className="h-4 w-4" />
     }
   }
 
-  const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case "concert":
-        return "Concert"
-      case "meetgreet":
-        return "Meet & Greet"
-      case "exclusive":
-        return "VIP Event"
+  const getTierBadge = (tier: string) => {
+    switch (tier) {
+      case "public":
+        return <Badge variant="outline">Public</Badge>
+      case "frost":
+        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">Frost+</Badge>
+      case "blizzard":
+        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">Blizzard+</Badge>
+      case "avalanche":
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">Avalanche</Badge>
       default:
-        return "Event"
+        return <Badge variant="outline">Public</Badge>
     }
   }
 
-  const getTierBadge = (tier: string | null) => {
-    if (!tier) return null
-
+  const getTierIcon = (tier: string) => {
     switch (tier) {
       case "frost":
-        return (
-          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">
-            <Star className="h-3 w-3 mr-1" />
-            Frost Fan
-          </Badge>
-        )
+        return <Star className="h-3 w-3" />
       case "blizzard":
-        return (
-          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
-            <Zap className="h-3 w-3 mr-1" />
-            Blizzard VIP
-          </Badge>
-        )
+        return <Zap className="h-3 w-3" />
       case "avalanche":
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
-            <Crown className="h-3 w-3 mr-1" />
-            Avalanche Elite
-          </Badge>
-        )
+        return <Crown className="h-3 w-3" />
       default:
         return null
     }
   }
 
-  const getAvailabilityColor = (available: number, total: number) => {
-    const percentage = (available / total) * 100
-    if (percentage > 50) return "text-green-400"
-    if (percentage > 20) return "text-yellow-400"
-    return "text-red-400"
+  const getAvailabilityColor = (registered: number, capacity: number) => {
+    const percentage = (registered / capacity) * 100
+    if (percentage >= 90) return "text-red-500"
+    if (percentage >= 70) return "text-yellow-500"
+    return "text-green-500"
   }
 
-  const getProgressColor = (available: number, total: number) => {
-    const percentage = (available / total) * 100
-    if (percentage > 50) return "bg-green-500"
-    if (percentage > 20) return "bg-yellow-500"
-    return "bg-red-500"
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    })
   }
+
+  // Sort events: featured first, then by date
+  const sortedEvents = [...events].sort((a, b) => {
+    if (a.featured && !b.featured) return -1
+    if (!a.featured && b.featured) return 1
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
+  })
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {events.map((event) => {
-        const availabilityPercentage = (event.availableSpots / event.totalSpots) * 100
-        const soldPercentage = 100 - availabilityPercentage
+    <div className="space-y-8">
+      {/* Featured Events */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-electric-400">Featured Events</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {sortedEvents
+            .filter((event) => event.featured)
+            .map((event) => (
+              <Card
+                key={event.id}
+                className="overflow-hidden border-electric-700/30 bg-background/50 backdrop-blur-lg hover:border-electric-500/50 transition-all group"
+              >
+                <div className="relative">
+                  <Image
+                    src={event.image || "/placeholder.svg"}
+                    alt={event.title}
+                    width={800}
+                    height={400}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <Badge className="bg-fire-500/90 dark:bg-electric-500/90 text-white">Featured</Badge>
+                    {getTierBadge(event.tierRequired)}
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <Badge variant="outline" className="bg-black/50 text-white border-white/20">
+                      {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="text-xl">{event.title}</span>
+                    <div className="flex items-center gap-1 text-electric-400">
+                      {getTierIcon(event.tierRequired)}
+                      {getEventTypeIcon(event.type)}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-muted-foreground">{event.description}</p>
 
-        return (
-          <Card
-            key={event.id}
-            className={`border-electric-700/30 bg-background/50 backdrop-blur-lg hover:border-electric-500/50 transition-all duration-300 ${
-              event.featured ? "ring-2 ring-electric-500/30" : ""
-            }`}
-          >
-            <CardHeader className="p-0">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-electric-400" />
+                      <span>{formatDate(event.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-electric-400" />
+                      <span>{event.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2 col-span-2">
+                      <MapPin className="h-4 w-4 text-electric-400" />
+                      <span>{event.location}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Availability</span>
+                      <span className={getAvailabilityColor(event.registered, event.capacity)}>
+                        {event.capacity - event.registered} spots left
+                      </span>
+                    </div>
+                    <Progress value={(event.registered / event.capacity) * 100} className="h-2" />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="text-lg font-bold text-electric-400">${event.memberPrice}</div>
+                      {event.price !== event.memberPrice && (
+                        <div className="text-sm text-muted-foreground line-through">${event.price}</div>
+                      )}
+                    </div>
+                    <Button asChild className="bg-gradient-electric hover:animate-electric-pulse">
+                      <Link href={`/events/${event.id}`}>
+                        <Ticket className="h-4 w-4 mr-2" />
+                        Book Now
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+      </div>
+
+      {/* All Events */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-electric-400">All Events</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedEvents.map((event) => (
+            <Card
+              key={event.id}
+              className="overflow-hidden border-electric-700/30 bg-background/50 backdrop-blur-lg hover:border-electric-500/50 transition-all group"
+            >
               <div className="relative">
-                <img
+                <Image
                   src={event.image || "/placeholder.svg"}
                   alt={event.title}
-                  className="w-full h-48 object-cover rounded-t-lg"
+                  width={400}
+                  height={250}
+                  className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-3 left-3 flex gap-2">
-                  <Badge className="bg-electric-500/90 text-white">
-                    {getCategoryIcon(event.category)}
-                    <span className="ml-1">{getCategoryLabel(event.category)}</span>
-                  </Badge>
-                  {event.featured && <Badge className="bg-gradient-electric text-white">Featured</Badge>}
-                </div>
-                <div className="absolute top-3 right-3">{getTierBadge(event.tierRequired)}</div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <h3 className="text-xl font-bold text-electric-400 mb-2">{event.title}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>{new Date(event.date).toLocaleDateString()}</span>
-                  <Clock className="h-4 w-4 ml-2" />
-                  <span>{event.time}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>
-                    {event.venue}, {event.location}
-                  </span>
+                <div className="absolute top-2 left-2 flex gap-1">
+                  {event.featured && (
+                    <Badge className="bg-fire-500/90 dark:bg-electric-500/90 text-white text-xs">Featured</Badge>
+                  )}
+                  {getTierBadge(event.tierRequired)}
                 </div>
               </div>
-
-              {/* Availability */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg leading-tight">{event.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span className={getAvailabilityColor(event.availableSpots, event.totalSpots)}>
-                      {event.availableSpots} spots available
+                    <Calendar className="h-3 w-3 text-electric-400" />
+                    <span>
+                      {formatDate(event.date)} at {event.time}
                     </span>
                   </div>
-                  <span className="text-muted-foreground">
-                    {event.totalSpots - event.availableSpots}/{event.totalSpots} sold
-                  </span>
-                </div>
-                <Progress value={soldPercentage} className="h-2" />
-              </div>
-
-              {/* Pricing */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-lg font-bold text-electric-400">${event.memberPrice}</div>
-                  <div className="text-sm text-muted-foreground">
-                    <span className="line-through">${event.price}</span>
-                    <span className="ml-1">member price</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-electric-400" />
+                    <span className="truncate">{event.location}</span>
                   </div>
                 </div>
-                <div className="text-right text-sm text-muted-foreground">Save ${event.price - event.memberPrice}</div>
-              </div>
-            </CardContent>
 
-            <CardFooter className="p-6 pt-0">
-              <Link href={`/events/${event.id}`} className="w-full">
-                <Button
-                  className="w-full bg-gradient-electric hover:animate-electric-pulse"
-                  disabled={event.availableSpots === 0}
-                >
-                  {event.availableSpots === 0 ? "Sold Out" : "View Details"}
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        )
-      })}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span>Availability</span>
+                    <span className={getAvailabilityColor(event.registered, event.capacity)}>
+                      {event.capacity - event.registered} left
+                    </span>
+                  </div>
+                  <Progress value={(event.registered / event.capacity) * 100} className="h-1" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-electric-400">${event.memberPrice}</div>
+                    {event.price !== event.memberPrice && (
+                      <div className="text-xs text-muted-foreground line-through">${event.price}</div>
+                    )}
+                  </div>
+                  <Button asChild size="sm" className="bg-gradient-electric">
+                    <Link href={`/events/${event.id}`}>Book</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
