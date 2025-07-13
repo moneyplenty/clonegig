@@ -138,8 +138,6 @@ function useToast() {
   }
 }
 
-const toast = {
-  // Placeholder for the toast variable
-}
+import { toast } from "@/hooks/use-toast"
 
 export { useToast, toast }
