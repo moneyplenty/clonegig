@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import DailyIframe from "@daily-co/daily-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
 
 interface DailyVideoCallProps {
