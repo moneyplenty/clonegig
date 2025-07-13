@@ -1,71 +1,79 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-
 import type React from "react"
 
 import { useAuth } from "@/components/auth/auth-provider"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Shield, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShieldOff } from "lucide-react"
 
 interface AdminProtectionProps {
   children: React.ReactNode
-  requiredRole: "admin" | "fan" | "premium" | "guest"
+  requiredRole?: "admin" | "user"
 }
 
-export function AdminProtection({ children, requiredRole }: AdminProtectionProps) {
-  const { user, loading } = useAuth()
+export function AdminProtection({ children, requiredRole = "admin" }: AdminProtectionProps) {
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // Not logged in, redirect to login
-        router.push("/login")
-      } else if (user.user_metadata?.role !== requiredRole) {
-        // Logged in but doesn't have the required role
-        // You might want to show an access denied message or redirect to a different page
-        console.warn(
-          `Access Denied: User role '${user.user_metadata?.role}' does not meet required role '${requiredRole}'.`,
-        )
-        // Optionally redirect to a general dashboard or home page
-        // router.push("/dashboard");
-      }
+    if (!loading && !user) {
+      router.push("/login?redirectTo=" + encodeURIComponent(window.location.pathname))
     }
-  }, [user, loading, router, requiredRole])
+  }, [user, loading, router])
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4">
-        <Card className="w-full max-w-md">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kelvin-primary"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto py-8 px-4 md:px-6">
+        <Card className="max-w-md mx-auto">
           <CardHeader className="text-center">
-            <CardTitle>Loading User Data...</CardTitle>
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <CardTitle>Authentication Required</CardTitle>
+            <CardDescription>You need to be logged in to access this page.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+            <Button asChild className="w-full">
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button variant="outline" asChild className="w-full bg-transparent">
+              <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go Home
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  if (!user || user.user_metadata?.role !== requiredRole) {
-    // Render access denied message if not loading and user doesn't have access
+  if (requiredRole === "admin" && profile?.role !== "admin") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <ShieldOff className="mx-auto h-12 w-12 text-destructive mb-4" />
+      <div className="container mx-auto py-8 px-4 md:px-6">
+        <Card className="max-w-md mx-auto">
+          <CardHeader className="text-center">
+            <Shield className="h-12 w-12 mx-auto text-destructive mb-4" />
             <CardTitle>Access Denied</CardTitle>
-            <p className="text-muted-foreground">You do not have the necessary permissions to view this page.</p>
+            <CardDescription>You don't have permission to access this admin area.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
+          <CardContent className="space-y-4">
+            <Button variant="outline" asChild className="w-full bg-transparent">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go to Dashboard
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

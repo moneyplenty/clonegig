@@ -8,122 +8,135 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2 } from "lucide-react"
+import Link from "next/link"
 
 export function SignupForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [role, setRole] = useState("guest") // Default role
+  const [fullName, setFullName] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
 
-    if (password !== confirmPassword) {
-      toast({
-        title: "Signup Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      })
-      setLoading(false)
-      return
-    }
+    const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: role, // Set the user's role
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    })
+      })
 
-    if (error) {
-      toast({
-        title: "Signup Error",
-        description: error.message,
-        variant: "destructive",
-      })
-    } else {
-      toast({
-        title: "Signup Successful",
-        description: "Please check your email to confirm your account.",
-        variant: "default",
-      })
-      router.push("/login")
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess(true)
+      }
+    } catch (error) {
+      setError("An unexpected error occurred")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
+  }
+
+  if (success) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+          <CardDescription className="text-center">
+            We've sent you a confirmation link to complete your registration.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => router.push("/login")} className="w-full">
+            Go to Sign In
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSignup}>
-      <div>
-        <Label htmlFor="email">Email address</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-        />
-      </div>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl text-center">Create Account</CardTitle>
+        <CardDescription className="text-center">Join the Kelvin Creekman fan community</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      <div>
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Enter your full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
 
-      <div>
-        <Label htmlFor="confirm-password">Confirm Password</Label>
-        <Input
-          id="confirm-password"
-          name="confirm-password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="••••••••"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
 
-      <div>
-        <Label htmlFor="role">Account Type</Label>
-        <Select value={role} onValueChange={setRole}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="guest">Guest (Free)</SelectItem>
-            <SelectItem value="fan">Fan (Basic Membership)</SelectItem>
-            <SelectItem value="premium">Premium (Full Access)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              minLength={6}
+            />
+          </div>
 
-      <div>
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing Up..." : "Sign Up"}
-        </Button>
-      </div>
-    </form>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Account
+          </Button>
+        </form>
+
+        <div className="mt-4 text-center text-sm">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
