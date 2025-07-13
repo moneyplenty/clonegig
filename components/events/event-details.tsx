@@ -1,16 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Calendar, MapPin, DollarSign } from "lucide-react"
-import { format } from "date-fns"
-
-interface Event {
-  id: string
-  title: string
-  description: string
-  date: string
-  location: string
-  price: number
-  isMeetGreet: boolean
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Icons } from "@/components/icons"
+import type { Event } from "@/types"
 
 interface EventDetailsProps {
   event: Event
@@ -18,25 +8,51 @@ interface EventDetailsProps {
 
 export function EventDetails({ event }: EventDetailsProps) {
   return (
-    <Card>
+    <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
       <CardHeader>
-        <CardTitle className="text-3xl">{event.title}</CardTitle>
-        <CardDescription>{event.isMeetGreet ? "Exclusive Meet & Greet Session" : "Concert Event"}</CardDescription>
+        <CardTitle className="text-3xl md:text-4xl font-bold">{event.title}</CardTitle>
+        <CardDescription className="text-kelvin-card-foreground/80">
+          <div className="flex items-center gap-2 mt-2">
+            <Icons.calendar className="w-5 h-5 text-electric-400" />
+            <span>
+              {new Date(event.date).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Icons.clock className="w-5 h-5 text-frost-400" />
+            <span>
+              {new Date(event.date).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZoneName: "short",
+              })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Icons.mapPin className="w-5 h-5 text-purple-400" />
+            <span>{event.location}</span>
+          </div>
+          {event.price > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              <Icons.dollarSign className="w-5 h-5 text-green-500" />
+              <span>${event.price.toFixed(2)}</span>
+            </div>
+          )}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <Calendar className="h-5 w-5" />
-          <span>{format(new Date(event.date), "PPPp")}</span>
-        </div>
-        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <MapPin className="h-5 w-5" />
-          <span>{event.location}</span>
-        </div>
-        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-          <DollarSign className="h-5 w-5" />
-          <span>{event.price === 0 ? "Free" : `$${event.price.toFixed(2)}`}</span>
-        </div>
-        <p className="text-lg leading-relaxed">{event.description}</p>
+      <CardContent>
+        <p className="text-kelvin-card-foreground/90 leading-relaxed">{event.description}</p>
+        {event.isMeetGreet && (
+          <div className="mt-4 flex items-center gap-2 text-electric-400 font-semibold">
+            <Icons.video className="w-5 h-5" />
+            This is a virtual Meet & Greet session!
+          </div>
+        )}
       </CardContent>
     </Card>
   )

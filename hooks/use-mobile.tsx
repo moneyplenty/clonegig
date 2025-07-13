@@ -1,20 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
 
-export function useMobile() {
-  const [isMobile, setIsMobile] = useState(false)
+export function useMediaQuery(query: string) {
+  const [value, setValue] = React.useState(false)
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768) // Adjust breakpoint as needed
+  React.useEffect(() => {
+    function onChange(event: MediaQueryListEvent) {
+      setValue(event.matches)
     }
 
-    handleResize() // Set initial value
-    window.addEventListener("resize", handleResize)
+    const result = matchMedia(query)
+    result.addEventListener("change", onChange)
+    setValue(result.matches)
 
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    return () => result.removeEventListener("change", onChange)
+  }, [query])
 
-  return isMobile
+  return value
 }

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { OTPInput, Slot, type OTPInputProps } from "input-otp"
-import { Minus } from "lucide-react"
+import { Dot } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -43,7 +43,7 @@ InputOTPSlot.displayName = "InputOTPSlot"
 const InputOTPSeparator = React.forwardRef<React.ElementRef<"div">, React.HTMLAttributes<HTMLDivElement>>(
   ({ ...props }, ref) => (
     <div ref={ref} role="separator" {...props}>
-      <Minus />
+      <Dot />
     </div>
   ),
 )

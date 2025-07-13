@@ -1,20 +1,11 @@
-import { AdminProtection } from "@/components/admin/admin-protection"
 import { AdminDashboard } from "@/components/admin/admin-dashboard"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { AdminProtection } from "@/components/admin/admin-protection"
 
-export default async function AdminPage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+export default function AdminPage() {
   return (
-    <AdminProtection user={user}>
-      <div className="container mx-auto py-8 px-4">
-        <h1 className="text-4xl font-bold text-center mb-8">Admin Dashboard</h1>
+    <AdminProtection requiredRole="admin">
+      <div className="container mx-auto py-8 px-4 min-h-[100dvh] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <h1 className="text-4xl font-bold mb-8 text-white">Admin Dashboard</h1>
         <AdminDashboard />
       </div>
     </AdminProtection>

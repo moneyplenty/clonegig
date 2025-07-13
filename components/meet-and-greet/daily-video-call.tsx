@@ -2,68 +2,31 @@
 
 import { useEffect, useRef, useState } from "react"
 import DailyIframe from "@daily-co/daily-js"
-import { DailyProvider, useDaily, useRoom } from "@daily-co/daily-react-hooks"
+import type { DailyCall } from "@daily-co/daily-react-hooks"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Icons } from "@/components/icons"
 import { toast } from "sonner"
 
 interface DailyVideoCallProps {
-  roomName?: string
-  userName?: string
+  roomUrl: string
 }
 
-export function DailyVideoCall({ roomName: initialRoomName, userName: initialUserName }: DailyVideoCallProps) {
-  const callFrameRef = useRef<HTMLDivElement>(null)
-  const daily = useDaily()
-  const room = useRoom()
-  const [roomUrl, setRoomUrl] = useState<string | null>(null)
-  const [inputRoomName, setInputRoomName] = useState(initialRoomName || "")
-  const [inputUserName, setInputUserName] = useState(initialUserName || "")
-  const [isJoining, setIsJoining] = useState(false)
+export function DailyVideoCall({ roomUrl }: DailyVideoCallProps) {
+  const callFrame = useRef<DailyCall | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (initialRoomName) {
-      setInputRoomName(initialRoomName)
+    if (!roomUrl) {
+      setError("No Daily.co room URL provided.")
+      setIsLoading(false)
+      return
     }
-    if (initialUserName) {
-      setInputUserName(initialUserName)
-    }
-  }, [initialRoomName, initialUserName])
 
-  const createAndJoinRoom = async () => {
-    setIsJoining(true)
-    try {
-      const response = await fetch("/api/create-daily-room", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ roomName: inputRoomName || `kelvin-meet-greet-${Date.now()}` }),
-      })
-
-      const { roomUrl: newRoomUrl, error } = await response.json()
-
-      if (error) {
-        toast.error(`Failed to create room: ${error.message}`)
-        setIsJoining(false)
-        return
-      }
-
-      setRoomUrl(newRoomUrl)
-      joinCall(newRoomUrl)
-    } catch (error: any) {
-      console.error("Error creating and joining room:", error)
-      toast.error("An unexpected error occurred while creating the room.")
-      setIsJoining(false)
-    }
-  }
-
-  const joinCall = (url: string) => {
-    if (callFrameRef.current) {
-      const callFrame = DailyIframe.createFrame(callFrameRef.current, {
-        url: url,
+    if (!callFrame.current) {
+      callFrame.current = DailyIframe.createFrame({
+        url: roomUrl,
         showLeaveButton: true,
         iframeStyle: {
           position: "absolute",
@@ -75,86 +38,75 @@ export function DailyVideoCall({ roomName: initialRoomName, userName: initialUse
         },
       })
 
-      callFrame.join({ userName: inputUserName || "Fan" })
+      callFrame.current.join()
 
-      callFrame.on("left-meeting", () => {
-        callFrame.destroy()
-        setRoomUrl(null)
-        setIsJoining(false)
+      callFrame.current.on("loaded", () => {
+        setIsLoading(false)
+      })
+
+      callFrame.current.on("error", (e) => {
+        console.error("Daily.co error:", e)
+        setError("Failed to load video call. Please try again.")
+        setIsLoading(false)
+        toast.error("Video call error: " + e.errorMsg)
+      })
+
+      callFrame.current.on("left-meeting", () => {
         toast.info("You have left the meeting.")
+        // Optionally redirect or show a post-meeting message
       })
     }
-  }
 
-  const handleJoinExisting = () => {
-    if (inputRoomName && process.env.NEXT_PUBLIC_DAILY_DOMAIN) {
-      const fullRoomUrl = `https://${process.env.NEXT_PUBLIC_DAILY_DOMAIN}.daily.co/${inputRoomName}`
-      setRoomUrl(fullRoomUrl)
-      joinCall(fullRoomUrl)
-    } else {
-      toast.error("Please enter a room name and ensure Daily.co domain is configured.")
+    return () => {
+      if (callFrame.current) {
+        callFrame.current.destroy()
+        callFrame.current = null
+      }
     }
-  }
+  }, [roomUrl])
 
-  const handleLeaveCall = () => {
-    if (daily) {
-      daily.leave()
-    }
+  if (error) {
+    return (
+      <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-destructive-foreground">
+            <Icons.alertTriangle className="inline-block h-6 w-6 mr-2" />
+            Video Call Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-kelvin-card-foreground/80">{error}</p>
+          <Button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-electric-500 hover:bg-electric-600 text-white"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <Card>
+    <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
       <CardHeader>
-        <CardTitle>Live Video Call</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          <Icons.video className="inline-block h-6 w-6 mr-2" />
+          Live Meet & Greet
+        </CardTitle>
+        <CardDescription className="text-kelvin-card-foreground/80">
+          {isLoading ? "Loading video call..." : "You are now connected to the session."}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {!roomUrl ? (
-          <>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Join an existing Meet & Greet session or create a new one.
-            </p>
-            <div>
-              <Label htmlFor="room-name">Room Name</Label>
-              <Input
-                id="room-name"
-                value={inputRoomName}
-                onChange={(e) => setInputRoomName(e.target.value)}
-                placeholder="e.g., kelvin-meet-greet-session"
-                disabled={isJoining}
-              />
-            </div>
-            <div>
-              <Label htmlFor="user-name">Your Name</Label>
-              <Input
-                id="user-name"
-                value={inputUserName}
-                onChange={(e) => setInputUserName(e.target.value)}
-                placeholder="Your Name"
-                disabled={isJoining}
-              />
-            </div>
-            <Button onClick={createAndJoinRoom} className="w-full" disabled={isJoining}>
-              {isJoining ? "Creating & Joining..." : "Create & Join New Room"}
-            </Button>
-            <Button
-              onClick={handleJoinExisting}
-              className="w-full bg-transparent"
-              variant="outline"
-              disabled={isJoining}
-            >
-              Join Existing Room
-            </Button>
-          </>
-        ) : (
-          <div className="relative w-full aspect-video rounded-md overflow-hidden">
-            <DailyProvider callObject={daily}>
-              <div ref={callFrameRef} className="w-full h-full" />
-            </DailyProvider>
-            <Button onClick={handleLeaveCall} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
-              Leave Call
-            </Button>
+      <CardContent className="relative h-[600px] w-full">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-kelvin-background/80 z-10">
+            <p className="text-kelvin-foreground text-lg">Loading video call...</p>
           </div>
         )}
+        <div id="daily-iframe-container" className="w-full h-full">
+          {/* Daily.co iframe will be mounted here */}
+        </div>
       </CardContent>
     </Card>
   )

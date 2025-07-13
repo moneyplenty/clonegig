@@ -1,60 +1,33 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Icons } from "@/components/icons"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { format } from "date-fns"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Pencil, Trash } from "lucide-react"
-
-const eventSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  date: z.string().min(1, "Date is required"),
-  location: z.string().min(1, "Location is required"),
-  price: z.preprocess((val) => Number.parseFloat(String(val)), z.number().min(0, "Price must be non-negative")),
-  isMeetGreet: z.boolean().default(false),
-})
-
-type EventFormValues = z.infer<typeof eventSchema>
-
-interface Event {
-  id: string
-  title: string
-  description: string | null
-  date: string
-  location: string
-  price: number
-  isMeetGreet: boolean
-}
+import type { Event } from "@/types"
 
 export function AdminEventManagement() {
   const supabase = createClient()
   const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
-
-  const form = useForm<EventFormValues>({
-    resolver: zodResolver(eventSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      date: "",
-      location: "",
-      price: 0,
-      isMeetGreet: false,
-    },
+  const [newEvent, setNewEvent] = useState<Partial<Event>>({
+    title: "",
+    description: "",
+    date: new Date(),
+    location: "",
+    price: 0,
+    isMeetGreet: false,
   })
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchEvents()
@@ -71,48 +44,79 @@ export function AdminEventManagement() {
     setLoading(false)
   }
 
-  const onSubmit = async (values: EventFormValues) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target
+    setNewEvent((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEvent((prev) => ({ ...prev, date: new Date(e.target.value) }))
+  }
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewEvent((prev) => ({ ...prev, price: Number.parseFloat(e.target.value) || 0 }))
+  }
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setNewEvent((prev) => ({ ...prev, isMeetGreet: checked }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setLoading(true)
-    if (editingEvent) {
+
+    if (editingEventId) {
       // Update event
       const { error } = await supabase
         .from("Event")
         .update({
-          title: values.title,
-          description: values.description,
-          date: values.date,
-          location: values.location,
-          price: values.price,
-          isMeetGreet: values.isMeetGreet,
+          title: newEvent.title,
+          description: newEvent.description,
+          date: newEvent.date?.toISOString(),
+          location: newEvent.location,
+          price: newEvent.price,
+          isMeetGreet: newEvent.isMeetGreet,
         })
-        .eq("id", editingEvent.id)
+        .eq("id", editingEventId)
 
       if (error) {
         toast.error("Error updating event: " + error.message)
       } else {
         toast.success("Event updated successfully!")
-        setEditingEvent(null)
-        form.reset()
+        setEditingEventId(null)
+        setNewEvent({
+          title: "",
+          description: "",
+          date: new Date(),
+          location: "",
+          price: 0,
+          isMeetGreet: false,
+        })
         fetchEvents()
       }
     } else {
-      // Create new event
-      const { error } = await supabase.from("Event").insert([
-        {
-          title: values.title,
-          description: values.description,
-          date: values.date,
-          location: values.location,
-          price: values.price,
-          isMeetGreet: values.isMeetGreet,
-        },
-      ])
+      // Add new event
+      const { error } = await supabase.from("Event").insert({
+        title: newEvent.title!,
+        description: newEvent.description,
+        date: newEvent.date!.toISOString(),
+        location: newEvent.location!,
+        price: newEvent.price!,
+        isMeetGreet: newEvent.isMeetGreet!,
+      })
 
       if (error) {
-        toast.error("Error creating event: " + error.message)
+        toast.error("Error adding event: " + error.message)
       } else {
-        toast.success("Event created successfully!")
-        form.reset()
+        toast.success("Event added successfully!")
+        setNewEvent({
+          title: "",
+          description: "",
+          date: new Date(),
+          location: "",
+          price: 0,
+          isMeetGreet: false,
+        })
         fetchEvents()
       }
     }
@@ -120,12 +124,11 @@ export function AdminEventManagement() {
   }
 
   const handleEdit = (event: Event) => {
-    setEditingEvent(event)
-    form.reset({
-      id: event.id,
+    setEditingEventId(event.id)
+    setNewEvent({
       title: event.title,
       description: event.description || "",
-      date: format(new Date(event.date), "yyyy-MM-dd'T'HH:mm"), // Format for datetime-local input
+      date: new Date(event.date),
       location: event.location,
       price: event.price,
       isMeetGreet: event.isMeetGreet,
@@ -147,68 +150,101 @@ export function AdminEventManagement() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <Card>
+    <div className="grid gap-8 lg:grid-cols-2">
+      <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
         <CardHeader>
-          <CardTitle>{editingEvent ? "Edit Event" : "Create New Event"}</CardTitle>
+          <CardTitle className="text-2xl font-bold">{editingEventId ? "Edit Event" : "Add New Event"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" {...form.register("title")} disabled={loading} />
-              {form.formState.errors.title && (
-                <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
-              )}
+              <Label htmlFor="title">Event Title</Label>
+              <Input
+                id="title"
+                value={newEvent.title || ""}
+                onChange={handleInputChange}
+                required
+                className="bg-kelvin-input text-kelvin-foreground border-kelvin-border"
+                disabled={loading}
+              />
             </div>
             <div>
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" {...form.register("description")} disabled={loading} />
-              {form.formState.errors.description && (
-                <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
-              )}
+              <Textarea
+                id="description"
+                value={newEvent.description || ""}
+                onChange={handleInputChange}
+                className="bg-kelvin-input text-kelvin-foreground border-kelvin-border"
+                disabled={loading}
+              />
             </div>
             <div>
               <Label htmlFor="date">Date & Time</Label>
-              <Input id="date" type="datetime-local" {...form.register("date")} disabled={loading} />
-              {form.formState.errors.date && (
-                <p className="text-sm text-red-500">{form.formState.errors.date.message}</p>
-              )}
+              <Input
+                id="date"
+                type="datetime-local"
+                value={newEvent.date ? new Date(newEvent.date).toISOString().slice(0, 16) : ""}
+                onChange={handleDateChange}
+                required
+                className="bg-kelvin-input text-kelvin-foreground border-kelvin-border"
+                disabled={loading}
+              />
             </div>
             <div>
               <Label htmlFor="location">Location</Label>
-              <Input id="location" {...form.register("location")} disabled={loading} />
-              {form.formState.errors.location && (
-                <p className="text-sm text-red-500">{form.formState.errors.location.message}</p>
-              )}
+              <Input
+                id="location"
+                value={newEvent.location || ""}
+                onChange={handleInputChange}
+                required
+                className="bg-kelvin-input text-kelvin-foreground border-kelvin-border"
+                disabled={loading}
+              />
             </div>
             <div>
-              <Label htmlFor="price">Price</Label>
-              <Input id="price" type="number" step="0.01" {...form.register("price")} disabled={loading} />
-              {form.formState.errors.price && (
-                <p className="text-sm text-red-500">{form.formState.errors.price.message}</p>
-              )}
+              <Label htmlFor="price">Price ($)</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                value={newEvent.price || 0}
+                onChange={handlePriceChange}
+                className="bg-kelvin-input text-kelvin-foreground border-kelvin-border"
+                disabled={loading}
+              />
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="isMeetGreet"
-                checked={form.watch("isMeetGreet")}
-                onCheckedChange={(checked) => form.setValue("isMeetGreet", !!checked)}
+                checked={newEvent.isMeetGreet}
+                onCheckedChange={handleCheckboxChange}
                 disabled={loading}
               />
-              <Label htmlFor="isMeetGreet">Is this a Meet & Greet session?</Label>
+              <Label htmlFor="isMeetGreet">Is Meet & Greet?</Label>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
+            <Button
+              type="submit"
+              className="w-full bg-electric-500 hover:bg-electric-600 text-white"
+              disabled={loading}
+            >
+              {loading ? (editingEventId ? "Updating..." : "Adding...") : editingEventId ? "Update Event" : "Add Event"}
             </Button>
-            {editingEvent && (
+            {editingEventId && (
               <Button
+                type="button"
                 variant="outline"
-                className="w-full mt-2 bg-transparent"
                 onClick={() => {
-                  setEditingEvent(null)
-                  form.reset()
+                  setEditingEventId(null)
+                  setNewEvent({
+                    title: "",
+                    description: "",
+                    date: new Date(),
+                    location: "",
+                    price: 0,
+                    isMeetGreet: false,
+                  })
                 }}
+                className="w-full mt-2 border-kelvin-border text-kelvin-foreground hover:bg-kelvin-card hover:text-kelvin-card-foreground"
                 disabled={loading}
               >
                 Cancel Edit
@@ -218,15 +254,15 @@ export function AdminEventManagement() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg lg:col-span-1">
         <CardHeader>
-          <CardTitle>Existing Events</CardTitle>
+          <CardTitle className="text-2xl font-bold">Existing Events</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p>Loading events...</p>
+            <div className="text-center text-kelvin-foreground/80">Loading events...</div>
           ) : events.length === 0 ? (
-            <p>No events found.</p>
+            <div className="text-center text-kelvin-foreground/80">No events found.</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -235,26 +271,37 @@ export function AdminEventManagement() {
                     <TableHead>Title</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Location</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>M&G</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {events.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell className="font-medium">{event.title}</TableCell>
-                      <TableCell>{format(new Date(event.date), "MMM dd, yyyy HH:mm")}</TableCell>
-                      <TableCell>{event.location}</TableCell>
-                      <TableCell>${event.price.toFixed(2)}</TableCell>
-                      <TableCell>{event.isMeetGreet ? "Meet & Greet" : "Concert"}</TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEdit(event)}>
-                            <Pencil className="h-4 w-4" />
+                        {new Date(event.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </TableCell>
+                      <TableCell>{event.location}</TableCell>
+                      <TableCell>{event.isMeetGreet ? "Yes" : "No"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" onClick={() => handleEdit(event)} disabled={loading}>
+                            <Icons.pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
                           </Button>
-                          <Button variant="destructive" size="icon" onClick={() => handleDelete(event.id)}>
-                            <Trash className="h-4 w-4" />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleDelete(event.id)}
+                            disabled={loading}
+                          >
+                            <Icons.trash className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
                           </Button>
                         </div>
                       </TableCell>

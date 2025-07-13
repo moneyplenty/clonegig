@@ -1,64 +1,46 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useCallback } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 
 export function EventsFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const currentType = searchParams.get("type") || "all"
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set(name, value)
-      return params.toString()
-    },
-    [searchParams],
-  )
-
-  const removeQueryString = useCallback(
-    (name: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete(name)
-      return params.toString()
-    },
-    [searchParams],
-  )
-
-  const handleFilterChange = (type: string | null) => {
-    if (type) {
-      router.push(`/events?${createQueryString("type", type)}`)
+  const handleFilterChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === "all") {
+      params.delete("type")
     } else {
-      router.push(`/events?${removeQueryString("type")}`)
+      params.set("type", value)
     }
+    router.push(`/events?${params.toString()}`)
   }
 
-  const currentType = searchParams.get("type")
-
   return (
-    <div className="flex flex-wrap gap-2 md:flex-col md:w-48">
-      <Button
-        variant={currentType === null ? "default" : "outline"}
-        onClick={() => handleFilterChange(null)}
-        className="w-full"
-      >
-        All Events
-      </Button>
-      <Button
-        variant={currentType === "concert" ? "default" : "outline"}
-        onClick={() => handleFilterChange("concert")}
-        className="w-full"
-      >
-        Concerts
-      </Button>
-      <Button
-        variant={currentType === "meet-greet" ? "default" : "outline"}
-        onClick={() => handleFilterChange("meet-greet")}
-        className="w-full"
-      >
-        Meet & Greet
-      </Button>
-    </div>
+    <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+      <CardHeader>
+        <CardTitle className="text-xl font-semibold">Filter Events</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <RadioGroup value={currentType} onValueChange={handleFilterChange} className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="all" id="type-all" />
+            <Label htmlFor="type-all">All Events</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="concert" id="type-concert" />
+            <Label htmlFor="type-concert">Concerts</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="meet-and-greet" id="type-meet-and-greet" />
+            <Label htmlFor="type-meet-and-greet">Meet & Greets</Label>
+          </div>
+        </RadioGroup>
+      </CardContent>
+    </Card>
   )
 }

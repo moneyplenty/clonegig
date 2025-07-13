@@ -1,68 +1,89 @@
-import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { PlayCircle, Headphones, BookOpen } from "lucide-react"
+"use client"
 
-interface Content {
-  id: string
-  title: string
-  description?: string
-  type: "video" | "audio" | "blog"
-  url?: string
-  accessLevel: "guest" | "fan" | "premium"
-  createdAt: string
-  updatedAt: string
-}
+import Image from "next/image"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Icons } from "@/components/icons"
+import type { Content } from "@/types"
+import { useAuth } from "@/components/auth/auth-provider"
+import { toast } from "sonner"
 
 interface ContentPreviewProps {
   content: Content
+  userRole: string
+  isLocked?: boolean
 }
 
-export function ContentPreview({ content }: ContentPreviewProps) {
-  const getIcon = (type: Content["type"]) => {
-    switch (type) {
-      case "video":
-        return <PlayCircle className="h-5 w-5" />
-      case "audio":
-        return <Headphones className="h-5 w-5" />
-      case "blog":
-        return <BookOpen className="h-5 w-5" />
-      default:
-        return null
+export function ContentPreview({ content, userRole, isLocked = false }: ContentPreviewProps) {
+  const { user, loading: authLoading } = useAuth()
+
+  const handleAccessContent = () => {
+    if (isLocked) {
+      if (!user) {
+        toast.error("You need to be logged in to access this content.")
+      } else {
+        toast.error(`This content requires a higher membership tier (${content.accessLevel}). Please upgrade.`)
+      }
+    } else {
+      // In a real app, you'd navigate to the content's full page or open a modal
+      toast.info(`Accessing: ${content.title}`)
+      if (content.url) {
+        window.open(content.url, "_blank")
+      }
     }
   }
 
-  const getAccessBadgeColor = (level: Content["accessLevel"]) => {
-    switch (level) {
-      case "guest":
-        return "bg-gray-200 text-gray-800"
-      case "fan":
-        return "bg-blue-200 text-blue-800"
-      case "premium":
-        return "bg-yellow-200 text-yellow-800"
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "video":
+        return <Icons.playCircle className="w-5 h-5 text-electric-400" />
+      case "audio":
+        return <Icons.headphones className="w-5 h-5 text-frost-400" />
+      case "blog":
+        return <Icons.bookOpen className="w-5 h-5 text-purple-400" />
       default:
-        return ""
+        return <Icons.fileText className="w-5 h-5 text-gray-400" />
     }
   }
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader>
-        <div className="flex items-center justify-between mb-2">
-          <CardTitle className="text-xl">{content.title}</CardTitle>
-          <Badge className={getAccessBadgeColor(content.accessLevel)}>{content.accessLevel}</Badge>
+    <Card
+      className={`bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg relative ${isLocked ? "opacity-50 grayscale" : ""}`}
+    >
+      {isLocked && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10 rounded-lg">
+          <Icons.lock className="w-12 h-12 text-white" />
         </div>
-        <CardDescription className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+      )}
+      <CardHeader className="p-0">
+        <div className="relative w-full h-48">
+          <Image
+            src={content.url || "/placeholder.png"} // Use content.url as image if it's an image, otherwise placeholder
+            alt={content.title}
+            layout="fill"
+            objectFit="cover"
+            className="rounded-t-lg"
+          />
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 p-4">
+        <CardTitle className="text-xl font-semibold mb-2">{content.title}</CardTitle>
+        <CardDescription className="text-kelvin-card-foreground/80 line-clamp-3">{content.description}</CardDescription>
+        <div className="flex items-center gap-2 mt-4 text-sm text-kelvin-card-foreground/70">
           {getIcon(content.type)}
           <span>{content.type.charAt(0).toUpperCase() + content.type.slice(1)}</span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-between">
-        <p className="text-gray-700 dark:text-gray-300 mb-4">{content.description}</p>
-        <Link href={`/content/${content.id}`} className="text-blue-600 hover:underline self-end">
-          View Content
-        </Link>
+          <span className="ml-auto capitalize">Access: {content.accessLevel}</span>
+        </div>
       </CardContent>
+      <CardFooter className="p-4 pt-0">
+        <Button
+          className="w-full bg-electric-500 hover:bg-electric-600 text-white"
+          onClick={handleAccessContent}
+          disabled={isLocked}
+        >
+          {isLocked ? "Locked" : "View Content"}
+        </Button>
+      </CardFooter>
     </Card>
   )
 }

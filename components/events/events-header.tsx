@@ -25,9 +25,9 @@ export function EventsHeader() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-4 mb-8">
-      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Upcoming Events</h1>
-      <p className="max-w-xl text-lg text-gray-600 dark:text-gray-400">
-        Don&apos;t miss out on Kelvin Creekman&apos;s electrifying concerts and exclusive meet & greet sessions!
+      <h1 className="text-4xl md:text-5xl font-bold text-kelvin-foreground mb-4">Upcoming Events</h1>
+      <p className="text-lg text-kelvin-foreground/80 max-w-3xl mx-auto">
+        Don&apos;t miss out on Kelvin Creekman&apos;s live performances, virtual meet & greets, and special appearances.
       </p>
       <div className="relative w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

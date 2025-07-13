@@ -31,6 +31,7 @@ import { format } from "date-fns"
 import { DailyVideoCall } from "./daily-video-call"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import Link from "next/link"
 
 interface TimeSlot {
   id: string
@@ -64,6 +65,8 @@ interface MeetAndGreetBookingProps {
   session: Session
   onJoinCall: () => void
   userId: string | null
+  eventId: string
+  eventTitle: string
 }
 
 const timeSlots: TimeSlot[] = [
@@ -132,11 +135,11 @@ const privateSessions: PrivateSession[] = [
   },
 ]
 
-export function MeetAndGreetBooking({ session, onJoinCall, userId }: MeetAndGreetBookingProps) {
+export function MeetAndGreetBooking({ session, onJoinCall, userId, eventId, eventTitle }: MeetAndGreetBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [loading, setLoading] = useState(false)
-  const { user, loading: authLoading } = useAuth()
+  const { user, userRole, loading: authLoading } = useAuth()
   const router = useRouter()
   const [isBooking, setIsBooking] = useState(false)
   const [activeTab, setActiveTab] = useState("group")
@@ -404,7 +407,7 @@ export function MeetAndGreetBooking({ session, onJoinCall, userId }: MeetAndGree
     }
 
     // Meet & Greet sessions are premium content
-    if (user.user_metadata?.role !== "premium" && user.user_metadata?.role !== "admin") {
+    if (userRole !== "premium" && userRole !== "admin") {
       toast.error("Meet & Greet sessions are exclusive to premium members. Please upgrade your membership.")
       router.push("/join") // Redirect to membership page
       return
@@ -472,6 +475,51 @@ export function MeetAndGreetBooking({ session, onJoinCall, userId }: MeetAndGree
       setLoading(false)
     }
   }
+
+  const handleBookSession = async () => {
+    if (!user) {
+      toast.error("You need to be logged in to book a Meet & Greet session.")
+      router.push("/login")
+      return
+    }
+
+    if (userRole !== "premium") {
+      toast.error("Meet & Greet sessions are exclusive to Premium members. Please upgrade your membership.")
+      router.push("/join")
+      return
+    }
+
+    setLoading(true)
+    try {
+      // Simulate API call to book the session and get a Daily.co room URL
+      // In a real app, this would be a server action or API route
+      const response = await fetch("/api/create-daily-room", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ eventId, userId: user.id }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create Daily.co room.")
+      }
+
+      const { roomUrl } = await response.json()
+
+      toast.success(`Successfully booked session for ${eventTitle}!`)
+      // Redirect user to the Daily.co room
+      router.push(roomUrl)
+    } catch (error: any) {
+      console.error("Booking error:", error)
+      toast.error(error.message || "Failed to book session. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isBookable = !authLoading && user && userRole === "premium"
 
   return (
     <div className="space-y-8">
@@ -867,7 +915,23 @@ export function MeetAndGreetBooking({ session, onJoinCall, userId }: MeetAndGree
               <Button onClick={handleRequestSession} className="w-full" disabled={loading || !userId}>
                 {loading ? "Submitting Request..." : "Request Session"}
               </Button>
-              {!userId && <p className="text-sm text-center text-gray-500 mt-2">Please log in to request a session.</p>}
+              {!userId && (
+                <p className="text-center text-sm text-kelvin-card-foreground/70">
+                  <Link href="/login" className="text-electric-400 hover:underline">
+                    Log in
+                  </Link>{" "}
+                  to request a session.
+                </p>
+              )}
+              {userId && userRole !== "premium" && !authLoading && (
+                <p className="text-center text-sm text-kelvin-card-foreground/70">
+                  This is a Premium-only feature.{" "}
+                  <Link href="/join" className="text-electric-400 hover:underline">
+                    Upgrade your membership
+                  </Link>{" "}
+                  to book.
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

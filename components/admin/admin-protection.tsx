@@ -1,60 +1,45 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import type React from "react"
+
+import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
-import { createClient } from "@/lib/supabase/client"
+import { useEffect } from "react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface AdminProtectionProps {
-  children: ReactNode
-  user: User | null
+  children: React.ReactNode
+  requiredRole: "admin" | "premium" | "fan" | "guest"
 }
 
-export function AdminProtection({ children, user }: AdminProtectionProps) {
+export function AdminProtection({ children, requiredRole }: AdminProtectionProps) {
+  const { user, userRole, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
-  const [loading, setLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    const checkUserRole = async () => {
+    if (!loading) {
       if (!user) {
         toast.error("You must be logged in to access this page.")
         router.push("/login")
-        return
+      } else if (userRole !== requiredRole) {
+        toast.error(`You do not have the required role (${requiredRole}) to access this page.`)
+        router.push("/dashboard")
       }
-
-      const { data: profile, error } = await supabase.from("User").select("role").eq("id", user.id).single()
-
-      if (error || profile?.role !== "admin") {
-        toast.error("You do not have administrative privileges to access this page.")
-        router.push("/dashboard") // Redirect to a non-admin page
-      } else {
-        setIsAdmin(true)
-      }
-      setLoading(false)
     }
+  }, [user, loading, userRole, requiredRole, router])
 
-    checkUserRole()
-  }, [user, router, supabase])
-
-  if (loading) {
+  if (loading || !user || userRole !== requiredRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Skeleton className="h-12 w-80 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+      <div className="flex flex-col min-h-[100dvh] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-8">
+        <Skeleton className="h-10 w-64 mb-8 bg-slate-700" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full bg-slate-700" />
+          ))}
         </div>
       </div>
     )
-  }
-
-  if (!isAdmin) {
-    return null // Or a message indicating no access
   }
 
   return <>{children}</>

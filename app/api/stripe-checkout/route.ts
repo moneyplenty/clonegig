@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
         currency: "usd",
         product_data: {
           name: item.name,
-          images: [item.image],
+          images: item.image ? [item.image] : [],
+          description: item.description || "",
         },
-        unit_amount: item.price * 100, // Price in cents
+        unit_amount: Math.round(item.price * 100), // Price in cents
       },
       quantity: item.quantity,
     }))
@@ -42,8 +43,8 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${req.nextUrl.origin}/checkout?success=true`,
-      cancel_url: `${req.nextUrl.origin}/checkout?canceled=true`,
+      success_url: `${req.nextUrl.origin}/store/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.nextUrl.origin}/store?canceled=true`,
       metadata: {
         userId: user.id,
         cartItems: JSON.stringify(
@@ -56,9 +57,13 @@ export async function POST(req: NextRequest) {
           })),
         ),
       },
+      shipping_address_collection: {
+        allowed_countries: ["US", "CA", "GB", "AU", "DE", "FR", "IT", "ES", "NL", "SE", "NO", "DK"],
+      },
+      billing_address_collection: "required",
     })
 
-    return NextResponse.json({ sessionId: session.id })
+    return NextResponse.json({ sessionId: session.id, url: session.url })
   } catch (error: any) {
     console.error("Stripe checkout error:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })

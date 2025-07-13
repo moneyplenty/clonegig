@@ -3,37 +3,36 @@ export const siteConfig = {
   description: "Official fan club website for rock and metal musician Kelvin Creekman",
   mainNav: [
     {
-      title: "Store",
-      href: "/store",
-    },
-    {
-      title: "Events",
-      href: "/events",
-    },
-    {
-      title: "Meet & Greet",
-      href: "/meet-and-greet",
+      title: "Home",
+      href: "/",
     },
     {
       title: "Content",
       href: "/content",
     },
     {
+      title: "Events",
+      href: "/events",
+    },
+    {
+      title: "Store",
+      href: "/store",
+    },
+    {
       title: "Community",
       href: "/community",
     },
     {
-      title: "Dashboard",
-      href: "/dashboard",
-    },
-    {
-      title: "Admin",
-      href: "/admin",
+      title: "Meet & Greet",
+      href: "/meet-and-greet",
     },
   ],
   links: {
-    twitter: "https://twitter.com/vercel",
-    github: "https://github.com/vercel/v0",
-    docs: "https://v0.dev",
+    twitter: "https://twitter.com/kelvincreekman",
+    instagram: "https://instagram.com/kelvincreekman",
+    youtube: "https://youtube.com/kelvincreekman",
+    tiktok: "https://tiktok.com/@kelvincreekman",
   },
 }
+
+export type SiteConfig = typeof siteConfig

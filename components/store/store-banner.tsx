@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Star, Zap, Crown, Truck, Shield, Gift, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth/auth-provider"
+import Image from "next/image"
 
 const memberBenefits = {
   frost: {
@@ -60,18 +61,22 @@ export function StoreBanner() {
   const memberInfo = userTier ? memberBenefits[userTier] : null
 
   return (
-    <section className="relative bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        {/* Background pattern or image for icy/electrifying feel */}
-        <div className="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center opacity-50" />
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-purple-700/30 to-indigo-700/30" />
-      </div>
-      <div className="relative z-10 max-w-4xl mx-auto text-center">
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">Unleash Your Inner Fan!</h2>
-        <p className="text-lg sm:text-xl mb-8 max-w-2xl mx-auto">
-          Discover exclusive Kelvin Creekman merchandise. From electrifying apparel to unique collectibles, show your
-          support in style.
+    <div className="relative w-full h-48 bg-gradient-to-r from-electric-500 to-frost-500 flex items-center justify-center text-white overflow-hidden">
+      <Image
+        src="/placeholder.png" // Replace with a relevant store banner image
+        alt="Store Banner"
+        layout="fill"
+        objectFit="cover"
+        className="absolute inset-0 z-0 opacity-30"
+      />
+      <div className="absolute inset-0 bg-black/40 z-10" />
+      <div className="relative z-20 text-center px-4">
+        <h1 className="text-4xl md:text-6xl font-extrabold leading-tight drop-shadow-lg">The Official Store</h1>
+        <p className="text-lg md:text-xl mt-2 opacity-90 drop-shadow-md">
+          Gear up with exclusive Kelvin Creekman merchandise.
         </p>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 z-20">
         {user && memberInfo ? (
           <Card className={`${memberInfo.bgColor} ${memberInfo.borderColor} border-2`}>
             <CardContent className="p-6">
@@ -122,6 +127,6 @@ export function StoreBanner() {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   )
 }

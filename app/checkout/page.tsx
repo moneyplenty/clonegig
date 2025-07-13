@@ -2,121 +2,71 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Icons } from "@/components/icons"
 import { useCart } from "@/components/store/cart-context"
-import { loadStripe } from "@stripe/stripe-js"
-import { toast } from "sonner"
-
-// Make sure to call `loadStripe` outside of a component’s render to avoid
-// recreating the Stripe object on every render.
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const success = searchParams.get("success")
   const canceled = searchParams.get("canceled")
-  const { cart, getTotalPrice, clearCart } = useCart()
-  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
+  const [isSuccess, setIsSuccess] = useState(false)
+  const { clearCart } = useCart()
 
   useEffect(() => {
     if (success) {
-      toast.success("Order placed successfully! Thank you for your purchase.")
-      clearCart()
-    }
-
-    if (canceled) {
-      toast.error("Payment canceled. You can try again.")
+      setMessage("Payment successful! Your order has been placed.")
+      setIsSuccess(true)
+      clearCart() // Clear cart on successful payment
+    } else if (canceled) {
+      setMessage("Payment canceled. You can try again or continue shopping.")
+      setIsSuccess(false)
+    } else {
+      setMessage("Processing your order...")
+      // This might be a direct navigation without success/canceled params,
+      // or a page refresh. In a real app, you'd check session status here.
     }
   }, [success, canceled, clearCart])
 
-  const handleCheckout = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch("/api/stripe-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ cartItems: cart }),
-      })
-
-      const { sessionId, error } = await response.json()
-
-      if (error) {
-        toast.error(`Checkout failed: ${error}`)
-        setLoading(false)
-        return
-      }
-
-      const stripe = await stripePromise
-      if (stripe) {
-        const { error: stripeError } = await stripe.redirectToCheckout({ sessionId })
-        if (stripeError) {
-          toast.error(`Stripe redirect error: ${stripeError.message}`)
-        }
-      }
-    } catch (error) {
-      console.error("Error during checkout:", error)
-      toast.error("An unexpected error occurred during checkout.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Checkout</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cart.length === 0 ? (
-              <p>Your cart is empty.</p>
-            ) : (
-              <ul className="space-y-4">
-                {cart.map((item) => (
-                  <li key={item.id} className="flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-md"
-                      />
-                      <div>
-                        <p className="font-semibold">{item.name}</p>
-                        <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                      </div>
-                    </div>
-                    <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="border-t pt-4 mt-4 flex justify-between items-center">
-              <p className="text-lg font-bold">Total:</p>
-              <p className="text-lg font-bold">${getTotalPrice().toFixed(2)}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
-              Click the button below to proceed to a secure checkout page powered by Stripe.
-            </p>
-            <Button onClick={handleCheckout} disabled={cart.length === 0 || loading} className="w-full py-3 text-lg">
-              {loading ? "Processing..." : "Proceed to Payment"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="flex min-h-[100dvh] items-center justify-center bg-kelvin-background px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md space-y-8 rounded-lg bg-kelvin-card p-8 shadow-lg border border-kelvin-border text-center">
+        <CardHeader>
+          {isSuccess ? (
+            <Icons.checkCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+          ) : (
+            <Icons.info className="mx-auto h-16 w-16 text-blue-500 mb-4" />
+          )}
+          <CardTitle className="text-3xl font-bold tracking-tight text-kelvin-foreground">
+            {isSuccess ? "Order Confirmed!" : "Payment Status"}
+          </CardTitle>
+          <CardDescription className="text-kelvin-foreground/80">{message}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isSuccess ? (
+            <>
+              <p className="text-kelvin-foreground/90">
+                Thank you for your purchase! You will receive an email confirmation shortly.
+              </p>
+              <Button asChild className="w-full bg-electric-500 hover:bg-electric-600 text-white">
+                <Link href="/dashboard">View Your Dashboard</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-kelvin-foreground/90">
+                If you encountered an issue, please try again or contact support.
+              </p>
+              <Button asChild className="w-full bg-frost-500 hover:bg-frost-600 text-white">
+                <Link href="/store">Continue Shopping</Link>
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

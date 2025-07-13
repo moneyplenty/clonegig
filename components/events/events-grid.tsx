@@ -1,58 +1,54 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, DollarSign } from "lucide-react"
-import { format } from "date-fns"
 import Link from "next/link"
-
-interface Event {
-  id: string
-  title: string
-  description: string
-  date: string
-  location: string
-  price: number
-  isMeetGreet: boolean
-}
+import { Icons } from "@/components/icons"
+import type { Event } from "@/types"
 
 interface EventsGridProps {
   events: Event[]
 }
 
 export function EventsGrid({ events }: EventsGridProps) {
+  if (events.length === 0) {
+    return <div className="text-center text-kelvin-foreground/80">No events found matching your criteria.</div>
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {events.length === 0 ? (
-        <p className="col-span-full text-center text-gray-500">No events found matching your criteria.</p>
-      ) : (
-        events.map((event) => (
-          <Card key={event.id} className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-xl">{event.title}</CardTitle>
-              <CardDescription>{event.isMeetGreet ? "Meet & Greet" : "Concert"}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-2">
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Calendar className="h-4 w-4" />
-                <span>{format(new Date(event.date), "PPPp")}</span>
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+      {events.map((event) => (
+        <Card key={event.id} className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">{event.title}</CardTitle>
+            <CardDescription className="text-kelvin-card-foreground/80">
+              <div className="flex items-center gap-1 mt-1">
+                <Icons.calendar className="w-4 h-4" />
+                {new Date(event.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <MapPin className="h-4 w-4" />
-                <span>{event.location}</span>
+              <div className="flex items-center gap-1">
+                <Icons.clock className="w-4 h-4" />
+                {new Date(event.date).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <DollarSign className="h-4 w-4" />
-                <span>{event.price === 0 ? "Free" : `$${event.price.toFixed(2)}`}</span>
+              <div className="flex items-center gap-1">
+                <Icons.mapPin className="w-4 h-4" />
+                {event.location}
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{event.description}</p>
-            </CardContent>
-            <CardFooter>
-              <Link href={`/events/${event.id}`} className="w-full">
-                <Button className="w-full">View Details</Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ))
-      )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-kelvin-card-foreground/90 line-clamp-3">{event.description}</p>
+            <Button asChild className="w-full bg-electric-500 hover:bg-electric-600 text-white">
+              <Link href={`/events/${event.id}`}>View Details</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

@@ -1,116 +1,174 @@
 # Kelvin Creekman Fan Club Website
 
-This is the official fan club website for the rock and metal musician, Kelvin Creekman.
+A modern, full-stack fan club website built with Next.js, featuring membership tiers, merchandise store, meet & greet sessions, and admin management.
 
 ## Features
 
-*   **Authentication**: Secure user authentication using Supabase, with different roles (guest, fan, premium, admin).
-*   **Content Access Control**: Exclusive content (videos, audio, blogs) accessible based on user membership tiers.
-*   **Merchandise Store**: An e-commerce store powered by Stripe for purchasing Kelvin Creekman merchandise.
-*   **Events Management**: View and manage upcoming events, including concerts and meet-and-greets.
-*   **Meet & Greet Video Calls**: Integration with Daily.co for live video calls during meet-and-greet sessions.
-*   **Admin Dashboard**: A protected `/admin` route for managing products, events, and content.
-*   **Email Notifications**: Confirmation emails for event bookings and meet-and-greets using Resend.
-*   **Responsive Design**: Optimized for various screen sizes using Tailwind CSS and Shadcn UI.
-*   **Dynamic Routes**: For individual blog posts, product pages, and event details.
+### 🎵 Core Features
+- **Membership Tiers**: Fan, Premium, and VIP with different access levels
+- **Mandatory Payment**: Users must purchase a membership before account creation
+- **Merchandise Store**: Full e-commerce functionality with Stripe integration
+- **Meet & Greet Sessions**: Video calls with admin management via Daily.co
+- **Content Management**: Exclusive content based on membership tiers
+- **Admin Dashboard**: Complete management interface
 
-## Technologies Used
-
-*   **Next.js 14 (App Router)**: React framework for building the web application.
-*   **React**: Frontend library for UI.
-*   **Tailwind CSS**: Utility-first CSS framework for styling.
-*   **Shadcn UI**: Reusable UI components built with Radix UI and Tailwind CSS.
-*   **Supabase**: Backend-as-a-Service for authentication and database.
-*   **Prisma**: Next-generation ORM for Node.js and TypeScript.
-*   **Stripe**: For payment processing in the merchandise store.
-*   **Daily.co**: For real-time video and audio communication (meet-and-greets).
-*   **Resend**: For sending transactional emails.
-*   **Lucide React**: For icons.
+### 🛠 Technical Features
+- **Next.js 14**: App Router with Server Components
+- **TypeScript**: Full type safety
+- **Supabase**: Authentication and database
+- **Prisma**: Database ORM
+- **Stripe**: Payment processing (test mode)
+- **Daily.co**: Video calling infrastructure
+- **Resend**: Email notifications
+- **Tailwind CSS**: Modern styling
+- **shadcn/ui**: Component library
 
 ## Getting Started
 
-### 1. Clone the repository
+### Prerequisites
+- Node.js 18+ 
+- PostgreSQL database
+- Supabase account
+- Stripe account (test mode)
+- Daily.co account
+- Resend account
 
-\`\`\`bash
-git clone <repository-url>
-cd kelvin-creekman-fan-club
-\`\`\`
+### Installation
 
-### 2. Install Dependencies
+1. **Clone the repository**
+   \`\`\`bash
+   git clone <repository-url>
+   cd kelvin-fan-club
+   \`\`\`
 
-\`\`\`bash
-pnpm install
-# or
-npm install
-# or
-yarn install
-\`\`\`
+2. **Install dependencies**
+   \`\`\`bash
+   npm install
+   \`\`\`
 
-### 3. Environment Variables
+3. **Set up environment variables**
+   \`\`\`bash
+   cp .env.example .env.local
+   \`\`\`
+   Fill in all the required environment variables.
 
-Create a `.env.local` file in the root of your project and add the following environment variables:
+4. **Set up the database**
+   \`\`\`bash
+   npx prisma db push
+   npx prisma generate
+   \`\`\`
 
-\`\`\`env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-SUPABASE_SERVICE_ROLE_KEY="YOUR_SUPABASE_SERVICE_ROLE_KEY" # Used for server-side operations
+5. **Run the development server**
+   \`\`\`bash
+   npm run dev
+   \`\`\`
 
-# Prisma (for Supabase PostgreSQL)
-POSTGRES_PRISMA_URL="YOUR_POSTGRES_PRISMA_URL"
-# If using direct connection for Prisma (e.g., for migrations)
-# POSTGRES_URL_NON_POOLING="YOUR_POSTGRES_URL_NON_POOLING"
+6. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="YOUR_STRIPE_PUBLISHABLE_KEY"
-STRIPE_SECRET_KEY="YOUR_STRIPE_SECRET_KEY"
-STRIPE_WEBHOOK_SECRET="YOUR_STRIPE_WEBHOOK_SECRET" # Get this from Stripe CLI or Dashboard
+## Environment Variables
 
-# Daily.co
-DAILY_API_KEY="YOUR_DAILY_API_KEY"
-DAILY_DOMAIN="YOUR_DAILY_DOMAIN"
-NEXT_PUBLIC_DAILY_DOMAIN="YOUR_DAILY_DOMAIN"
-
-# Resend
-RESEND_API_KEY="YOUR_RESEND_API_KEY"
-\`\`\`
-
-### 4. Setup Supabase
-
-*   Create a new project on [Supabase](https://supabase.com/).
-*   Copy your `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your project settings (API section).
-*   Generate a new `Service Role Key` (under Project Settings -> API Keys) and set it as `SUPABASE_SERVICE_ROLE_KEY`.
-*   Configure your PostgreSQL database connection string for `POSTGRES_PRISMA_URL`.
-
-### 5. Database Migrations (Prisma)
-
-Run Prisma migrations to set up your database schema:
-
-\`\`\`bash
-npx prisma migrate dev --name init
-\`\`\`
-
-### 6. Seed Database (Optional)
-
-You can create a `prisma/seed.ts` file and run `npx prisma db seed` to populate your database with sample data.
-
-### 7. Run the Development Server
-
-\`\`\`bash
-pnpm dev
-# or
-npm run dev
-# or
-yarn dev
-\`\`\`
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Required Variables
+- `POSTGRES_URL`: PostgreSQL connection string
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key (test)
+- `STRIPE_SECRET_KEY`: Stripe secret key (test)
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret
+- `RESEND_API_KEY`: Resend API key
+- `DAILY_API_KEY`: Daily.co API key
+- `NEXT_PUBLIC_DAILY_DOMAIN`: Daily.co domain
 
 ## Deployment
 
-This project can be easily deployed to Vercel. Ensure your environment variables are configured in your Vercel project settings.
+### Vercel Deployment
 
-## Contributing
+1. **Connect to Vercel**
+   - Push your code to GitHub
+   - Connect your repository to Vercel
+   - Configure environment variables in Vercel dashboard
 
-Feel free to contribute to this project by opening issues or submitting pull requests.
+2. **Database Setup**
+   - Use Vercel Postgres or external PostgreSQL
+   - Run migrations: `npx prisma db push`
+
+3. **Stripe Webhooks**
+   - Set up webhook endpoint: `https://yourdomain.com/api/stripe-webhook`
+   - Add webhook secret to environment variables
+
+4. **Domain Configuration**
+   - Configure custom domain in Vercel
+   - Update NEXTAUTH_URL environment variable
+
+## Project Structure
+
 \`\`\`
+├── app/                    # Next.js app directory
+│   ├── admin/             # Admin pages
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   └── ...
+├── components/            # React components
+│   ├── admin/            # Admin components
+│   ├── auth/             # Auth components
+│   ├── store/            # Store components
+│   └── ui/               # UI components
+├── lib/                  # Utility libraries
+├── prisma/               # Database schema
+└── public/               # Static assets
+\`\`\`
+
+## Key Features Explained
+
+### Mandatory Payment Before Signup
+- Users must select and pay for a membership tier before creating an account
+- Payment is processed through Stripe Checkout
+- Account is created only after successful payment verification
+- All payments are in test mode for development
+
+### Admin Meet & Greet Management
+- Admins can view all meet & greet bookings
+- Create Daily.co video rooms for sessions
+- Send signals/notifications to users via email
+- Join video calls directly from admin dashboard
+- Support for WhatsApp and FaceTime private sessions
+
+### Membership Tiers
+- **Fan ($9.99/month)**: Basic access to exclusive content
+- **Premium ($19.99/month)**: Meet & greet access + additional perks
+- **VIP ($49.99/month)**: Private sessions + premium benefits
+
+### Store Integration
+- Full e-commerce functionality
+- Stripe Checkout integration
+- Order management
+- Shipping address collection
+- Email confirmations
+
+## Security Features
+
+- Server-side authentication with Supabase
+- Role-based access control
+- Protected API routes
+- Stripe webhook signature verification
+- Input validation with Zod
+- CSRF protection
+
+## Testing
+
+### Stripe Test Mode
+The application is configured for Stripe test mode. Use these test card numbers:
+- **Success**: 4242 4242 4242 4242
+- **Decline**: 4000 0000 0000 0002
+
+### Test Users
+Create test users through the signup flow with different membership tiers to test functionality.
+
+## Support
+
+For support or questions about this project, please contact the development team.
+
+## License
+
+This project is proprietary and confidential. All rights reserved.

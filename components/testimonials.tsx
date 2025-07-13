@@ -1,86 +1,53 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  CarouselDots,
-} from "@/components/ui/carousel"
+import { Icons } from "@/components/icons"
 
 export function Testimonials() {
   const testimonials = [
     {
-      quote:
-        "Kelvin Creekman's music changed my life! The energy, the lyrics, everything is just pure fire. Best fan club ever!",
-      name: "Alex M.",
-      title: "Die-hard Fan",
-      avatar: "/placeholder-user.jpg",
+      name: "Alex R.",
+      role: "Long-time Fan",
+      quote: "Kelvin Creekman's music has been the soundtrack to my life. This fan club is the perfect way to connect!",
+      avatar: "/placeholder-user.png",
     },
     {
-      quote:
-        "The exclusive content is incredible. It's like being right there in the studio with Kelvin. Worth every penny of the premium membership!",
       name: "Sarah L.",
-      title: "Premium Member",
-      avatar: "/placeholder-user.jpg",
+      role: "New Member",
+      quote: "The exclusive content is incredible! I feel so much closer to Kelvin and his creative process.",
+      avatar: "/placeholder-user.png",
     },
     {
+      name: "Mark T.",
+      role: "Premium Member",
       quote:
-        "Attending the virtual meet & greet was a dream come true. Kelvin is genuinely amazing with his fans. Highly recommend!",
-      name: "Chris P.",
-      title: "Blizzard VIP",
-      avatar: "/placeholder-user.jpg",
-    },
-    {
-      quote:
-        "The merchandise quality is top-notch. I wear my Kelvin Creekman t-shirt everywhere. This fan club truly delivers!",
-      name: "Jordan K.",
-      title: "Frost Fan",
-      avatar: "/placeholder-user.jpg",
+        "The meet & greets are a game-changer. Getting to chat with Kelvin directly is an unforgettable experience.",
+      avatar: "/placeholder-user.png",
     },
   ]
 
   return (
-    <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800">
-      <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">What Our Fans Say</h2>
-            <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-              Hear directly from the Kelvin Creekman community.
-            </p>
-          </div>
+    <section className="py-12 bg-kelvin-card text-kelvin-card-foreground">
+      <div className="container mx-auto px-4 md:px-6">
+        <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">What Our Fans Say</h2>
+        <p className="text-lg text-kelvin-card-foreground/80 text-center max-w-3xl mx-auto mb-12">
+          Hear directly from the passionate community that makes the Kelvin Creekman Fan Club so special.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.map((testimonial, index) => (
+            <Card key={index} className="bg-kelvin-background text-kelvin-foreground border-kelvin-border shadow-lg">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <Icons.quote className="h-8 w-8 text-electric-400 mb-4" />
+                <p className="text-lg italic mb-6">&quot;{testimonial.quote}&quot;</p>
+                <Avatar className="h-16 w-16 mb-4">
+                  <AvatarImage src={testimonial.avatar || "/placeholder.png"} alt={testimonial.name} />
+                  <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <h3 className="font-semibold text-xl">{testimonial.name}</h3>
+                <p className="text-sm text-kelvin-foreground/80">{testimonial.role}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <Carousel className="w-full max-w-3xl mx-auto">
-          <CarouselContent>
-            {testimonials.map((testimonial, index) => (
-              <CarouselItem key={index}>
-                <Card className="bg-white dark:bg-gray-900 shadow-lg">
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <Avatar className="h-20 w-20 mb-4">
-                      <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
-                      <AvatarFallback>
-                        {testimonial.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-lg italic text-gray-700 dark:text-gray-300 mb-4">
-                      &quot;{testimonial.quote}&quot;
-                    </p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.title}</p>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-          <CarouselDots />
-        </Carousel>
       </div>
     </section>
   )

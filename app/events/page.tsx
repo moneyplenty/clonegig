@@ -6,25 +6,22 @@ import { cookies } from "next/headers"
 
 export const dynamic = "force-dynamic"
 
-export default async function EventsPage({
-  searchParams,
-}: {
-  searchParams: { type?: string; search?: string }
-}) {
+interface EventsPageProps {
+  searchParams: {
+    type?: string
+  }
+}
+
+export default async function EventsPage({ searchParams }: EventsPageProps) {
   const cookieStore = cookies()
   const supabase = createClient(cookieStore)
 
-  let query = supabase
-    .from("Event")
-    .select("*")
-    .gte("date", new Date().toISOString())
-    .order("date", { ascending: true })
+  let query = supabase.from("Event").select("*").order("date", { ascending: true })
 
-  if (searchParams.type) {
-    query = query.eq("isMeetGreet", searchParams.type === "meet-greet")
-  }
-  if (searchParams.search) {
-    query = query.ilike("title", `%${searchParams.search}%`)
+  if (searchParams.type === "meet-and-greet") {
+    query = query.eq("isMeetGreet", true)
+  } else if (searchParams.type === "concert") {
+    query = query.eq("isMeetGreet", false) // Assuming non-meet-and-greet are concerts
   }
 
   const { data: events, error } = await query
@@ -35,14 +32,18 @@ export default async function EventsPage({
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <EventsHeader />
-      <div className="flex flex-col md:flex-row gap-6 mb-8">
-        <EventsFilters />
-        <div className="flex-1">
-          <EventsGrid events={events || []} />
+    <div className="flex flex-col min-h-[100dvh] bg-kelvin-background text-kelvin-foreground">
+      <main className="flex-1 container mx-auto py-12 px-4 md:px-6">
+        <EventsHeader />
+        <div className="flex flex-col md:flex-row gap-8">
+          <aside className="md:w-1/4">
+            <EventsFilters />
+          </aside>
+          <section className="md:w-3/4">
+            <EventsGrid events={events || []} />
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

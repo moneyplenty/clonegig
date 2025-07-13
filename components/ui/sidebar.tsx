@@ -4,6 +4,8 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { type VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -12,6 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Icons } from "@/components/icons"
+import type { SidebarNavItem } from "@/types"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -539,6 +543,38 @@ const SidebarMenuSubButton = React.forwardRef<
   )
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
+
+export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
+  const pathname = usePathname()
+
+  if (!items?.length) {
+    return null
+  }
+
+  return (
+    <nav className="grid items-start gap-2">
+      {items.map((item, index) => {
+        const Icon = Icons[item.icon || "chevronRight"]
+        return (
+          item.href && (
+            <Link key={index} href={item.disabled ? "/" : item.href}>
+              <span
+                className={cn(
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  pathname === item.href ? "bg-accent" : "transparent",
+                  item.disabled && "cursor-not-allowed opacity-80",
+                )}
+              >
+                <Icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
+              </span>
+            </Link>
+          )
+        )
+      })}
+    </nav>
+  )
+}
 
 export {
   Sidebar,

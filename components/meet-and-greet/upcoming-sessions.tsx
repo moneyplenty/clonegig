@@ -1,77 +1,67 @@
-"use client"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Icons } from "@/components/icons"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import { MeetAndGreetBooking } from "./meet-and-greet-booking"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
-import { useEffect, useState } from "react"
-import { format } from "date-fns"
-import Link from "next/link"
+export async function UpcomingSessions() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-interface UpcomingSessionsProps {
-  userId: string | null
-}
+  const { data: events, error } = await supabase
+    .from("Event")
+    .select("*")
+    .eq("isMeetGreet", true)
+    .order("date", { ascending: true })
+    .limit(3) // Fetch up to 3 upcoming meet & greet sessions
 
-interface Event {
-  id: string
-  title: string
-  date: string
-  location: string
-  isMeetGreet: boolean
-}
+  if (error) {
+    console.error("Error fetching upcoming meet & greet sessions:", error)
+    return <div>Error loading sessions.</div>
+  }
 
-export function UpcomingSessions({ userId }: UpcomingSessionsProps) {
-  const [upcomingMeetGreets, setUpcomingMeetGreets] = useState<Event[]>([])
-  const supabase = createClient()
-
-  useEffect(() => {
-    const fetchUpcomingMeetGreets = async () => {
-      const { data, error } = await supabase
-        .from("Event")
-        .select("*")
-        .eq("isMeetGreet", true)
-        .gte("date", new Date().toISOString())
-        .order("date", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching upcoming meet & greets:", error)
-      } else {
-        setUpcomingMeetGreets(data || [])
-      }
-    }
-
-    fetchUpcomingMeetGreets()
-  }, [supabase])
+  if (!events || events.length === 0) {
+    return (
+      <div className="text-center text-kelvin-foreground/80">
+        No upcoming meet & greet sessions scheduled at the moment. Check back soon!
+      </div>
+    )
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Upcoming Meet & Greet Sessions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {userId ? (
-          upcomingMeetGreets.length > 0 ? (
-            <ul className="space-y-4">
-              {upcomingMeetGreets.map((event) => (
-                <li key={event.id} className="border-b pb-4 last:border-b-0 last:pb-0">
-                  <h3 className="text-lg font-semibold">{event.title}</h3>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(event.date), "PPPp")} at {event.location}
-                  </p>
-                  <Link href={`/meet-and-greet/${event.id}`}>
-                    <Button size="sm" className="mt-2">
-                      Join Session
-                    </Button>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No upcoming meet & greet sessions found.</p>
-          )
-        ) : (
-          <p>Please log in to view your upcoming meet & greet sessions.</p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {events.map((event) => (
+        <Card key={event.id} className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">{event.title}</CardTitle>
+            <CardDescription className="text-kelvin-card-foreground/80">
+              <div className="flex items-center gap-1">
+                <Icons.calendar className="w-4 h-4" />
+                {new Date(event.date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+              <div className="flex items-center gap-1">
+                <Icons.clock className="w-4 h-4" />
+                {new Date(event.date).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="flex items-center gap-1">
+                <Icons.mapPin className="w-4 h-4" />
+                {event.location}
+              </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-kelvin-card-foreground/90">{event.description}</p>
+            <MeetAndGreetBooking eventId={event.id} eventTitle={event.title} />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   )
 }
