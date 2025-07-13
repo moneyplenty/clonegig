@@ -144,6 +144,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Crown } from "lucide-react"
+
+export default function DashboardPage() {
+  // Mock user role - in real app this would come from auth context
+  const userRole = "admin"
+
+  return (
+    <div className="container mx-auto py-8 px-4 md:px-6">
+      <h1 className="text-4xl font-bold mb-8 text-center">Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {userRole === "admin" && (
           <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
