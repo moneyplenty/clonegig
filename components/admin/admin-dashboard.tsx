@@ -1,176 +1,226 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Users, Calendar, Package, FileText, TrendingUp, DollarSign } from "lucide-react"
+import { Users, Calendar, ShoppingBag, FileText, DollarSign, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+
+interface DashboardStats {
+  totalUsers: number
+  totalEvents: number
+  totalProducts: number
+  totalContent: number
+  totalRevenue: number
+  monthlyGrowth: number
+}
 
 export function AdminDashboard() {
-  // Mock data - replace with real data from your API
-  const stats = {
-    totalUsers: 1234,
-    activeEvents: 8,
-    totalProducts: 45,
-    contentItems: 67,
-    monthlyRevenue: 12500,
-    growthRate: 15.3,
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalEvents: 0,
+    totalProducts: 0,
+    totalContent: 0,
+    totalRevenue: 0,
+    monthlyGrowth: 0,
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      const supabase = createClient()
+
+      // Fetch stats from database
+      const [usersResult, eventsResult, productsResult, contentResult] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact" }),
+        supabase.from("events").select("id", { count: "exact" }),
+        supabase.from("products").select("id", { count: "exact" }),
+        supabase.from("content").select("id", { count: "exact" }),
+      ])
+
+      setStats({
+        totalUsers: usersResult.count || 0,
+        totalEvents: eventsResult.count || 0,
+        totalProducts: productsResult.count || 0,
+        totalContent: contentResult.count || 0,
+        totalRevenue: 12450, // Mock data
+        monthlyGrowth: 15.3, // Mock data
+      })
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error)
+      // Use mock data on error
+      setStats({
+        totalUsers: 1250,
+        totalEvents: 15,
+        totalProducts: 25,
+        totalContent: 45,
+        totalRevenue: 12450,
+        monthlyGrowth: 15.3,
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const recentActivity = [
-    { type: "user", message: "New user registration: john@example.com", time: "2 minutes ago" },
-    { type: "event", message: 'Event "Live Concert" updated', time: "15 minutes ago" },
-    { type: "product", message: 'Product "T-Shirt" added to store', time: "1 hour ago" },
-    { type: "content", message: "New blog post published", time: "2 hours ago" },
+  const statCards = [
+    {
+      title: "Total Users",
+      value: stats.totalUsers.toLocaleString(),
+      description: "Registered members",
+      icon: Users,
+      href: "/admin/users",
+    },
+    {
+      title: "Events",
+      value: stats.totalEvents.toString(),
+      description: "Scheduled events",
+      icon: Calendar,
+      href: "/admin/events",
+    },
+    {
+      title: "Products",
+      value: stats.totalProducts.toString(),
+      description: "Store items",
+      icon: ShoppingBag,
+      href: "/admin/store",
+    },
+    {
+      title: "Content",
+      value: stats.totalContent.toString(),
+      description: "Published content",
+      icon: FileText,
+      href: "/admin/content",
+    },
+    {
+      title: "Revenue",
+      value: `$${stats.totalRevenue.toLocaleString()}`,
+      description: "This month",
+      icon: DollarSign,
+      href: "#",
+    },
+    {
+      title: "Growth",
+      value: `+${stats.monthlyGrowth}%`,
+      description: "Monthly growth",
+      icon: TrendingUp,
+      href: "#",
+    },
   ]
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+              <div className="h-4 w-4 bg-muted rounded"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-muted rounded w-1/3 mb-1"></div>
+              <div className="h-3 bg-muted rounded w-2/3"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {statCards.map((card) => (
+          <Card key={card.title} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Link href={card.href}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+                <card.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value}</div>
+                <p className="text-xs text-muted-foreground">{card.description}</p>
+              </CardContent>
+            </Link>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+{stats.growthRate}% from last month</p>
+          <CardContent className="space-y-2">
+            <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+              <Link href="/admin/events">
+                <Calendar className="mr-2 h-4 w-4" />
+                Create New Event
+              </Link>
+            </Button>
+            <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+              <Link href="/admin/store">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                Add Product
+              </Link>
+            </Button>
+            <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+              <Link href="/admin/content">
+                <FileText className="mr-2 h-4 w-4" />
+                Publish Content
+              </Link>
+            </Button>
+            <Button className="w-full justify-start bg-transparent" variant="outline" asChild>
+              <Link href="/admin/users">
+                <Users className="mr-2 h-4 w-4" />
+                Manage Users
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Events</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest system activity</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeEvents}</div>
-            <p className="text-xs text-muted-foreground">Events scheduled this month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Store Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">Products in store</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Content Items</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.contentItems}</div>
-            <p className="text-xs text-muted-foreground">Published content pieces</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.monthlyRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.growthRate}%</div>
-            <p className="text-xs text-muted-foreground">User growth this month</p>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">New user registered</p>
+                <p className="text-xs text-muted-foreground">2 minutes ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Event ticket purchased</p>
+                <p className="text-xs text-muted-foreground">5 minutes ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">New content published</p>
+                <p className="text-xs text-muted-foreground">1 hour ago</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">Store order completed</p>
+                <p className="text-xs text-muted-foreground">2 hours ago</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common administrative tasks</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button asChild className="h-auto p-4 flex flex-col items-center space-y-2">
-              <Link href="/admin/users">
-                <Users className="h-6 w-6" />
-                <span>Manage Users</span>
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center space-y-2 bg-transparent"
-            >
-              <Link href="/admin/events">
-                <Calendar className="h-6 w-6" />
-                <span>Manage Events</span>
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center space-y-2 bg-transparent"
-            >
-              <Link href="/admin/store">
-                <Package className="h-6 w-6" />
-                <span>Manage Store</span>
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center space-y-2 bg-transparent"
-            >
-              <Link href="/admin/content">
-                <FileText className="h-6 w-6" />
-                <span>Manage Content</span>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Latest actions across the platform</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {activity.type === "user" && <Users className="h-4 w-4 text-blue-500" />}
-                  {activity.type === "event" && <Calendar className="h-4 w-4 text-green-500" />}
-                  {activity.type === "product" && <Package className="h-4 w-4 text-purple-500" />}
-                  {activity.type === "content" && <FileText className="h-4 w-4 text-orange-500" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
-                <Badge variant="secondary" className="capitalize">
-                  {activity.type}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

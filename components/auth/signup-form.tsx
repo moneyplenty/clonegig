@@ -4,11 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "./auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
@@ -20,6 +20,7 @@ export function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const { signUp } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,45 +28,29 @@ export function SignupForm() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
+    const { error } = await signUp(email, password, fullName)
 
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      })
-
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess(true)
-      }
-    } catch (error) {
-      setError("An unexpected error occurred")
-    } finally {
-      setLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      setSuccess(true)
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 2000)
     }
+
+    setLoading(false)
   }
 
   if (success) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+          <CardTitle className="text-2xl text-center">Welcome!</CardTitle>
           <CardDescription className="text-center">
-            We've sent you a confirmation link to complete your registration.
+            Your account has been created successfully. Redirecting to dashboard...
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button onClick={() => router.push("/login")} className="w-full">
-            Go to Sign In
-          </Button>
-        </CardContent>
       </Card>
     )
   }
@@ -73,17 +58,16 @@ export function SignupForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center">Create Account</CardTitle>
-        <CardDescription className="text-center">Join the Kelvin Creekman fan community</CardDescription>
+        <CardTitle className="text-2xl text-center">Create account</CardTitle>
+        <CardDescription className="text-center">Enter your details to create your account</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
@@ -96,7 +80,6 @@ export function SignupForm() {
               disabled={loading}
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -109,7 +92,6 @@ export function SignupForm() {
               disabled={loading}
             />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
@@ -123,20 +105,20 @@ export function SignupForm() {
               minLength={6}
             />
           </div>
-
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Account
+            Create account
           </Button>
-        </form>
-
-        <div className="mt-4 text-center text-sm">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign in
-          </Link>
-        </div>
-      </CardContent>
+          <p className="text-sm text-center text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </form>
     </Card>
   )
 }

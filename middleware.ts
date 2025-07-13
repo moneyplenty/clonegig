@@ -39,17 +39,16 @@ export async function middleware(request: NextRequest) {
       // No user, redirect to login
       const url = request.nextUrl.clone()
       url.pathname = "/login"
-      url.searchParams.set("redirectTo", request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
 
-    // Check if user has admin role
+    // Check if user is admin
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
     if (!profile || profile.role !== "admin") {
-      // User is not admin, redirect to dashboard
+      // Not admin, redirect to home
       const url = request.nextUrl.clone()
-      url.pathname = "/dashboard"
+      url.pathname = "/"
       return NextResponse.redirect(url)
     }
   }
@@ -59,7 +58,6 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = "/login"
-      url.searchParams.set("redirectTo", request.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
   }

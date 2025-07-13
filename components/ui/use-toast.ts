@@ -138,8 +138,21 @@ function useToast() {
   }
 }
 
-const toast = {
-  // Placeholder for the toast variable
+const toast = (props: Toast) => {
+  const id = props.id || Math.random().toString(36).substring(2, 9)
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) {
+          dispatch({ type: "DISMISS_TOAST", toastId: id })
+        }
+      },
+    },
+  })
 }
 
 export { useToast, toast }

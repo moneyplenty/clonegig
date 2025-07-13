@@ -2,7 +2,15 @@
 
 import type React from "react"
 import { createContext, useContext, useReducer, useEffect } from "react"
-import type { CartItem } from "@/types"
+import { toast } from "@/hooks/use-toast"
+
+interface CartItem {
+  id: string
+  name: string
+  price: number
+  image: string
+  quantity: number
+}
 
 interface CartState {
   items: CartItem[]
@@ -94,7 +102,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart)
-        dispatch({ type: "LOAD_CART", payload: parsedCart })
+        if (Array.isArray(parsedCart)) {
+          dispatch({ type: "LOAD_CART", payload: parsedCart })
+        }
       } catch (error) {
         console.error("Error loading cart from localStorage:", error)
       }
@@ -108,10 +118,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     dispatch({ type: "ADD_ITEM", payload: item })
+    toast({
+      title: "Added to cart",
+      description: `${item.name} has been added to your cart.`,
+    })
   }
 
   const removeItem = (id: string) => {
     dispatch({ type: "REMOVE_ITEM", payload: id })
+    toast({
+      title: "Removed from cart",
+      description: "Item has been removed from your cart.",
+    })
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -120,6 +138,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => {
     dispatch({ type: "CLEAR_CART" })
+    toast({
+      title: "Cart cleared",
+      description: "All items have been removed from your cart.",
+    })
   }
 
   return (

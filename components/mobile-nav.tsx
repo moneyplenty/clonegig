@@ -1,17 +1,16 @@
 "use client"
 
 import * as React from "react"
-import Link, { type LinkProps } from "next/link"
-import { useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Icons } from "@/components/icons"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
+import { Icons } from "@/components/icons"
+import { cn } from "@/lib/utils"
 
 export function MobileNav() {
   const [open, setOpen] = React.useState(false)
+  const pathname = usePathname()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -20,61 +19,70 @@ export function MobileNav() {
           variant="ghost"
           className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
         >
-          <Menu className="h-5 w-5" />
+          <Icons.menu className="h-6 w-6" />
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="pr-0">
-        <MobileLink href="/" className="flex items-center" onOpenChange={setOpen}>
-          <Icons.logo className="mr-2 h-4 w-4" />
+        <Link href="/" className="flex items-center space-x-2" onClick={() => setOpen(false)}>
+          <Icons.logo className="h-6 w-6" />
           <span className="font-bold">Kelvin Creekman</span>
-        </MobileLink>
-        <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+        </Link>
+        <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
           <div className="flex flex-col space-y-3">
-            <MobileLink href="/events" onOpenChange={setOpen}>
+            <Link
+              href="/events"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === "/events" ? "text-foreground" : "text-foreground/60",
+              )}
+              onClick={() => setOpen(false)}
+            >
               Events
-            </MobileLink>
-            <MobileLink href="/content" onOpenChange={setOpen}>
+            </Link>
+            <Link
+              href="/content"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === "/content" ? "text-foreground" : "text-foreground/60",
+              )}
+              onClick={() => setOpen(false)}
+            >
               Content
-            </MobileLink>
-            <MobileLink href="/store" onOpenChange={setOpen}>
+            </Link>
+            <Link
+              href="/store"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === "/store" ? "text-foreground" : "text-foreground/60",
+              )}
+              onClick={() => setOpen(false)}
+            >
               Store
-            </MobileLink>
-            <MobileLink href="/meet-and-greet" onOpenChange={setOpen}>
-              Meet & Greet
-            </MobileLink>
-            <MobileLink href="/community" onOpenChange={setOpen}>
+            </Link>
+            <Link
+              href="/community"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === "/community" ? "text-foreground" : "text-foreground/60",
+              )}
+              onClick={() => setOpen(false)}
+            >
               Community
-            </MobileLink>
-            <MobileLink href="/join" onOpenChange={setOpen}>
-              Join Fan Club
-            </MobileLink>
+            </Link>
+            <Link
+              href="/meet-and-greet"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === "/meet-and-greet" ? "text-foreground" : "text-foreground/60",
+              )}
+              onClick={() => setOpen(false)}
+            >
+              Meet & Greet
+            </Link>
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
-  )
-}
-
-interface MobileLinkProps extends LinkProps {
-  onOpenChange?: (open: boolean) => void
-  children: React.ReactNode
-  className?: string
-}
-
-function MobileLink({ href, onOpenChange, className, children, ...props }: MobileLinkProps) {
-  const router = useRouter()
-  return (
-    <Link
-      href={href}
-      onClick={() => {
-        router.push(href.toString())
-        onOpenChange?.(false)
-      }}
-      className={cn(className)}
-      {...props}
-    >
-      {children}
-    </Link>
   )
 }

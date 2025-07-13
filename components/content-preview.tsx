@@ -1,91 +1,170 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Play, FileText, ImageIcon, Music, Lock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { PlayCircle, BookOpen, Headphones, ImageIcon } from "lucide-react"
-import { useAuth } from "./auth/auth-provider"
 
-interface ContentItem {
-  id: number
-  title: string
-  type: "video" | "blog" | "audio" | "gallery" | "text"
-  category: string
-  image: string
-  description: string
-  isPremium: boolean
+const mockContent = [
+  {
+    id: 1,
+    title: "Behind the Scenes: Recording 'Electric Dreams'",
+    type: "video",
+    category: "Exclusive",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "Go behind the scenes of Kelvin's latest album recording.",
+    isPremium: true,
+    duration: "12:34",
+    publishedAt: "2024-01-15",
+  },
+  {
+    id: 2,
+    title: "Kelvin's Top 5 Guitar Riffs",
+    type: "blog",
+    category: "Public",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "Kelvin shares his favorite guitar riffs and how they influenced him.",
+    isPremium: false,
+    readTime: "5 min read",
+    publishedAt: "2024-01-10",
+  },
+  {
+    id: 3,
+    title: "Fan Art Showcase: January 2024",
+    type: "gallery",
+    category: "Public",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "A collection of amazing fan art submitted by the community.",
+    isPremium: false,
+    imageCount: 24,
+    publishedAt: "2024-01-08",
+  },
+  {
+    id: 4,
+    title: "Unreleased Demo: 'Frozen Fire'",
+    type: "audio",
+    category: "Exclusive",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "Listen to an exclusive unreleased demo track.",
+    isPremium: true,
+    duration: "3:45",
+    publishedAt: "2024-01-05",
+  },
+  {
+    id: 5,
+    title: "Live Q&A Transcript with Kelvin",
+    type: "text",
+    category: "Exclusive",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "Read the full transcript from the latest live Q&A session.",
+    isPremium: true,
+    readTime: "15 min read",
+    publishedAt: "2024-01-03",
+  },
+  {
+    id: 6,
+    title: "Tour Diary: Road to Electrify",
+    type: "blog",
+    category: "Public",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "Follow Kelvin's journey on his latest tour.",
+    isPremium: false,
+    readTime: "8 min read",
+    publishedAt: "2024-01-01",
+  },
+]
+
+const getContentIcon = (type: string) => {
+  switch (type) {
+    case "video":
+      return Play
+    case "audio":
+      return Music
+    case "blog":
+    case "text":
+      return FileText
+    case "gallery":
+      return ImageIcon
+    default:
+      return FileText
+  }
 }
 
-interface ContentPreviewProps {
-  content: ContentItem[]
+const getContentMeta = (content: any) => {
+  if (content.duration) return content.duration
+  if (content.readTime) return content.readTime
+  if (content.imageCount) return `${content.imageCount} images`
+  return ""
 }
 
-export function ContentPreview({ content }: ContentPreviewProps) {
-  const { user } = useAuth()
-
-  const getIcon = (type: ContentItem["type"]) => {
-    switch (type) {
-      case "video":
-        return <PlayCircle className="h-5 w-5" />
-      case "blog":
-      case "text":
-        return <BookOpen className="h-5 w-5" />
-      case "audio":
-        return <Headphones className="h-5 w-5" />
-      case "gallery":
-        return <ImageIcon className="h-5 w-5" />
-      default:
-        return null
-    }
-  }
-
-  const canAccess = (item: ContentItem) => {
-    if (!item.isPremium) {
-      return true // Public content is always accessible
-    }
-    // Premium content requires 'premium' or 'admin' role
-    return user?.user_metadata?.role === "premium" || user?.user_metadata?.role === "admin"
-  }
-
+export function ContentPreview() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-      {content.map((item) => (
-        <Card key={item.id} className="flex flex-col">
-          <CardHeader className="p-0">
-            <div className="relative w-full h-48">
+    <>
+      {mockContent.slice(0, 3).map((content) => {
+        const Icon = getContentIcon(content.type)
+        return (
+          <Card key={content.id} className="flex flex-col">
+            <div className="relative aspect-video overflow-hidden rounded-t-lg">
               <Image
-                src={item.image || "/placeholder.svg"}
-                alt={item.title}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-t-lg"
+                src={content.image || "/placeholder.svg"}
+                alt={content.title}
+                fill
+                className="object-cover transition-transform hover:scale-105"
               />
-              {item.isPremium && (
-                <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">Premium</Badge>
-              )}
-              <div className="absolute bottom-2 right-2 bg-background/70 backdrop-blur-sm text-foreground px-2 py-1 rounded-md text-sm flex items-center gap-1">
-                {getIcon(item.type)}
-                {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+              <div className="absolute top-2 left-2">
+                <Badge variant={content.isPremium ? "default" : "secondary"}>{content.category}</Badge>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-grow p-4">
-            <CardTitle className="text-lg font-semibold mb-2">{item.title}</CardTitle>
-            <p className="text-muted-foreground text-sm line-clamp-2">{item.description}</p>
-          </CardContent>
-          <CardFooter className="p-4 pt-0">
-            <Button className="w-full" asChild disabled={!canAccess(item)}>
-              {canAccess(item) ? (
-                <Link href={`/content/${item.id}`}>View Content</Link>
-              ) : (
-                <Link href="/join">Unlock with Premium</Link>
+              {content.isPremium && (
+                <div className="absolute top-2 right-2">
+                  <div className="bg-black/50 rounded-full p-1">
+                    <Lock className="h-4 w-4 text-white" />
+                  </div>
+                </div>
               )}
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+              <div className="absolute bottom-2 left-2">
+                <div className="bg-black/50 rounded-full p-1.5">
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+              </div>
+              {getContentMeta(content) && (
+                <div className="absolute bottom-2 right-2">
+                  <Badge variant="secondary" className="bg-black/50 text-white">
+                    {getContentMeta(content)}
+                  </Badge>
+                </div>
+              )}
+            </div>
+            <CardHeader>
+              <CardTitle className="line-clamp-2">{content.title}</CardTitle>
+              <CardDescription className="line-clamp-2">{content.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <div className="text-sm text-muted-foreground">
+                Published {new Date(content.publishedAt).toLocaleDateString()}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full" variant={content.isPremium ? "default" : "outline"} asChild>
+                <Link href={`/content/${content.id}`}>
+                  {content.isPremium ? (
+                    <>
+                      <Lock className="mr-2 h-4 w-4" />
+                      Premium Content
+                    </>
+                  ) : (
+                    <>
+                      <Icon className="mr-2 h-4 w-4" />
+                      View Content
+                    </>
+                  )}
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        )
+      })}
+    </>
   )
 }

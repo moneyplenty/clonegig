@@ -1,3 +1,5 @@
+"use client"
+
 import { Input } from "@/components/ui/input"
 import { Search, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -5,8 +7,8 @@ import { useCart } from "./cart-context"
 import Link from "next/link"
 
 export function StoreHeader() {
-  const { cart } = useCart()
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const { items } = useCart()
+  const totalItems = items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">

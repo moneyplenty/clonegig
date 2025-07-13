@@ -7,24 +7,38 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Search, MoreHorizontal, UserPlus, Filter } from "lucide-react"
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Search, Edit, Trash2, Crown, Star, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import type { User } from "@/types"
+import { toast } from "@/hooks/use-toast"
+
+interface User {
+  id: string
+  full_name: string | null
+  email: string
+  role: "user" | "admin"
+  membership_tier: "free" | "premium" | "vip"
+  avatar_url: string | null
+  created_at: string
+}
 
 export function AdminUserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterRole, setFilterRole] = useState<"all" | "user" | "admin">("all")
-  const [filterTier, setFilterTier] = useState<"all" | "free" | "premium" | "vip">("all")
+  const [selectedRole, setSelectedRole] = useState<string>("all")
+  const [selectedTier, setSelectedTier] = useState<string>("all")
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const supabase = createClient()
 
@@ -34,216 +48,319 @@ export function AdminUserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`
+          id,
+          full_name,
+          role,
+          membership_tier,
+          avatar_url,
+          created_at
+        `)
+        .order("created_at", { ascending: false })
 
-      if (error) {
-        console.error("Error fetching users:", error)
-        return
-      }
+      if (error) throw error
 
-      setUsers(data || [])
+      // Mock email data since we can't access auth.users directly
+      const usersWithEmail =
+        data?.map((user) => ({
+          ...user,
+          email: `user${user.id.slice(0, 8)}@example.com`, // Mock email
+        })) || []
+
+      setUsers(usersWithEmail)
     } catch (error) {
       console.error("Error fetching users:", error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch users. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const updateUserRole = async (userId: string, newRole: "user" | "admin") => {
+  const handleUpdateUser = async (userId: string, updates: Partial<User>) => {
     try {
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId)
+      const { error } = await supabase.from("profiles").update(updates).eq("id", userId)
 
-      if (error) {
-        console.error("Error updating user role:", error)
-        return
-      }
+      if (error) throw error
 
-      // Update local state
-      setUsers(users.map((user) => (user.id === userId ? { ...user, role: newRole } : user)))
+      setUsers(users.map((user) => (user.id === userId ? { ...user, ...updates } : user)))
+
+      toast({
+        title: "Success",
+        description: "User updated successfully.",
+      })
+
+      setIsEditDialogOpen(false)
+      setEditingUser(null)
     } catch (error) {
-      console.error("Error updating user role:", error)
+      console.error("Error updating user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const updateUserTier = async (userId: string, newTier: "free" | "premium" | "vip") => {
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return
+
     try {
-      const { error } = await supabase.from("profiles").update({ membership_tier: newTier }).eq("id", userId)
+      const { error } = await supabase.from("profiles").delete().eq("id", userId)
 
-      if (error) {
-        console.error("Error updating user tier:", error)
-        return
-      }
+      if (error) throw error
 
-      // Update local state
-      setUsers(users.map((user) => (user.id === userId ? { ...user, membership_tier: newTier } : user)))
+      setUsers(users.filter((user) => user.id !== userId))
+
+      toast({
+        title: "Success",
+        description: "User deleted successfully.",
+      })
     } catch (error) {
-      console.error("Error updating user tier:", error)
+      console.error("Error deleting user:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = filterRole === "all" || user.role === filterRole
-    const matchesTier = filterTier === "all" || user.membership_tier === filterTier
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRole = selectedRole === "all" || user.role === selectedRole
+    const matchesTier = selectedTier === "all" || user.membership_tier === selectedTier
 
     return matchesSearch && matchesRole && matchesTier
   })
 
+  const getTierIcon = (tier: string) => {
+    switch (tier) {
+      case "vip":
+        return <Crown className="h-4 w-4" />
+      case "premium":
+        return <Star className="h-4 w-4" />
+      default:
+        return <Users className="h-4 w-4" />
+    }
+  }
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case "vip":
+        return "bg-yellow-500"
+      case "premium":
+        return "bg-blue-500"
+      default:
+        return "bg-gray-500"
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kelvin-primary"></div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>Loading users...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-muted rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold">User Management</h2>
-          <p className="text-muted-foreground">Manage user accounts, roles, and membership tiers</p>
-        </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite User
-        </Button>
-      </div>
-
-      {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filters</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            User Management
+          </CardTitle>
+          <CardDescription>Manage user accounts, roles, and membership tiers</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedTier} onValueChange={setSelectedTier}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Filter by tier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tiers</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Tier</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src={user.avatar_url || ""} />
+                          <AvatarFallback>
+                            {user.full_name
+                              ?.split(" ")
+                              .map((n) => n[0])
+                              .join("") || user.email[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.full_name || "No name"}</div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getTierColor(user.membership_tier)}>
+                        {getTierIcon(user.membership_tier)}
+                        <span className="ml-1 capitalize">{user.membership_tier}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingUser(user)
+                            setIsEditDialogOpen(true)
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDeleteUser(user.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No users found</h3>
+              <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user role and membership tier.</DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={editingUser.role}
+                  onValueChange={(value) => setEditingUser({ ...editingUser, role: value as "user" | "admin" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tier">Membership Tier</Label>
+                <Select
+                  value={editingUser.membership_tier}
+                  onValueChange={(value) =>
+                    setEditingUser({ ...editingUser, membership_tier: value as "free" | "premium" | "vip" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Role: {filterRole}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setFilterRole("all")}>All Roles</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterRole("user")}>User</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterRole("admin")}>Admin</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Tier: {filterTier}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setFilterTier("all")}>All Tiers</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterTier("free")}>Free</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterTier("premium")}>Premium</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterTier("vip")}>VIP</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>Manage user accounts and permissions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Membership</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback>{user.full_name?.charAt(0) || user.email?.charAt(0) || "U"}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.full_name || "No name"}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.membership_tier === "vip"
-                          ? "default"
-                          : user.membership_tier === "premium"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {user.membership_tier}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => updateUserRole(user.id, user.role === "admin" ? "user" : "admin")}
-                        >
-                          {user.role === "admin" ? "Remove Admin" : "Make Admin"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateUserTier(user.id, "free")}>Set to Free</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateUserTier(user.id, "premium")}>
-                          Set to Premium
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateUserTier(user.id, "vip")}>Set to VIP</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                editingUser &&
+                handleUpdateUser(editingUser.id, {
+                  role: editingUser.role,
+                  membership_tier: editingUser.membership_tier,
+                })
+              }
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
