@@ -1,43 +1,58 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
+import { createClient } from "@/lib/supabase/server"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const {
-      userName,
-      userEmail,
-      sessionDate,
-      sessionTime,
-      sessionType,
-      sessionDuration,
-      sessionPrice,
-      contactInfo,
-      specialRequests,
-      preferredTime,
-      roomUrl,
-      userQuestion,
-      date,
-      time,
-    } = body
+  const supabase = createClient()
+  const { bookingId, userId, roomUrl } = await request.json()
 
-    if (!userEmail || (!userName && !date && !time) || !roomUrl) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+  if (!bookingId || !userId) {
+    return NextResponse.json({ error: "Booking ID and User ID are required" }, { status: 400 })
+  }
+
+  try {
+    // Fetch booking details
+    const { data: booking, error: bookingError } = await supabase
+      .from("meet_and_greet_bookings")
+      .select("*")
+      .eq("id", bookingId)
+      .single()
+
+    if (bookingError || !booking) {
+      console.error("Error fetching booking:", bookingError)
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 })
     }
 
-    const isPrivateSession =
-      sessionType?.includes("WHATSAPP") || sessionType?.includes("FACETIME") || sessionType?.includes("Private")
+    // Fetch user details
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", userId)
+      .single()
+
+    if (profileError || !profile) {
+      console.error("Error fetching user profile:", profileError)
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
+    }
+
+    const userName = profile.full_name || profile.email
+    const sessionDate = new Date(booking.session_time).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
 
     const { data, error } = await resend.emails.send({
       from: "Kelvin Creekman Fan Club <onboarding@resend.dev>", // Replace with your verified Resend domain
-      to: [userEmail],
-      subject: isPrivateSession
-        ? `Meet & Greet Confirmation: ${userName}`
-        : `Meet & Greet Session Confirmation: ${date} at ${time}`,
+      to: profile.email,
+      subject: `Your Meet & Greet Session Confirmation - ${booking.session_title}`,
       html: `
-        <!DOCTYPE html>
+        &lt;!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
@@ -163,125 +178,30 @@ export async function POST(request: NextRequest) {
               <h1 class="title">Meet & Greet Confirmed!</h1>
             </div>
             
-            <p>Hey ${userName || "Fan"}! 🎸</p>
+            <p>Hey ${userName}! 🎸</p>
             
-            ${
-              isPrivateSession
-                ? `
-              <div class="highlight">
-                <h3 style="margin: 0 0 10px 0;">🔥 PRIVATE SESSION BOOKED! 🔥</h3>
-                <p style="margin: 0;">Kelvin will personally contact you within 24 hours to schedule your exclusive session!</p>
-              </div>
-              
-              <p>You've just booked an exclusive private session with Kelvin! This is going to be an incredible one-on-one experience that you'll never forget.</p>
-            `
-                : `
-              <p>Your spot in the <strong>${sessionType}</strong> has been confirmed! Get ready for an amazing group experience with Kelvin and fellow fans.</p>
-            `
-            }
+            <p>Your Meet & Greet session with Kelvin Creekman has been successfully confirmed!</p>
             
             <div class="session-details">
               <h3 style="color: #1e3c72; margin-top: 0;">🎥 Session Details</h3>
               <div class="detail-row">
                 <span class="detail-label">Session Type:</span>
-                <span class="detail-value">${sessionType}</span>
+                <span class="detail-value">${booking.session_type}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Date & Time:</span>
+                <span class="detail-value">${sessionDate}</span>
               </div>
               ${
-                sessionDate || date
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Date:</span>
-                <span class="detail-value">${sessionDate || date}</span>
-              </div>
-              `
-                  : ""
-              }
-              ${
-                sessionTime || time
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Time:</span>
-                <span class="detail-value">${sessionTime || time}</span>
-              </div>
-              `
-                  : ""
-              }
-              ${
-                sessionDuration
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Duration:</span>
-                <span class="detail-value">${sessionDuration}</span>
-              </div>
-              `
-                  : ""
-              }
-              ${
-                sessionPrice
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Price:</span>
-                <span class="detail-value">${sessionPrice}</span>
-              </div>
-              `
-                  : ""
-              }
-              ${
-                contactInfo
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Contact Info:</span>
-                <span class="detail-value">${contactInfo}</span>
-              </div>
-              `
-                  : ""
-              }
-              ${
-                preferredTime
-                  ? `
-              <div class="detail-row">
-                <span class="detail-label">Preferred Time:</span>
-                <span class="detail-value">${preferredTime}</span>
-              </div>
-              `
-                  : ""
-              }
-              <div class="detail-row">
+                roomUrl
+                  ? `<div class="detail-row">
                 <span class="detail-label">Join Link:</span>
                 <span class="detail-value"><a href="${roomUrl}">${roomUrl}</a></span>
-              </div>
-              ${userQuestion ? `<div class="detail-row"><span class="detail-label">Your Question:</span><span class="detail-value">${userQuestion}</span></div>` : ""}
+              </div>`
+                  : ""
+              }
             </div>
             
-            ${
-              specialRequests
-                ? `
-            <div class="important-info">
-              <h4 style="margin-top: 0; color: #856404;">📝 Your Special Requests:</h4>
-              <p style="margin-bottom: 0;">${specialRequests}</p>
-            </div>
-            `
-                : ""
-            }
-            
-            ${
-              isPrivateSession
-                ? `
-            <div class="tech-requirements">
-              <h4 style="margin-top: 0; color: #2d5016;">📱 Next Steps for Private Session:</h4>
-              <ul style="margin-bottom: 0;">
-                <li><strong>Kelvin will contact you directly</strong> within 24 hours using the contact information you provided</li>
-                <li>He'll work with you to find the perfect time that works for both of you</li>
-                <li>Make sure your device is charged and you have a stable internet connection</li>
-                <li>Find a quiet, well-lit space for the best experience</li>
-                <li>Prepare any questions or topics you'd like to discuss</li>
-                ${sessionType?.includes("WHATSAPP") ? "<li>Ensure your WhatsApp is updated and working properly</li>" : ""}
-                ${sessionType?.includes("FACETIME") ? "<li>Make sure your Apple ID is set up correctly for FaceTime</li>" : ""}
-                ${sessionType?.includes("video") ? "<li>We'll send you a secure video link before the session</li>" : ""}
-              </ul>
-            </div>
-            `
-                : `
             <div class="tech-requirements">
               <h4 style="margin-top: 0; color: #2d5016;">💻 Technical Requirements:</h4>
               <ul style="margin-bottom: 0;">
@@ -292,39 +212,19 @@ export async function POST(request: NextRequest) {
                 <li>Good lighting so Kelvin can see you clearly</li>
               </ul>
             </div>
-            `
-            }
             
             <div class="important-info">
               <h4 style="margin-top: 0; color: #856404;">⚡ Important Reminders:</h4>
               <ul style="margin-bottom: 0;">
-                ${
-                  isPrivateSession
-                    ? `
-                <li>This is a private, exclusive session - please keep it personal and don't record without permission</li>
-                <li>Payment will be processed after the session is completed</li>
-                <li>If you need to reschedule, contact us at least 24 hours in advance</li>
-                `
-                    : `
-                <li>Join the session 5-10 minutes early to test your connection</li>
-                <li>Be respectful of other participants and wait your turn to speak</li>
-                <li>Recording is not permitted to protect everyone's privacy</li>
-                `
-                }
+                <li>Please join the room a few minutes before your scheduled time.</li>
                 <li>Have your questions ready - this is your chance to connect with Kelvin!</li>
                 <li>Check your email for any last-minute updates</li>
               </ul>
             </div>
             
-            ${
-              !isPrivateSession
-                ? `
             <div style="text-align: center;">
               <a href="https://kelvincreekman.com/meet-and-greet" class="button">Join Session (Link will be active 30 min before)</a>
             </div>
-            `
-                : ""
-            }
             
             <p>If you have any questions or need technical support, please contact us at <a href="mailto:support@kelvincreekman.com">support@kelvincreekman.com</a></p>
             
@@ -350,13 +250,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error("Error sending email:", error)
-      return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
+      console.error("Resend email error:", error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, data })
-  } catch (error) {
-    console.error("Error in send-meetgreet-confirmation:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Error sending meet & greet confirmation email:", error)
+    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 })
   }
 }

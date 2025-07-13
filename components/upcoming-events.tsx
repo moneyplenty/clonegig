@@ -1,110 +1,78 @@
-"use client"
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, MapPin, Clock } from "lucide-react"
-import Image from "next/image"
 import Link from "next/link"
+import Image from "next/image"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "Electric Dreams Live Concert",
-    description: "Experience Kelvin's latest album performed live with full band and special effects.",
-    date: "2024-02-15",
-    time: "8:00 PM",
-    location: "Madison Square Garden, NYC",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "$75",
-    isPremium: false,
-    category: "Concert",
-  },
-  {
-    id: 2,
-    title: "VIP Meet & Greet Session",
-    description: "Exclusive meet and greet with Kelvin, photo opportunities, and signed merchandise.",
-    date: "2024-02-20",
-    time: "6:00 PM",
-    location: "Virtual Event",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "$150",
-    isPremium: true,
-    category: "Meet & Greet",
-  },
-  {
-    id: 3,
-    title: "Acoustic Unplugged Session",
-    description: "Intimate acoustic performance featuring fan favorites and unreleased tracks.",
-    date: "2024-03-01",
-    time: "7:30 PM",
-    location: "Blue Note Jazz Club, NYC",
-    image: "/placeholder.svg?height=200&width=300",
-    price: "$45",
-    isPremium: false,
-    category: "Acoustic",
-  },
-]
+interface Event {
+  id: string
+  name: string
+  description: string
+  date: string
+  location: string
+  ticket_price: number
+  image_url: string
+}
 
-export function UpcomingEvents() {
+export async function UpcomingEvents() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: events, error } = await supabase.from("events").select("*").order("date", { ascending: true }).limit(3)
+
+  if (error) {
+    console.error("Error fetching events:", error)
+    return <div>Error loading events.</div>
+  }
+
   return (
-    <section className="py-12 md:py-24 lg:py-32 bg-muted/50">
-      <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Upcoming Events</h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Don't miss out on exclusive live performances, meet & greets, and special events.
-            </p>
-          </div>
-        </div>
-        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-          {upcomingEvents.map((event) => (
-            <Card key={event.id} className="flex flex-col">
-              <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
-                <div className="absolute top-2 left-2">
-                  <Badge variant={event.isPremium ? "default" : "secondary"}>{event.category}</Badge>
-                </div>
-                {event.isPremium && (
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="destructive">Premium</Badge>
-                  </div>
-                )}
+    <section className="py-12 md:py-20 bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-900 dark:text-white">
+          Upcoming Events
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {events.map((event) => (
+            <Card key={event.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div className="relative w-full h-48">
+                <Image
+                  src={event.image_url || "/placeholder.svg"}
+                  alt={event.name}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-t-lg"
+                />
               </div>
               <CardHeader>
-                <CardTitle className="line-clamp-2">{event.title}</CardTitle>
-                <CardDescription className="line-clamp-3">{event.description}</CardDescription>
+                <CardTitle className="text-xl font-semibold">{event.name}</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400">
+                  {new Date(event.date).toLocaleDateString()} at {event.location}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(event.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{event.location}</span>
-                  </div>
+              <CardContent className="flex flex-col gap-4">
+                <p className="text-gray-700 dark:text-gray-300 line-clamp-3">{event.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-primary">
+                    {event.ticket_price > 0 ? `$${event.ticket_price.toFixed(2)}` : "Free"}
+                  </span>
+                  <Link href={`/events/${event.id}`}>
+                    <Button variant="outline">View Details</Button>
+                  </Link>
                 </div>
-                <div className="text-2xl font-bold text-primary">{event.price}</div>
               </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <Link href={`/events/${event.id}`}>Book Now</Link>
-                </Button>
-              </CardFooter>
             </Card>
           ))}
         </div>
-        <div className="flex justify-center">
-          <Button variant="outline" size="lg" asChild>
-            <Link href="/events">View All Events</Link>
-          </Button>
+        <div className="text-center mt-12">
+          <Link href="/events">
+            <Button
+              size="lg"
+              className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-3 rounded-full shadow-md"
+            >
+              View All Events
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

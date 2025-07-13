@@ -1,28 +1,29 @@
 "use client"
 
-import { Input } from "@/components/ui/input"
-import { Search, ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useCart } from "./cart-context"
+import { ShoppingCart } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { CartContext } from "./cart-context"
+import { useContext } from "react"
 
 export function StoreHeader() {
-  const { items } = useCart()
-  const totalItems = items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+  const { cartItems } = useContext(CartContext)
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-      <h1 className="text-4xl font-bold">Merchandise</h1>
-      <div className="relative flex-1 md:flex-grow-0 md:w-1/3">
-        <Input placeholder="Search merchandise..." className="pl-8" />
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      </div>
-      <Button variant="outline" size="lg" asChild>
-        <Link href="/checkout">
-          <ShoppingCart className="mr-2 h-5 w-5" />
-          Cart ({totalItems})
-        </Link>
-      </Button>
+    <div className="flex items-center justify-between py-4 px-6 border-b">
+      <h1 className="text-2xl font-bold">Merchandise Store</h1>
+      <Link href="/store/cart">
+        <Button variant="ghost" size="icon" className="relative">
+          <ShoppingCart className="h-6 w-6" />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+              {totalItems}
+            </span>
+          )}
+          <span className="sr-only">Shopping Cart</span>
+        </Button>
+      </Link>
     </div>
   )
 }

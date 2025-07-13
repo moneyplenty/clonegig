@@ -1,25 +1,15 @@
-modules = ["nodejs-20", "web"]
-run = "npm run dev"
+version = 0.2
+patterns = ["**"]
+exclude = ["node_modules", ".git", ".replit", ".c9", ".vscode", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "replit.nix", "README.md", "LICENSE", "Procfile", "requirements.txt", "pyproject.toml", "poetry.lock", "mix.lock", "mix.exs", "Cargo.lock", "Cargo.toml", "go.mod", "go.sum", "composer.json", "composer.lock", "Gemfile", "Gemfile.lock", "Rakefile", "pom.xml", "build.gradle", "settings.gradle", "package.json", "tsconfig.json", "next.config.mjs", "postcss.config.mjs", "tailwind.config.ts", "components.json", "styles/globals.css", "public/placeholder-logo.png", "public/placeholder-logo.svg", "public/placeholder.svg", "public/creekman-logo.png", "public/placeholder-user.jpg", "public/placeholder.jpg", "public/merch/beanie.jpg", "public/merch/kelvin-tshirt.webp", "public/merch/mug-black.webp", "public/merch/mug-white.webp", "public/merch/notepad.webp", "public/merch/pin.webp"]
 
 [nix]
-channel = "stable-24_05"
+args = ["shell", "nixpkgs#nodejs-20_x", "-f", "shell.nix"]
 
-[deployment]
-run = ["sh", "-c", "npm run start -- --hostname 0.0.0.0"]
-build = ["sh", "-c", "npm run build"]
+[languages]
+typescript = { pattern = "**/{*.ts,*.tsx}" }
 
-[workflows]
-runButton = "Dev Server"
+[run]
+command = "npm run dev"
 
-[[workflows.workflow]]
-name = "Dev Server"
-author = 44963688
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev -- --hostname 0.0.0.0"
-
-[[ports]]
-localPort = 3000
-externalPort = 80
+[env]
+NODE_ENV = "development"

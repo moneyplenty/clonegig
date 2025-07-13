@@ -1,49 +1,48 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const { userId, sessionType } = await req.json()
+
+  if (!userId || !sessionType) {
+    return NextResponse.json({ error: "Missing userId or sessionType" }, { status: 400 })
+  }
+
   try {
-    const { roomName } = await req.json()
-
-    if (!roomName) {
-      return new NextResponse("Room name is required", { status: 400 })
-    }
-
     const DAILY_API_KEY = process.env.DAILY_API_KEY
-    const DAILY_DOMAIN = process.env.DAILY_DOMAIN
-
-    if (!DAILY_API_KEY || !DAILY_DOMAIN) {
-      return new NextResponse("Server configuration error: Daily API key or domain missing.", { status: 500 })
+    if (!DAILY_API_KEY) {
+      throw new Error("DAILY_API_KEY is not set in environment variables.")
     }
 
-    const response = await fetch(`https://api.daily.co/v1/rooms`, {
+    const roomProperties = {
+      properties: {
+        nbf: Math.round(Date.now() / 1000), // now
+        exp: Math.round(Date.now() / 1000) + 60 * 60, // 1 hour from now
+        max_participants: 2,
+        enable_prejoin_ui: true,
+        eject_at_room_exp: true,
+        // You can add more properties based on sessionType if needed
+      },
+    }
+
+    const response = await fetch("https://api.daily.co/v1/rooms", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${DAILY_API_KEY}`,
       },
-      body: JSON.stringify({
-        name: roomName,
-        properties: {
-          exp: Math.round(Date.now() / 1000) + 60 * 60, // Room expires in 1 hour
-          enable_screenshare: true,
-          enable_chat: true,
-          start_video_off: false,
-          start_audio_off: false,
-          max_participants: 2, // Kelvin and one fan
-        },
-      }),
+      body: JSON.stringify(roomProperties),
     })
 
     if (!response.ok) {
       const errorData = await response.json()
       console.error("Daily.co API error:", errorData)
-      return new NextResponse(`Failed to create Daily room: ${errorData.info}`, { status: response.status })
+      throw new Error(`Failed to create Daily.co room: ${errorData.info || response.statusText}`)
     }
 
-    const room = await response.json()
-    return NextResponse.json({ url: room.url })
-  } catch (error) {
-    console.error("Error creating Daily room:", error)
-    return new NextResponse("Internal server error", { status: 500 })
+    const data = await response.json()
+    return NextResponse.json({ roomUrl: data.url })
+  } catch (error: any) {
+    console.error("Error creating Daily.co room:", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

@@ -2,86 +2,52 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
-import { useAuth } from "@/components/auth/auth-provider"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { Loader2, Shield } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 
-interface AdminProtectionProps {
-  children: React.ReactNode
-  requiredRole?: "admin"
-}
-
-export function AdminProtection({ children, requiredRole = "admin" }: AdminProtectionProps) {
-  const { user, profile, loading } = useAuth()
+export function AdminProtection({ children }: { children: React.ReactNode }) {
+  const supabase = createClient()
   const router = useRouter()
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    if (!loading) {
+    async function checkAdminStatus() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         router.push("/login")
         return
       }
 
-      if (!profile || profile.role !== requiredRole) {
-        setIsAuthorized(false)
-        return
-      }
+      const { data: profile, error } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
-      setIsAuthorized(true)
+      if (error || profile?.role !== "admin") {
+        router.push("/") // Redirect non-admins to home
+      } else {
+        setIsAdmin(true)
+      }
+      setLoading(false)
     }
-  }, [user, profile, loading, requiredRole, router])
+
+    checkAdminStatus()
+  }, [supabase, router])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="ml-2 text-lg">Loading admin panel...</p>
       </div>
     )
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>You need to sign in to access this page.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push("/login")} className="w-full">
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <Shield className="h-12 w-12 mx-auto mb-4 text-red-500" />
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>You don't have permission to access this page. Admin privileges required.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push("/")} className="w-full">
-              Go Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  if (!isAdmin) {
+    return null // Or a message like "Access Denied"
   }
 
   return <>{children}</>

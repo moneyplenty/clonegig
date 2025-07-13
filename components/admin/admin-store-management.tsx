@@ -1,281 +1,306 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { toast } from "@/components/ui/use-toast"
-import { Edit, Trash, Package, DollarSign } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { toast } from "@/hooks/use-toast"
+import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react"
 
 interface Product {
   id: string
   name: string
+  description: string | null
   price: number
-  description: string
-  image: string
+  image_url: string | null
   stock: number
-  category: string
-  isActive: boolean
+  created_at: string
+  updated_at: string
 }
 
-export function AdminStoreManagement() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Kelvin Creekman T-Shirt",
-      price: 25.0,
-      description: "Show your support with this official Kelvin Creekman t-shirt.",
-      image: "/merch/kelvin-tshirt.webp",
-      stock: 50,
-      category: "Apparel",
-      isActive: true
-    },
-    {
-      id: "2",
-      name: "Electric Dreams Beanie",
-      price: 20.0,
-      description: "Stay warm with the 'Electric Dreams' album beanie.",
-      image: "/merch/beanie.jpg",
-      stock: 30,
-      category: "Apparel",
-      isActive: true
-    },
-    {
-      id: "3",
-      name: "Kelvin Creekman Mug (Black)",
-      price: 15.0,
-      description: "Enjoy your coffee in this sleek black Kelvin Creekman mug.",
-      image: "/merch/mug-black.webp",
-      stock: 75,
-      category: "Accessories",
-      isActive: true
-    }
-  ])
-  
-  const [form, setForm] = useState<Omit<Product, "id"> & { id?: string }>({
+interface AdminStoreManagementProps {
+  initialProducts: Product[]
+}
+
+export function AdminStoreManagement({ initialProducts }: AdminStoreManagementProps) {
+  const supabase = createClient()
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [loading, setLoading] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
+  const [form, setForm] = useState({
     name: "",
-    price: 0,
     description: "",
-    image: "",
+    price: 0,
+    image_url: "",
     stock: 0,
-    category: "",
-    isActive: true
   })
-  const [isEditing, setIsEditing] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target
-    const { checked } = e.target as HTMLInputElement
-    setForm(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : 
-               type === "number" ? parseFloat(value) || 0 : value
-    }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isEditing && form.id) {
-      setProducts(prev => prev.map(product => 
-        product.id === form.id ? { ...form, id: product.id } as Product : product
-      ))
-      toast({ title: "Product Updated", description: `${form.name} has been updated.` })
-    } else {
-      const newProduct: Product = { ...form, id: String(Date.now()) } as Product
-      setProducts(prev => [...prev, newProduct])
-      toast({ title: "Product Added", description: `${form.name} has been added.` })
+  useEffect(() => {
+    // If initialProducts are provided, use them. Otherwise, fetch.
+    if (initialProducts.length === 0) {
+      fetchProducts()
     }
-    resetForm()
+  }, [initialProducts])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false })
+    if (error) {
+      console.error("Error fetching products:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load products.",
+        variant: "destructive",
+      })
+    } else {
+      setProducts(data || [])
+    }
+    setLoading(false)
   }
 
-  const handleEdit = (product: Product) => {
-    setForm(product)
-    setIsEditing(true)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: name === "price" || name === "stock" ? Number.parseFloat(value) : value }))
   }
 
-  const handleDelete = (id: string) => {
-    setProducts(prev => prev.filter(product => product.id !== id))
-    toast({ title: "Product Deleted", description: "Product has been removed." })
+  const handleAddEditProduct = async () => {
+    if (!form.name || !form.price || !form.stock) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields (Name, Price, Stock).",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+    let error = null
+    const productData = {
+      name: form.name,
+      description: form.description,
+      price: form.price,
+      image_url: form.image_url,
+      stock: form.stock,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (currentProduct) {
+      // Update existing product
+      const { error: updateError } = await supabase.from("products").update(productData).eq("id", currentProduct.id)
+      error = updateError
+    } else {
+      // Add new product
+      const { error: insertError } = await supabase.from("products").insert(productData)
+      error = insertError
+    }
+
+    if (error) {
+      console.error("Error saving product:", error)
+      toast({
+        title: "Error",
+        description: `Failed to save product: ${error.message}`,
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: `Product ${currentProduct ? "updated" : "added"} successfully.`,
+      })
+      setIsDialogOpen(false)
+      fetchProducts()
+    }
+    setLoading(false)
   }
 
-  const resetForm = () => {
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return
+
+    setLoading(true)
+    const { error } = await supabase.from("products").delete().eq("id", id)
+    if (error) {
+      console.error("Error deleting product:", error)
+      toast({
+        title: "Error",
+        description: `Failed to delete product: ${error.message}`,
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: "Product deleted successfully.",
+      })
+      fetchProducts()
+    }
+    setLoading(false)
+  }
+
+  const openEditDialog = (product: Product) => {
+    setCurrentProduct(product)
+    setForm({
+      name: product.name,
+      description: product.description || "",
+      price: product.price,
+      image_url: product.image_url || "",
+      stock: product.stock,
+    })
+    setIsDialogOpen(true)
+  }
+
+  const openAddDialog = () => {
+    setCurrentProduct(null)
     setForm({
       name: "",
-      price: 0,
       description: "",
-      image: "",
+      price: 0,
+      image_url: "",
       stock: 0,
-      category: "",
-      isActive: true
     })
-    setIsEditing(false)
+    setIsDialogOpen(true)
   }
-
-  const totalProducts = products.length
-  const totalValue = products.reduce((sum, product) => sum + (product.price * product.stock), 0)
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inventory Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{products.filter(p => p.stock < 20).length}</div>
-          </CardContent>
-        </Card>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Store Management</h1>
+        <Button onClick={openAddDialog}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-1 bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader>
-            <CardTitle>{isEditing ? "Edit Product" : "Add New Product"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Product Name</Label>
-                <Input id="name" name="name" value={form.name} onChange={handleChange} required />
-              </div>
-              <div>
-                <Label htmlFor="price">Price ($)</Label>
-                <Input 
-                  id="price" 
-                  name="price" 
-                  type="number" 
-                  step="0.01"
-                  value={form.price} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="stock">Stock Quantity</Label>
-                <Input 
-                  id="stock" 
-                  name="stock" 
-                  type="number" 
-                  value={form.stock} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input id="category" name="category" value={form.category} onChange={handleChange} required />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" name="description" value={form.description} onChange={handleChange} required />
-              </div>
-              <div>
-                <Label htmlFor="image">Image URL</Label>
-                <Input id="image" name="image" value={form.image} onChange={handleChange} />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isActive"
-                  checked={form.isActive}
-                  onCheckedChange={(checked) => 
-                    setForm(prev => ({ ...prev, isActive: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="isActive">Active Product</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  {isEditing ? "Update Product" : "Add Product"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2 bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader>
-            <CardTitle>Product Inventory</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <span className={product.stock < 20 ? "text-red-600 font-bold" : ""}>
-                          {product.stock}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          product.isActive 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-gray-100 text-gray-800"
-                        }`}>
-                          {product.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEdit(product)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="destructive" size="icon" onClick={() => handleDelete(product.id)}>
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{currentProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={form.name}
+                onChange={handleInputChange}
+                className="col-span-3"
+                required
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={form.description}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Price
+              </Label>
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                step="0.01"
+                value={form.price}
+                onChange={handleInputChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="stock" className="text-right">
+                Stock
+              </Label>
+              <Input
+                id="stock"
+                name="stock"
+                type="number"
+                step="1"
+                value={form.stock}
+                onChange={handleInputChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="image_url" className="text-right">
+                Image URL
+              </Label>
+              <Input
+                id="image_url"
+                name="image_url"
+                value={form.image_url}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsDialogOpen(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={handleAddEditProduct} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {currentProduct ? "Save Changes" : "Add Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : products.length === 0 ? (
+        <p className="text-center text-muted-foreground">No products found. Add some above!</p>
+      ) : (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Image URL</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell className="truncate max-w-[200px]">{product.image_url || "N/A"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(product)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product.id)}>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

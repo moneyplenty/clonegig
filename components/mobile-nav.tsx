@@ -1,87 +1,104 @@
 "use client"
-
-import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Icons } from "@/components/icons"
+import { HamburgerMenuIcon } from "@radix-ui/react-icons"
+
+import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import Image from "next/image"
 
 export function MobileNav() {
-  const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+          className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
         >
-          <Icons.menu className="h-6 w-6" />
+          <HamburgerMenuIcon className="h-5 w-5" />
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="pr-0">
-        <Link href="/" className="flex items-center space-x-2" onClick={() => setOpen(false)}>
-          <Icons.logo className="h-6 w-6" />
-          <span className="font-bold">Kelvin Creekman</span>
+        <Link href="/" className="flex items-center space-x-2">
+          <Image
+            src="/creekman-logo.png" // Updated logo path
+            alt="Creekman Logo"
+            width={24}
+            height={24}
+            className="rounded-full"
+          />
+          <span className="font-bold">{siteConfig.name}</span>
         </Link>
-        <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+        <ScrollArea className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
           <div className="flex flex-col space-y-3">
+            <Link
+              href="/"
+              className={cn("text-sm font-medium text-muted-foreground", pathname === "/" && "text-foreground")}
+            >
+              Home
+            </Link>
             <Link
               href="/events"
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === "/events" ? "text-foreground" : "text-foreground/60",
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/events") && "text-foreground",
               )}
-              onClick={() => setOpen(false)}
             >
               Events
             </Link>
             <Link
-              href="/content"
+              href="/meet-and-greet"
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === "/content" ? "text-foreground" : "text-foreground/60",
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/meet-and-greet") && "text-foreground",
               )}
-              onClick={() => setOpen(false)}
             >
-              Content
+              Meet & Greet
             </Link>
             <Link
               href="/store"
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === "/store" ? "text-foreground" : "text-foreground/60",
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/store") && "text-foreground",
               )}
-              onClick={() => setOpen(false)}
             >
               Store
             </Link>
             <Link
               href="/community"
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === "/community" ? "text-foreground" : "text-foreground/60",
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/community") && "text-foreground",
               )}
-              onClick={() => setOpen(false)}
             >
               Community
             </Link>
             <Link
-              href="/meet-and-greet"
+              href="/content"
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === "/meet-and-greet" ? "text-foreground" : "text-foreground/60",
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/content") && "text-foreground",
               )}
-              onClick={() => setOpen(false)}
             >
-              Meet & Greet
+              Content
+            </Link>
+            <Link
+              href="/join"
+              className={cn(
+                "text-sm font-medium text-muted-foreground",
+                pathname.startsWith("/join") && "text-foreground",
+              )}
+            >
+              Join
             </Link>
           </div>
-        </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   )

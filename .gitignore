@@ -1,45 +1,33 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Next.js
+.next/
+out/
 
-# dependencies
-/node_modules
-/.pnp
-/.pnp.js
+# Node.js
+node_modules/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# testing
-/coverage
+# npm
+npm-debug.log*
+.npm/
 
-# next.js
-/.next/
-/out/
+# yarn
+yarn-debug.log*
+.yarn/
 
-# production
-/build
+# vercel
+.vercel/
+
+# supabase
+supabase/
+*.supabase/
 
 # misc
 .DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# local env files
-.env
-.env.local
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
+*.log
 *.tsbuildinfo
-next-env.d.ts
-
-# prisma
-/prisma/migrations
-
-# lock files
-pnpm-lock.yaml
-</merged_code>
+.env
+.env.*.local
+.env.local

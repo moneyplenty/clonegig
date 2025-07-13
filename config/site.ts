@@ -1,14 +1,14 @@
 export const siteConfig = {
-  name: "Kelvin Creekman Fan Club",
-  description: "Official fan club website for Kelvin Creekman",
+  name: "SaaS Starter",
+  description: "A Next.js SaaS starter kit with Supabase and Stripe.",
   mainNav: [
     {
       title: "Home",
       href: "/",
     },
     {
-      title: "Content",
-      href: "/content",
+      title: "Store",
+      href: "/store",
     },
     {
       title: "Events",
@@ -19,22 +19,22 @@ export const siteConfig = {
       href: "/meet-and-greet",
     },
     {
-      title: "Store",
-      href: "/store",
+      title: "Content",
+      href: "/content",
     },
     {
       title: "Community",
       href: "/community",
     },
     {
-      title: "Dashboard",
-      href: "/dashboard",
+      title: "Join",
+      href: "/join",
     },
   ],
   links: {
     twitter: "https://twitter.com/vercel",
     github: "https://github.com/vercel/next.js",
-    docs: "https://nextjs.org",
+    docs: "https://nextjs.org/docs",
   },
 }
 

@@ -1,83 +1,78 @@
 "use client"
 
 import * as React from "react"
-import * as RechartsPrimitive from "recharts"
-
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  Bar,
+  BarChart,
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from "recharts"
 import { cn } from "@/lib/utils"
 
-// Workaround for https://github.com/recharts/recharts/issues/3615
-const use = RechartsPrimitive.ResponsiveContainer // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
-const ChartContext = React.createContext<{
-  config: ChartConfig
-} | null>(null)
-
-function useChart() {
-  const context = React.useContext(ChartContext)
-
-  if (!context) {
-    throw new Error("useChart must be used within a <Chart />")
-  }
-
-  return context
+interface ChartProps extends React.HTMLAttributes<HTMLDivElement> {
+  data: any[]
+  type: "line" | "bar" | "area"
+  xAxisKey: string
+  yAxisKey: string | string[]
+  tooltip?: boolean
+  legend?: boolean
+  grid?: boolean
+  colors?: string[]
 }
 
-type ChartConfig = {
-  [k: string]: {
-    label?: string
-    icon?: React.ComponentType
-  } & ({ color?: string; theme?: never } | { color?: never; theme: string })
-}
+const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
+  (
+    {
+      data,
+      type,
+      xAxisKey,
+      yAxisKey,
+      tooltip = true,
+      legend = true,
+      grid = true,
+      colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"],
+      className,
+      ...props
+    },
+    ref,
+  ) => {
+    const ChartComponent = type === "line" ? LineChart : type === "bar" ? BarChart : AreaChart
+    const DataComponent = type === "line" ? Line : type === "bar" ? Bar : Area
 
-type ChartContainerProps = {
-  config: ChartConfig
-  children: React.ReactNode
-} & React.ComponentPropsWithoutRef<"div">
-
-const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
-  ({ config, className, children, ...props }, ref) => {
-    const newChildren = React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        if (child.type === RechartsPrimitive.ResponsiveContainer) {
-          return React.cloneElement(child, {
-            className: cn("w-full", child.props.className),
-          } as React.ComponentPropsWithoutRef<typeof RechartsPrimitive.ResponsiveContainer>)
-        }
-      }
-      return child
-    })
+    const yKeys = Array.isArray(yAxisKey) ? yAxisKey : [yAxisKey]
 
     return (
-      <ChartContext.Provider value={{ config }}>
-        <div
-          ref={ref}
-          className={cn("flex h-[300px] w-full flex-col items-center justify-center overflow-hidden", className)}
-          {...props}
-        >
-          {newChildren}
-        </div>
-      </ChartContext.Provider>
+      <div ref={ref} className={cn("h-[400px] w-full", className)} {...props}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ChartComponent data={data}>
+            {grid && <CartesianGrid strokeDasharray="3 3" />}
+            <XAxis dataKey={xAxisKey} />
+            <YAxis />
+            {tooltip && <Tooltip />}
+            {legend && <Legend />}
+            {yKeys.map((key, index) => (
+              <DataComponent
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={colors[index % colors.length]}
+                fill={type === "area" ? colors[index % colors.length] : undefined}
+              />
+            ))}
+          </ChartComponent>
+        </ResponsiveContainer>
+      </div>
     )
   },
 )
-ChartContainer.displayName = "ChartContainer"
+Chart.displayName = "Chart"
 
-const ChartTooltip = RechartsPrimitive.Tooltip
-
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof ChartTooltip> &
-    React.ComponentPropsWithoutRef<"div"> & {
-      hideLabel?: boolean
-      hideIndicator?: boolean
-      isActive?: boolean
-    }
->(({ hideLabel, hideIndicator, isActive, ...props }, ref) => {
-  return (
-    <div ref={ref} {...props}>
-      {/* Tooltip content goes here */}
-    </div>
-  )
-})
-ChartTooltipContent.displayName = "ChartTooltipContent"
-</merged_code>
+export { Chart }

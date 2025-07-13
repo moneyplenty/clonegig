@@ -31,20 +31,17 @@ const InputOTPSlot = React.forwardRef<
     ref={ref}
     index={index}
     className={cn(
-      "relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
-      "focus:z-10 focus:border-primary focus:ring-1 focus:ring-ring",
+      "relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md focus:z-10 focus:outline-none focus:ring-1 focus:ring-ring",
       className,
     )}
     {...props}
-  >
-    {props.children}
-  </Slot>
+  />
 ))
 InputOTPSlot.displayName = "InputOTPSlot"
 
 const InputOTPSeparator = React.forwardRef<React.ElementRef<"div">, React.HTMLAttributes<HTMLDivElement>>(
-  ({ ...props }, ref) => (
-    <div ref={ref} role="separator" {...props}>
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("-mx-2 flex items-center justify-center", className)} {...props}>
       <Dot />
     </div>
   ),

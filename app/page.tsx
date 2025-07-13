@@ -2,16 +2,18 @@ import { HeroSection } from "@/components/hero-section"
 import { UpcomingEvents } from "@/components/upcoming-events"
 import { FeaturedMerchandise } from "@/components/featured-merchandise"
 import { Testimonials } from "@/components/testimonials"
-import { MembershipTiers } from "@/components/membership-tiers"
+import { ContentPreview } from "@/components/content-preview"
+import { SuperFans } from "@/components/super-fans"
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <>
+    <main>
       <HeroSection />
       <UpcomingEvents />
       <FeaturedMerchandise />
+      <ContentPreview />
+      <SuperFans />
       <Testimonials />
-      <MembershipTiers />
-    </>
+    </main>
   )
 }

@@ -1,68 +1,64 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { useCart } from "@/components/store/cart-context"
+import { CheckCircle } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-export default function CheckoutSuccessPage() {
-  const searchParams = useSearchParams()
-  const sessionId = searchParams.get("session_id")
-  const [loading, setLoading] = useState(true)
-  const { clearCart } = useCart()
+export default async function CheckoutSuccessPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const sessionId = searchParams.session_id as string | undefined
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
-  useEffect(() => {
-    if (sessionId) {
-      // Clear the cart after successful payment
-      clearCart()
-      setLoading(false)
+  let purchaseDetails = null
+  if (sessionId) {
+    const { data, error } = await supabase
+      .from("purchases")
+      .select("*")
+      .eq("stripe_checkout_session_id", sessionId)
+      .single()
+
+    if (error) {
+      console.error("Error fetching purchase details:", error)
+    } else {
+      purchaseDetails = data
     }
-  }, [sessionId, clearCart])
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-16 px-4 md:px-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div className="container mx-auto py-16 px-4 md:px-6">
-      <div className="max-w-2xl mx-auto text-center">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+    <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center py-12">
+      <Card className="w-full max-w-md mx-auto text-center">
+        <CardHeader>
+          <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+          <CardTitle className="text-3xl font-bold mt-4">Payment Successful!</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">Thank you for your purchase! Your order has been successfully placed.</p>
+          {purchaseDetails && (
+            <div className="text-left border-t pt-4 mt-4">
+              <p className="text-sm font-medium">Order Summary:</p>
+              <p className="text-lg font-bold">
+                Total: ${purchaseDetails.amount?.toFixed(2)} {purchaseDetails.currency?.toUpperCase()}
+              </p>
+              <p className="text-sm text-muted-foreground">Order ID: {purchaseDetails.id}</p>
             </div>
-            <CardTitle className="text-2xl">Payment Successful!</CardTitle>
-            <CardDescription>Thank you for your purchase. Your order has been confirmed.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-sm text-muted-foreground">
-              <p>Order confirmation has been sent to your email.</p>
-              <p>Session ID: {sessionId}</p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild>
-                <Link href="/dashboard">
-                  View Dashboard
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+          )}
+          <div className="flex flex-col gap-2">
+            <Link href="/dashboard">
+              <Button className="w-full">Go to Dashboard</Button>
+            </Link>
+            <Link href="/store">
+              <Button variant="outline" className="w-full bg-transparent">
+                Continue Shopping
               </Button>
-              <Button variant="outline" asChild>
-                <Link href="/store">Continue Shopping</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

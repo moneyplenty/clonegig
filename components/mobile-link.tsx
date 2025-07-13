@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
+import type * as React from "react"
 import Link, { type LinkProps } from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 
@@ -13,15 +13,18 @@ interface MobileLinkProps extends LinkProps {
 }
 
 export function MobileLink({ href, onOpenChange, className, children, ...props }: MobileLinkProps) {
+  const router = useRouter()
   const pathname = usePathname()
+
   return (
     <Link
       href={href}
       onClick={() => {
+        router.push(href.toString())
         onOpenChange?.(false)
       }}
       className={cn(
-        "flex items-center gap-2 p-2 text-lg font-medium",
+        "flex w-full items-center rounded-md p-2 text-lg font-medium hover:underline",
         pathname === href && "bg-accent text-accent-foreground",
         className,
       )}

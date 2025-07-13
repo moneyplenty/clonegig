@@ -1,231 +1,74 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { DailyProvider, useDaily, useDailyEvent, useParticipant } from "@daily-co/daily-react-hooks"
+import type { DailyCall } from "@daily-co/daily-js"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/hooks/use-toast"
-import { Loader2, Video, VideoOff, Mic, MicOff, Phone } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2 } from "lucide-react"
 
 interface SignalVideoCallProps {
-  roomId: string
-  userName: string
-  onCallEnd?: () => void
+  roomUrl: string
+  userName?: string
+  onLeave?: () => void
 }
 
-export function SignalVideoCall({ roomId, userName, onCallEnd }: SignalVideoCallProps) {
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true)
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true)
-  const localVideoRef = useRef<HTMLVideoElement>(null)
-  const remoteVideoRef = useRef<HTMLVideoElement>(null)
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
-  const localStreamRef = useRef<MediaStream | null>(null)
-  const socketRef = useRef<WebSocket | null>(null)
+export function SignalVideoCall({ roomUrl, userName, onLeave }: SignalVideoCallProps) {
+  const callRef = useRef<DailyCall | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!roomUrl) {
+      setError("No Daily.co room URL provided.")
+      setIsLoading(false)
+      return
+    }
+
+    const createCallObject = async () => {
+      try {
+        const Daily = await import("@daily-co/daily-js")
+        const call = Daily.createCallObject()
+        callRef.current = call
+        await call.join({ url: roomUrl, userName })
+        setIsLoading(false)
+      } catch (e: any) {
+        console.error("Failed to create or join Daily.co call:", e)
+        setError(`Failed to start video call: ${e.message || "Unknown error"}`)
+        setIsLoading(false)
+      }
+    }
+
+    createCallObject()
+
     return () => {
-      // Cleanup on unmount
-      endCall()
-    }
-  }, [])
-
-  const initializeWebRTC = async () => {
-    try {
-      // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
-
-      localStreamRef.current = stream
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream
-      }
-
-      // Create peer connection
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }],
-      })
-
-      peerConnectionRef.current = peerConnection
-
-      // Add local stream to peer connection
-      stream.getTracks().forEach((track) => {
-        peerConnection.addTrack(track, stream)
-      })
-
-      // Handle remote stream
-      peerConnection.ontrack = (event) => {
-        const [remoteStream] = event.streams
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream
-        }
-      }
-
-      // Handle ICE candidates
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate && socketRef.current) {
-          socketRef.current.send(
-            JSON.stringify({
-              type: "ice-candidate",
-              candidate: event.candidate,
-              roomId,
-            }),
-          )
-        }
-      }
-
-      // Connect to signaling server
-      connectToSignalingServer()
-    } catch (error) {
-      console.error("Error initializing WebRTC:", error)
-      toast({
-        title: "Camera/Microphone Error",
-        description: "Could not access camera or microphone. Please check permissions.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const connectToSignalingServer = () => {
-    // In a real implementation, you would connect to your WebSocket signaling server
-    // For this demo, we'll simulate the connection
-    const ws = new WebSocket(`wss://your-signaling-server.com/room/${roomId}`)
-    socketRef.current = ws
-
-    ws.onopen = () => {
-      setIsConnected(true)
-      setIsConnecting(false)
-      ws.send(
-        JSON.stringify({
-          type: "join-room",
-          roomId,
-          userName,
-        }),
-      )
-    }
-
-    ws.onmessage = async (event) => {
-      const message = JSON.parse(event.data)
-      const peerConnection = peerConnectionRef.current
-
-      if (!peerConnection) return
-
-      switch (message.type) {
-        case "offer":
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer))
-          const answer = await peerConnection.createAnswer()
-          await peerConnection.setLocalDescription(answer)
-          ws.send(
-            JSON.stringify({
-              type: "answer",
-              answer,
-              roomId,
-            }),
-          )
-          break
-
-        case "answer":
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer))
-          break
-
-        case "ice-candidate":
-          await peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate))
-          break
-
-        case "user-joined":
-          // Create offer for new user
-          const offer = await peerConnection.createOffer()
-          await peerConnection.setLocalDescription(offer)
-          ws.send(
-            JSON.stringify({
-              type: "offer",
-              offer,
-              roomId,
-            }),
-          )
-          break
+      if (callRef.current) {
+        callRef.current.leave()
+        callRef.current.destroy()
+        callRef.current = null
       }
     }
+  }, [roomUrl, userName])
 
-    ws.onclose = () => {
-      setIsConnected(false)
-      toast({
-        title: "Connection Lost",
-        description: "The video call connection was lost.",
-        variant: "destructive",
-      })
-    }
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error)
-      setIsConnecting(false)
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to the video call.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const startCall = async () => {
-    setIsConnecting(true)
-    await initializeWebRTC()
-  }
-
-  const endCall = () => {
-    // Stop local stream
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop())
-    }
-
-    // Close peer connection
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close()
-    }
-
-    // Close WebSocket
-    if (socketRef.current) {
-      socketRef.current.close()
-    }
-
-    setIsConnected(false)
-    setIsConnecting(false)
-    onCallEnd?.()
-  }
-
-  const toggleVideo = () => {
-    if (localStreamRef.current) {
-      const videoTrack = localStreamRef.current.getVideoTracks()[0]
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled
-        setIsVideoEnabled(videoTrack.enabled)
-      }
-    }
-  }
-
-  const toggleAudio = () => {
-    if (localStreamRef.current) {
-      const audioTrack = localStreamRef.current.getAudioTracks()[0]
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled
-        setIsAudioEnabled(audioTrack.enabled)
-      }
-    }
-  }
-
-  if (!isConnected && !isConnecting) {
+  if (isLoading) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Join Video Call</CardTitle>
-          <CardDescription>Click the button below to start your meet & greet session</CardDescription>
-        </CardHeader>
-        <CardContent className="text-center">
-          <Button onClick={startCall} size="lg" className="bg-green-600 hover:bg-green-700">
-            <Video className="mr-2 h-5 w-5" />
-            Start Video Call
+        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[400px]">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="mt-4 text-lg text-muted-foreground">Loading video call...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[400px] text-red-500">
+          <p className="text-lg font-semibold">Error:</p>
+          <p className="text-center">{error}</p>
+          <Button onClick={onLeave} className="mt-4">
+            Go Back
           </Button>
         </CardContent>
       </Card>
@@ -233,70 +76,104 @@ export function SignalVideoCall({ roomId, userName, onCallEnd }: SignalVideoCall
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <DailyProvider callObject={callRef.current}>
+      <VideoCallUI onLeave={onLeave} />
+    </DailyProvider>
+  )
+}
+
+function VideoCallUI({ onLeave }: { onLeave?: () => void }) {
+  const daily = useDaily()
+  const localParticipant = useParticipant("local")
+  const remoteParticipants = Object.values(daily?.participants() || {}).filter(
+    (p) => p.session_id !== localParticipant?.session_id,
+  )
+
+  const [isMicOn, setIsMicOn] = useState(true)
+  const [isCameraOn, setIsCameraOn] = useState(true)
+
+  useEffect(() => {
+    if (localParticipant) {
+      setIsMicOn(localParticipant.audio)
+      setIsCameraOn(localParticipant.video)
+    }
+  }, [localParticipant])
+
+  const toggleMic = useCallback(() => {
+    if (daily) {
+      daily.setLocalAudio(!isMicOn)
+      setIsMicOn(!isMicOn)
+    }
+  }, [daily, isMicOn])
+
+  const toggleCamera = useCallback(() => {
+    if (daily) {
+      daily.setLocalVideo(!isCameraOn)
+      setIsCameraOn(!isCameraOn)
+    }
+  }, [daily, isCameraOn])
+
+  const leaveCall = useCallback(() => {
+    if (daily) {
+      daily.leave()
+      onLeave?.()
+    }
+  }, [daily, onLeave])
+
+  useDailyEvent("left-meeting", () => {
+    onLeave?.()
+  })
+
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Video Call - {userName}</CardTitle>
-        <CardDescription>{isConnecting ? "Connecting..." : isConnected ? "Connected" : "Disconnected"}</CardDescription>
+        <CardTitle className="text-center">Video Call</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          {/* Local Video */}
-          <div className="relative">
+      <CardContent className="flex flex-col items-center justify-center p-6">
+        <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4">
+          {localParticipant?.videoTrack && (
             <video
-              ref={localVideoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-64 bg-gray-900 rounded-lg object-cover"
+              ref={(video) => {
+                if (video) video.srcObject = new MediaStream([localParticipant.videoTrack])
+              }}
+              className="absolute bottom-2 right-2 w-1/4 h-auto rounded-md border-2 border-white z-10"
             />
-            <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">You</div>
-          </div>
-
-          {/* Remote Video */}
-          <div className="relative">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-64 bg-gray-900 rounded-lg object-cover"
-            />
-            <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
-              Kelvin Creekman
+          )}
+          {remoteParticipants.length > 0 ? (
+            remoteParticipants.map((p) => (
+              <video
+                key={p.session_id}
+                autoPlay
+                playsInline
+                ref={(video) => {
+                  if (video && p.videoTrack) video.srcObject = new MediaStream([p.videoTrack])
+                }}
+                className="w-full h-full object-cover"
+              />
+            ))
+          ) : (
+            <div className="flex items-center justify-center w-full h-full text-white text-lg">
+              Waiting for other participant...
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Controls */}
-        <div className="flex justify-center space-x-4">
-          <Button
-            variant={isVideoEnabled ? "default" : "destructive"}
-            size="icon"
-            onClick={toggleVideo}
-            disabled={isConnecting}
-          >
-            {isVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+        <div className="flex gap-4">
+          <Button variant="outline" size="icon" onClick={toggleMic}>
+            {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-red-500" />}
+            <span className="sr-only">{isMicOn ? "Mute Mic" : "Unmute Mic"}</span>
           </Button>
-
-          <Button
-            variant={isAudioEnabled ? "default" : "destructive"}
-            size="icon"
-            onClick={toggleAudio}
-            disabled={isConnecting}
-          >
-            {isAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+          <Button variant="outline" size="icon" onClick={toggleCamera}>
+            {isCameraOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5 text-red-500" />}
+            <span className="sr-only">{isCameraOn ? "Turn Off Camera" : "Turn On Camera"}</span>
           </Button>
-
-          <Button variant="destructive" size="icon" onClick={endCall} disabled={isConnecting}>
-            <Phone className="h-4 w-4" />
+          <Button variant="destructive" size="icon" onClick={leaveCall}>
+            <PhoneOff className="h-5 w-5" />
+            <span className="sr-only">Leave Call</span>
           </Button>
         </div>
-
-        {isConnecting && (
-          <div className="flex items-center justify-center mt-4">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span>Connecting to video call...</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   )

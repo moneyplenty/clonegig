@@ -1,170 +1,84 @@
-"use client"
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Play, FileText, ImageIcon, Music, Lock } from "lucide-react"
-import Image from "next/image"
 import Link from "next/link"
+import Image from "next/image"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 
-const mockContent = [
-  {
-    id: 1,
-    title: "Behind the Scenes: Recording 'Electric Dreams'",
-    type: "video",
-    category: "Exclusive",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "Go behind the scenes of Kelvin's latest album recording.",
-    isPremium: true,
-    duration: "12:34",
-    publishedAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    title: "Kelvin's Top 5 Guitar Riffs",
-    type: "blog",
-    category: "Public",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "Kelvin shares his favorite guitar riffs and how they influenced him.",
-    isPremium: false,
-    readTime: "5 min read",
-    publishedAt: "2024-01-10",
-  },
-  {
-    id: 3,
-    title: "Fan Art Showcase: January 2024",
-    type: "gallery",
-    category: "Public",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "A collection of amazing fan art submitted by the community.",
-    isPremium: false,
-    imageCount: 24,
-    publishedAt: "2024-01-08",
-  },
-  {
-    id: 4,
-    title: "Unreleased Demo: 'Frozen Fire'",
-    type: "audio",
-    category: "Exclusive",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "Listen to an exclusive unreleased demo track.",
-    isPremium: true,
-    duration: "3:45",
-    publishedAt: "2024-01-05",
-  },
-  {
-    id: 5,
-    title: "Live Q&A Transcript with Kelvin",
-    type: "text",
-    category: "Exclusive",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "Read the full transcript from the latest live Q&A session.",
-    isPremium: true,
-    readTime: "15 min read",
-    publishedAt: "2024-01-03",
-  },
-  {
-    id: 6,
-    title: "Tour Diary: Road to Electrify",
-    type: "blog",
-    category: "Public",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "Follow Kelvin's journey on his latest tour.",
-    isPremium: false,
-    readTime: "8 min read",
-    publishedAt: "2024-01-01",
-  },
-]
+interface Content {
+  id: string
+  title: string
+  description: string
+  type: string
+  url: string
+  access_level: string
+  image_url?: string // Assuming some content might have an image
+}
 
-const getContentIcon = (type: string) => {
-  switch (type) {
-    case "video":
-      return Play
-    case "audio":
-      return Music
-    case "blog":
-    case "text":
-      return FileText
-    case "gallery":
-      return ImageIcon
-    default:
-      return FileText
+export async function ContentPreview() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: content, error } = await supabase
+    .from("content")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(3)
+
+  if (error) {
+    console.error("Error fetching content:", error)
+    return <div>Error loading content.</div>
   }
-}
 
-const getContentMeta = (content: any) => {
-  if (content.duration) return content.duration
-  if (content.readTime) return content.readTime
-  if (content.imageCount) return `${content.imageCount} images`
-  return ""
-}
-
-export function ContentPreview() {
   return (
-    <>
-      {mockContent.slice(0, 3).map((content) => {
-        const Icon = getContentIcon(content.type)
-        return (
-          <Card key={content.id} className="flex flex-col">
-            <div className="relative aspect-video overflow-hidden rounded-t-lg">
-              <Image
-                src={content.image || "/placeholder.svg"}
-                alt={content.title}
-                fill
-                className="object-cover transition-transform hover:scale-105"
-              />
-              <div className="absolute top-2 left-2">
-                <Badge variant={content.isPremium ? "default" : "secondary"}>{content.category}</Badge>
+    <section className="py-12 md:py-20 bg-white dark:bg-gray-800">
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-gray-900 dark:text-white">
+          Exclusive Content
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {content.map((item) => (
+            <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div className="relative w-full h-48">
+                <Image
+                  src={item.image_url || "/placeholder.svg"}
+                  alt={item.title}
+                  layout="fill"
+                  objectFit="cover"
+                  className="rounded-t-lg"
+                />
               </div>
-              {content.isPremium && (
-                <div className="absolute top-2 right-2">
-                  <div className="bg-black/50 rounded-full p-1">
-                    <Lock className="h-4 w-4 text-white" />
-                  </div>
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">{item.title}</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400">
+                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)} - Access: {item.access_level.toUpperCase()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <p className="text-gray-700 dark:text-gray-300 line-clamp-3">{item.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-primary">
+                    {item.access_level === "free" ? "Free Access" : `Requires ${item.access_level} Membership`}
+                  </span>
+                  <Link href={`/content?id=${item.id}`}>
+                    <Button variant="outline">View Content</Button>
+                  </Link>
                 </div>
-              )}
-              <div className="absolute bottom-2 left-2">
-                <div className="bg-black/50 rounded-full p-1.5">
-                  <Icon className="h-4 w-4 text-white" />
-                </div>
-              </div>
-              {getContentMeta(content) && (
-                <div className="absolute bottom-2 right-2">
-                  <Badge variant="secondary" className="bg-black/50 text-white">
-                    {getContentMeta(content)}
-                  </Badge>
-                </div>
-              )}
-            </div>
-            <CardHeader>
-              <CardTitle className="line-clamp-2">{content.title}</CardTitle>
-              <CardDescription className="line-clamp-2">{content.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="text-sm text-muted-foreground">
-                Published {new Date(content.publishedAt).toLocaleDateString()}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" variant={content.isPremium ? "default" : "outline"} asChild>
-                <Link href={`/content/${content.id}`}>
-                  {content.isPremium ? (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Premium Content
-                    </>
-                  ) : (
-                    <>
-                      <Icon className="mr-2 h-4 w-4" />
-                      View Content
-                    </>
-                  )}
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        )
-      })}
-    </>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="text-center mt-12">
+          <Link href="/content">
+            <Button
+              size="lg"
+              className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-3 rounded-full shadow-md"
+            >
+              View All Content
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
   )
 }

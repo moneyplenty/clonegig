@@ -1,78 +1,58 @@
-import { Suspense } from "react"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import { MeetAndGreetBooking } from "@/components/meet-and-greet/meet-and-greet-booking"
 import { UpcomingSessions } from "@/components/meet-and-greet/upcoming-sessions"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { createClient } from "@/lib/supabase/server"
-import type { MeetAndGreetBooking as MeetAndGreetBookingType } from "@/types"
-import { SignalVideoCall } from "@/components/meet-and-greet/signal-video-call"
+import { DailyVideoCall } from "@/components/meet-and-greet/daily-video-call"
 import { redirect } from "next/navigation"
 
-export default async function MeetAndGreetPage() {
-  const supabase = await createClient() // Explicitly await the client creation
-  console.log("Supabase client in MeetAndGreetPage:", supabase) // Debug log
+export default async function MeetAndGreetPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login?redirect=/meet-and-greet")
+    redirect("/login")
   }
 
-  // Fetch user's confirmed private meet & greet bookings
-  const { data: bookings, error: bookingsError } = await supabase
-    .from("meet_and_greet_bookings")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("payment_status", "completed")
-    .not("room_url", "is", null) // Only fetch bookings with a room_url
-    .order("created_at", { ascending: false })
-    .limit(1) // Assuming only one active private session at a time for simplicity
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .single()
 
-  if (bookingsError) {
-    console.error("Error fetching meet and greet bookings:", bookingsError)
+  if (profileError) {
+    console.error("Error fetching profile:", profileError)
+    return <div>Error loading user profile.</div>
   }
 
-  const activePrivateBooking: MeetAndGreetBookingType | null = bookings?.[0] || null
+  const roomUrl = searchParams.room as string | undefined
 
   return (
-    <div className="container py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-primary mb-4">Meet & Greet with Kelvin Creekman</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Connect with Kelvin Creekman through exclusive group sessions or private one-on-one video calls.
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <h1 className="text-4xl font-bold text-center mb-8">Meet & Greet</h1>
+      <p className="text-lg text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+        Book a personalized session with Kelvin Creekman! Choose from various session types and times.
+      </p>
 
-      {activePrivateBooking && activePrivateBooking.room_url ? (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-green-500">Your Private Session is Ready!</CardTitle>
-            <CardDescription>You have a confirmed private meet & greet session. Join the call below.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SignalVideoCall
-              roomId={activePrivateBooking.room_url.split("/").pop() || ""} // Extract room ID from URL
-              userName={user.user_metadata?.full_name || user.email || "Fan"}
-            />
-            <p className="text-sm text-muted-foreground mt-4">
-              Please note: This is a demo room URL. In a production environment, this would be a live video call link.
-            </p>
-          </CardContent>
-        </Card>
+      {roomUrl ? (
+        <DailyVideoCall
+          roomUrl={roomUrl}
+          userName={profile?.full_name || profile?.email || "Fan"}
+          onLeave={() => redirect("/meet-and-greet")}
+        />
       ) : (
-        <MeetAndGreetBooking />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <MeetAndGreetBooking userId={user.id} />
+          <UpcomingSessions userId={user.id} />
+        </div>
       )}
-
-      <Separator className="my-12" />
-
-      <section className="mb-12">
-        <h2 className="text-3xl font-bold text-primary mb-6 text-center">Upcoming Group Sessions</h2>
-        <Suspense fallback={<div>Loading upcoming sessions...</div>}>
-          <UpcomingSessions />
-        </Suspense>
-      </section>
     </div>
   )
 }

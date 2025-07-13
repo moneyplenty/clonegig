@@ -1,143 +1,110 @@
 "use client"
 
 import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
-import { CalendarIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/components/auth/auth-provider"
-import { useToast } from "@/hooks/use-toast"
+import { CalendarIcon, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import type { MeetAndGreetSession } from "@/types"
 
-export function MeetAndGreetBooking() {
-  const { user, profile, loading: authLoading } = useAuth()
-  const { toast } = useToast()
+interface MeetAndGreetBookingProps {
+  userId: string
+}
+
+export function MeetAndGreetBooking({ userId }: MeetAndGreetBookingProps) {
   const supabase = createClient()
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined)
+  const [selectedType, setSelectedType] = useState<string | undefined>(undefined)
+  const [loading, setLoading] = useState(false)
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
-  const [selectedSession, setSelectedSession] = useState<MeetAndGreetSession | undefined>(undefined)
-  const [isBooking, setIsBooking] = useState(false)
-
-  // Dummy data for available sessions (replace with actual data from backend)
-  const availableSessions: MeetAndGreetSession[] = [
-    {
-      id: "session-1",
-      type: "private",
-      date: "2025-08-15",
-      time: "10:00 AM",
-      duration: 30,
-      price: 50.0,
-      max_attendees: null,
-      attendees_count: 0,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "session-2",
-      type: "private",
-      date: "2025-08-15",
-      time: "02:00 PM",
-      duration: 30,
-      price: 50.0,
-      max_attendees: null,
-      attendees_count: 0,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: "session-3",
-      type: "private",
-      date: "2025-08-16",
-      time: "11:00 AM",
-      duration: 30,
-      price: 50.0,
-      max_attendees: null,
-      attendees_count: 0,
-      created_at: new Date().toISOString(),
-    },
+  const availableTimes = [
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "01:00 PM",
+    "01:30 PM",
+    "02:00 PM",
+    "02:30 PM",
+    "03:00 PM",
+    "03:30 PM",
+    "04:00 PM",
+    "04:30 PM",
   ]
 
-  const filteredSessions = selectedDate
-    ? availableSessions.filter((session) => session.date === format(selectedDate, "yyyy-MM-dd"))
-    : []
+  const sessionTypes = [
+    { value: "15-min-chat", label: "15-min Chat ($50)", price: 50 },
+    { value: "30-min-qa", label: "30-min Q&A ($90)", price: 90 },
+    { value: "60-min-masterclass", label: "60-min Masterclass ($150)", price: 150 },
+  ]
 
-  const handleBookPrivateSession = async () => {
-    if (!user || !profile) {
+  const handleBooking = async () => {
+    if (!selectedDate || !selectedTime || !selectedType) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to book a session.",
+        title: "Missing Information",
+        description: "Please select a date, time, and session type.",
         variant: "destructive",
       })
       return
     }
 
-    if (!selectedSession) {
-      toast({
-        title: "No Session Selected",
-        description: "Please select a date and time for your private session.",
-        variant: "destructive",
-      })
-      return
+    setLoading(true)
+    const sessionPrice = sessionTypes.find((type) => type.value === selectedType)?.price || 0
+    const sessionDateTime = new Date(selectedDate)
+    const [time, ampm] = selectedTime.split(" ")
+    let [hours, minutes] = time.split(":").map(Number)
+
+    if (ampm === "PM" && hours !== 12) {
+      hours += 12
+    }
+    if (ampm === "AM" && hours === 12) {
+      hours = 0
     }
 
-    setIsBooking(true)
-    try {
-      // Initiate Stripe checkout for the private session
-      const response = await fetch("/api/stripe-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              id: selectedSession.id,
-              name: `Private Meet & Greet (${selectedSession.time})`,
-              price: selectedSession.price,
-              quantity: 1,
-              type: "meet_and_greet", // Custom type for webhook
-              session_id: selectedSession.id,
-              user_id: user.id,
-            },
-          ],
-          redirectUrl: `${window.location.origin}/meet-and-greet`, // Redirect back to this page
-        }),
-      })
+    sessionDateTime.setHours(hours, minutes, 0, 0)
 
-      const data = await response.json()
+    const { error } = await supabase.from("meet_and_greet_bookings").insert({
+      user_id: userId,
+      session_time: sessionDateTime.toISOString(),
+      session_type: selectedType,
+      status: "pending", // Admin will confirm later
+      price: sessionPrice,
+    })
 
-      if (response.ok && data.url) {
-        window.location.href = data.url
-      } else {
-        throw new Error(data.error || "Failed to initiate payment.")
-      }
-    } catch (error: any) {
-      console.error("Stripe checkout error:", error)
+    if (error) {
+      console.error("Error booking session:", error)
       toast({
-        title: "Payment Error",
-        description: error.message || "There was an issue initiating your payment. Please try again.",
+        title: "Booking Failed",
+        description: `There was an error booking your session: ${error.message}`,
         variant: "destructive",
       })
-    } finally {
-      setIsBooking(false)
+    } else {
+      toast({
+        title: "Booking Confirmed!",
+        description: "Your session request has been sent. Please await confirmation.",
+      })
+      // Optionally clear form or redirect
+      setSelectedDate(new Date())
+      setSelectedTime(undefined)
+      setSelectedType(undefined)
     }
+    setLoading(false)
   }
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-2xl font-semibold text-secondary-foreground">Book a Private Session</h3>
-      <p className="text-muted-foreground">Experience a one-on-one video call with Kelvin Creekman via Signal.</p>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            htmlFor="date"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Select Date
-          </label>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Book a Session</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Select Date</h3>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -154,54 +121,47 @@ export function MeetAndGreetBooking() {
           </Popover>
         </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor="time"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Select Time
-          </label>
-          <Select
-            onValueChange={(value) => setSelectedSession(availableSessions.find((s) => s.id === value))}
-            value={selectedSession?.id}
-            disabled={!selectedDate || filteredSessions.length === 0}
-          >
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Select Time</h3>
+          <Select onValueChange={setSelectedTime} value={selectedTime}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a time slot" />
+              <SelectValue placeholder="Choose a time slot" />
             </SelectTrigger>
             <SelectContent>
-              {filteredSessions.length > 0 ? (
-                filteredSessions.map((session) => (
-                  <SelectItem key={session.id} value={session.id}>
-                    {session.time} ({session.duration} min) - ${session.price?.toFixed(2)}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="no-sessions" disabled>
-                  No sessions available for this date
+              {availableTimes.map((time) => (
+                <SelectItem key={time} value={time}>
+                  {time}
                 </SelectItem>
-              )}
+              ))}
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      <Button
-        onClick={handleBookPrivateSession}
-        className="w-full"
-        disabled={!selectedSession || isBooking || authLoading || !user}
-      >
-        {isBooking ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing Payment...
-          </>
-        ) : (
-          "Book Private Session (via Stripe)"
-        )}
-      </Button>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Select Session Type</h3>
+          <Select onValueChange={setSelectedType} value={selectedType}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose a session type" />
+            </SelectTrigger>
+            <SelectContent>
+              {sessionTypes.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {!user && <p className="text-sm text-center text-red-500">Please log in to book a session.</p>}
-    </div>
+        <Button
+          onClick={handleBooking}
+          className="w-full"
+          disabled={loading || !selectedDate || !selectedTime || !selectedType}
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Book Session
+        </Button>
+      </CardContent>
+    </Card>
   )
 }

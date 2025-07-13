@@ -1,342 +1,313 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { toast } from "@/components/ui/use-toast"
-import { Edit, Trash, FileText, Eye } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "@/hooks/use-toast"
+import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react"
 
-interface Content {
+interface ContentItem {
   id: string
   title: string
-  type: "article" | "video" | "music" | "image"
-  content: string
-  excerpt: string
-  author: string
-  publishDate: string
-  status: "published" | "draft" | "archived"
-  isPremium: boolean
-  tags: string[]
+  description: string | null
+  type: string
+  url: string
+  access_level: string
+  created_at: string
+  updated_at: string
 }
 
 export function AdminContentManagement() {
-  const [contents, setContents] = useState<Content[]>([
-    {
-      id: "1",
-      title: "Behind the Scenes: Electric Dreams Recording",
-      type: "article",
-      content: "An exclusive look at the recording process of the Electric Dreams album...",
-      excerpt: "Exclusive behind-the-scenes content from the studio.",
-      author: "Kelvin Creekman",
-      publishDate: "2024-12-15T10:00:00Z",
-      status: "published",
-      isPremium: true,
-      tags: ["studio", "recording", "electric-dreams"]
-    },
-    {
-      id: "2",
-      title: "Acoustic Session #1",
-      type: "video",
-      content: "https://example.com/video/acoustic-session-1",
-      excerpt: "Intimate acoustic performance of fan favorites.",
-      author: "Kelvin Creekman",
-      publishDate: "2024-12-10T18:00:00Z",
-      status: "published",
-      isPremium: false,
-      tags: ["acoustic", "live", "performance"]
-    },
-    {
-      id: "3",
-      title: "New Song Demo: Thunder Road",
-      type: "music",
-      content: "https://example.com/audio/thunder-road-demo",
-      excerpt: "First listen to an upcoming track.",
-      author: "Kelvin Creekman",
-      publishDate: "2024-12-20T12:00:00Z",
-      status: "draft",
-      isPremium: true,
-      tags: ["demo", "new-music", "thunder-road"]
-    }
-  ])
-  
-  const [form, setForm] = useState<Omit<Content, "id" | "tags"> & { id?: string; tagsString: string }>({
+  const supabase = createClient()
+  const [content, setContent] = useState<ContentItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [currentContent, setCurrentContent] = useState<ContentItem | null>(null)
+  const [form, setForm] = useState({
     title: "",
-    type: "article",
-    content: "",
-    excerpt: "",
-    author: "",
-    publishDate: "",
-    status: "draft",
-    isPremium: false,
-    tagsString: ""
+    description: "",
+    type: "video",
+    url: "",
+    access_level: "free",
   })
-  const [isEditing, setIsEditing] = useState(false)
 
-  const handleChange = (field: string, value: any) => {
-    setForm(prev => ({ ...prev, [field]: value }))
-  }
+  useEffect(() => {
+    fetchContent()
+  }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const tags = form.tagsString.split(",").map(tag => tag.trim()).filter(Boolean)
-    
-    if (isEditing && form.id) {
-      setContents(prev => prev.map(content => 
-        content.id === form.id 
-          ? { ...form, id: content.id, tags } as Content 
-          : content
-      ))
-      toast({ title: "Content Updated", description: `${form.title} has been updated.` })
+  const fetchContent = async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from("content").select("*").order("created_at", { ascending: false })
+    if (error) {
+      console.error("Error fetching content:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load content.",
+        variant: "destructive",
+      })
     } else {
-      const newContent: Content = {
-        ...form,
-        id: String(Date.now()),
-        tags,
-        publishDate: form.publishDate || new Date().toISOString()
-      } as Content
-      setContents(prev => [...prev, newContent])
-      toast({ title: "Content Created", description: `${form.title} has been created.` })
+      setContent(data || [])
     }
-    resetForm()
+    setLoading(false)
   }
 
-  const handleEdit = (content: Content) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleAddEditContent = async () => {
+    if (!form.title || !form.url || !form.type || !form.access_level) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+    let error = null
+    if (currentContent) {
+      // Update existing content
+      const { error: updateError } = await supabase
+        .from("content")
+        .update({
+          title: form.title,
+          description: form.description,
+          type: form.type,
+          url: form.url,
+          access_level: form.access_level,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", currentContent.id)
+      error = updateError
+    } else {
+      // Add new content
+      const { error: insertError } = await supabase.from("content").insert({
+        title: form.title,
+        description: form.description,
+        type: form.type,
+        url: form.url,
+        access_level: form.access_level,
+      })
+      error = insertError
+    }
+
+    if (error) {
+      console.error("Error saving content:", error)
+      toast({
+        title: "Error",
+        description: `Failed to save content: ${error.message}`,
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: `Content ${currentContent ? "updated" : "added"} successfully.`,
+      })
+      setIsDialogOpen(false)
+      fetchContent()
+    }
+    setLoading(false)
+  }
+
+  const handleDeleteContent = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this content?")) return
+
+    setLoading(true)
+    const { error } = await supabase.from("content").delete().eq("id", id)
+    if (error) {
+      console.error("Error deleting content:", error)
+      toast({
+        title: "Error",
+        description: `Failed to delete content: ${error.message}`,
+        variant: "destructive",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: "Content deleted successfully.",
+      })
+      fetchContent()
+    }
+    setLoading(false)
+  }
+
+  const openEditDialog = (contentItem: ContentItem) => {
+    setCurrentContent(contentItem)
     setForm({
-      ...content,
-      tagsString: content.tags.join(", ")
+      title: contentItem.title,
+      description: contentItem.description || "",
+      type: contentItem.type,
+      url: contentItem.url,
+      access_level: contentItem.access_level,
     })
-    setIsEditing(true)
+    setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    setContents(prev => prev.filter(content => content.id !== id))
-    toast({ title: "Content Deleted", description: "Content has been removed." })
-  }
-
-  const resetForm = () => {
+  const openAddDialog = () => {
+    setCurrentContent(null)
     setForm({
       title: "",
-      type: "article",
-      content: "",
-      excerpt: "",
-      author: "",
-      publishDate: "",
-      status: "draft",
-      isPremium: false,
-      tagsString: ""
+      description: "",
+      type: "video",
+      url: "",
+      access_level: "free",
     })
-    setIsEditing(false)
+    setIsDialogOpen(true)
   }
-
-  const publishedCount = contents.filter(c => c.status === "published").length
-  const premiumCount = contents.filter(c => c.isPremium).length
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Content</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contents.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{publishedCount}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Premium Content</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{premiumCount}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Drafts</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{contents.filter(c => c.status === "draft").length}</div>
-          </CardContent>
-        </Card>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Content Management</h1>
+        <Button onClick={openAddDialog}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Content
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-1 bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader>
-            <CardTitle>{isEditing ? "Edit Content" : "Create New Content"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input 
-                  id="title" 
-                  value={form.title} 
-                  onChange={(e) => handleChange("title", e.target.value)} 
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="type">Content Type</Label>
-                <Select value={form.type} onValueChange={(value) => handleChange("type", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="article">Article</SelectItem>
-                    <SelectItem value="video">Video</SelectItem>
-                    <SelectItem value="music">Music</SelectItem>
-                    <SelectItem value="image">Image</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="author">Author</Label>
-                <Input 
-                  id="author" 
-                  value={form.author} 
-                  onChange={(e) => handleChange("author", e.target.value)} 
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="excerpt">Excerpt</Label>
-                <Textarea 
-                  id="excerpt" 
-                  value={form.excerpt} 
-                  onChange={(e) => handleChange("excerpt", e.target.value)} 
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea 
-                  id="content" 
-                  value={form.content} 
-                  onChange={(e) => handleChange("content", e.target.value)} 
-                  rows={6}
-                  required 
-                />
-              </div>
-              <div>
-                <Label htmlFor="tagsString">Tags (comma-separated)</Label>
-                <Input 
-                  id="tagsString" 
-                  value={form.tagsString} 
-                  onChange={(e) => handleChange("tagsString", e.target.value)} 
-                  placeholder="tag1, tag2, tag3"
-                />
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={form.status} onValueChange={(value) => handleChange("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isPremium"
-                  checked={form.isPremium}
-                  onCheckedChange={(checked) => handleChange("isPremium", checked)}
-                />
-                <Label htmlFor="isPremium">Premium Content</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  {isEditing ? "Update Content" : "Create Content"}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="flex-1">
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2 bg-card/50 backdrop-blur-sm border-kelvin-border">
-          <CardHeader>
-            <CardTitle>Content Library</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Author</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Premium</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {contents.map((content) => (
-                    <TableRow key={content.id}>
-                      <TableCell className="font-medium">{content.title}</TableCell>
-                      <TableCell className="capitalize">{content.type}</TableCell>
-                      <TableCell>{content.author}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          content.status === 'published' 
-                            ? 'bg-green-100 text-green-800' 
-                            : content.status === 'draft'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {content.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>{content.isPremium ? "Yes" : "No"}</TableCell>
-                      <TableCell>{new Date(content.publishDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="icon" onClick={() => handleEdit(content)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="destructive" size="icon" onClick={() => handleDelete(content.id)}>
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{currentContent ? "Edit Content" : "Add New Content"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="title"
+                name="title"
+                value={form.title}
+                onChange={handleInputChange}
+                className="col-span-3"
+                required
+              />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={form.description}
+                onChange={handleInputChange}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="type" className="text-right">
+                Type
+              </Label>
+              <Select value={form.type} onValueChange={(value) => handleSelectChange("type", value)}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select content type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="audio">Audio</SelectItem>
+                  <SelectItem value="blog">Blog</SelectItem>
+                  <SelectItem value="image">Image</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="url" className="text-right">
+                URL
+              </Label>
+              <Input
+                id="url"
+                name="url"
+                value={form.url}
+                onChange={handleInputChange}
+                className="col-span-3"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="access_level" className="text-right">
+                Access Level
+              </Label>
+              <Select value={form.access_level} onValueChange={(value) => handleSelectChange("access_level", value)}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select access level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="vip">VIP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsDialogOpen(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={handleAddEditContent} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {currentContent ? "Save Changes" : "Add Content"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : content.length === 0 ? (
+        <p className="text-center text-muted-foreground">No content found. Add some above!</p>
+      ) : (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Access Level</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {content.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.title}</TableCell>
+                  <TableCell>{item.type}</TableCell>
+                  <TableCell>{item.access_level}</TableCell>
+                  <TableCell className="truncate max-w-[200px]">{item.url}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteContent(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,13 +1,22 @@
-import { AdminProtection } from "@/components/admin/admin-protection"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import { AdminStoreManagement } from "@/components/admin/admin-store-management"
+import { AdminProtection } from "@/components/admin/admin-protection"
 
-export default function AdminStorePage() {
+export default async function AdminStorePage() {
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
+
+  const { data: products, error } = await supabase.from("products").select("*")
+
+  if (error) {
+    console.error("Error fetching products:", error)
+    return <div>Error loading products.</div>
+  }
+
   return (
-    <AdminProtection requiredRole="admin">
-      <div className="container mx-auto py-8 px-4 md:px-6">
-        <h1 className="text-4xl font-bold mb-8 text-center">Store Management</h1>
-        <AdminStoreManagement />
-      </div>
+    <AdminProtection>
+      <AdminStoreManagement initialProducts={products || []} />
     </AdminProtection>
   )
 }

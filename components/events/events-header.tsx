@@ -1,14 +1,18 @@
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function EventsHeader() {
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-      <h1 className="text-4xl font-bold">Upcoming Events</h1>
-      <div className="relative flex-1 md:flex-grow-0 md:w-1/3">
-        <Input placeholder="Search events..." className="pl-8" />
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      </div>
+    <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+      <h1 className="text-4xl font-bold text-center md:text-left mb-4 md:mb-0">All Events</h1>
+      <Link href="/meet-and-greet">
+        <Button
+          size="lg"
+          className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-8 py-3 rounded-full shadow-md"
+        >
+          Book a Meet & Greet
+        </Button>
+      </Link>
     </div>
   )
 }

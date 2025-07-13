@@ -1,71 +1,127 @@
-import type { User as SupabaseUser } from "@supabase/supabase-js"
+import type { User } from "./user" // Assuming User type is defined in a separate file
+import type { Icons } from "./icons" // Assuming Icons object is defined in a separate file
+import type { Database as DB } from "./database.types"
 
-export interface User extends SupabaseUser {
+export type NavItem = {
+  title: string
+  href: string
+  disabled?: boolean
+}
+
+export type MainNavItem = NavItem
+
+export type SidebarNavItem = {
+  title: string
+  disabled?: boolean
+  external?: boolean
+  icon?: keyof typeof Icons
+} & (
+  | {
+      href: string
+      items?: never
+    }
+  | {
+      href?: string
+      items: NavItem[]
+    }
+)
+
+export type SiteConfig = {
+  name: string
+  description: string
+  url: string
+  ogImage: string
+  links: {
+    twitter: string
+    github: string
+  }
+}
+
+export type DocsConfig = {
+  mainNav: MainNavItem[]
+  sidebarNav: SidebarNavItem[]
+}
+
+export type MarketingConfig = {
+  mainNav: MainNavItem[]
+}
+
+export type DashboardConfig = {
+  mainNav: MainNavItem[]
+  sidebarNav: SidebarNavItem[]
+}
+
+export type SubscriptionPlan = {
+  name: string
+  description: string
+  stripePriceId: string
+}
+
+export type UserSubscriptionPlan = SubscriptionPlan &
+  Pick<User, "stripeCustomerId" | "stripeSubscriptionId"> & {
+    stripeCurrentPeriodEnd: number
+    isPro: boolean
+  }
+
+export type Product = {
   id: string
-  full_name: string | null
-  avatar_url: string | null
-  role: "user" | "admin"
-  membership_tier: "free" | "premium" | "vip"
+  name: string
+  price: number
+  image: string
+  description: string
+}
+
+export type Event = {
+  id: string
+  title: string
+  date: string
+  time: string
+  location: string
+  description: string
+  image: string
+}
+
+export type Content = {
+  id: string
+  title: string
+  description: string
+  type: "video" | "audio" | "blog" | "image" | "text"
+  url: string
+  access_level: "free" | "premium" | "vip"
+  image_url?: string
   created_at: string
   updated_at: string
 }
 
-export interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  image_url: string
-  category: string
-  stock: number
-  created_at: string
-}
-
-export interface CartItem extends Product {
-  quantity: number
-}
-
-export interface Event {
-  id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  image_url: string
-  ticket_price: number
-  is_premium: boolean
-  created_at: string
-}
-
-export interface MeetAndGreetSession {
-  id: string
-  type: "group" | "private"
-  date: string
-  time: string
-  duration: number // in minutes
-  price: number | null // for private sessions
-  max_attendees: number | null // for group sessions
-  attendees_count: number // current attendees for group sessions
-  created_at: string
-}
-
-export interface MeetAndGreetBooking {
+export type MeetAndGreetBooking = {
   id: string
   user_id: string
-  session_id: string
-  session_type: "group" | "private"
-  payment_status: "pending" | "completed" | "failed"
-  room_url: string | null // URL for the video call
+  session_time: string
+  session_type: string
+  status: "pending" | "confirmed" | "cancelled" | "completed"
+  room_url?: string | null
+  price: number
   created_at: string
+  updated_at: string
 }
 
-export interface Content {
+export type UserProfile = {
   id: string
-  title: string
-  description: string
-  type: "video" | "audio" | "blog" | "gallery"
-  url: string
-  is_premium: boolean
-  created_at: string
+  email: string
+  role: "user" | "admin"
+  // Add other profile fields as needed
+}
+
+declare module "@supabase/supabase-js" {
+  interface UserMetadata {
+    role?: "user" | "admin"
+    // Add other custom user metadata fields here
+  }
+  interface User {
+    user_metadata: UserMetadata
+  }
+}
+
+declare global {
+  type Database = DB
 }
