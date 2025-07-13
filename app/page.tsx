@@ -66,7 +66,13 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <main className="flex-1">
-        <HeroSection />
+        <HeroSection 
+          title="Welcome to Kelvin Creekman's Universe"
+          description="Join the Ice Legion and experience exclusive content, live events, and connect with fellow fans worldwide."
+          ctaText="Join the Ice Legion"
+          ctaLink="/join"
+          imageSrc="/placeholder.svg?height=1080&width=1920"
+        />
         <section className="py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
