@@ -1,110 +1,125 @@
-import { Button } from "@/components/ui/button"
 import { ContentPreview } from "@/components/content-preview"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import type { Content } from "@/types"
+import { Input } from "@/components/ui/input"
+import { Search } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
-import Link from "next/link"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
-export const dynamic = "force-dynamic"
-
-export default async function ContentPage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { data: profile, error: profileError } = await supabase.from("User").select("role").eq("id", user?.id).single()
-
-  const userRole = profile?.role || "guest"
-
-  const { data: content, error } = await supabase.from("Content").select("*").order("createdAt", { ascending: false })
-
-  if (error) {
-    console.error("Error fetching content:", error)
-    return <div>Error loading content.</div>
-  }
-
-  const filterContentByAccess = (contentItem: Content) => {
-    if (contentItem.accessLevel === "guest") {
-      return true
-    }
-    if (contentItem.accessLevel === "fan" && (userRole === "fan" || userRole === "premium" || userRole === "admin")) {
-      return true
-    }
-    if (contentItem.accessLevel === "premium" && (userRole === "premium" || userRole === "admin")) {
-      return true
-    }
-    if (contentItem.accessLevel === "admin" && userRole === "admin") {
-      return true
-    }
-    return false
-  }
-
-  const accessibleContent = content?.filter(filterContentByAccess) || []
-  const inaccessibleContent = content?.filter((item) => !filterContentByAccess(item)) || []
+export default function ContentPage() {
+  const mockContent = [
+    {
+      id: 1,
+      title: "Behind the Scenes: Recording 'Electric Dreams'",
+      type: "video",
+      category: "Exclusive",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "Go behind the scenes of Kelvin's latest album recording.",
+      isPremium: true,
+    },
+    {
+      id: 2,
+      title: "Kelvin's Top 5 Guitar Riffs",
+      type: "blog",
+      category: "Public",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "Kelvin shares his favorite guitar riffs and how they influenced him.",
+      isPremium: false,
+    },
+    {
+      id: 3,
+      title: "Fan Art Showcase: August 2024",
+      type: "gallery",
+      category: "Public",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "A collection of amazing fan art submitted by the community.",
+      isPremium: false,
+    },
+    {
+      id: 4,
+      title: "Unreleased Demo: 'Frozen Fire'",
+      type: "audio",
+      category: "Exclusive",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "Listen to an exclusive unreleased demo track.",
+      isPremium: true,
+    },
+    {
+      id: 5,
+      title: "Live Q&A Transcript with Kelvin",
+      type: "text",
+      category: "Exclusive",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "Read the full transcript from the latest live Q&A session.",
+      isPremium: true,
+    },
+    {
+      id: 6,
+      title: "Tour Diary: Road to Electrify",
+      type: "blog",
+      category: "Public",
+      image: "/placeholder.svg?height=200&width=300",
+      description: "Follow Kelvin's journey on his latest tour.",
+      isPremium: false,
+    },
+  ]
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-kelvin-background text-kelvin-foreground">
-      <main className="flex-1 container mx-auto py-12 px-4 md:px-6">
-        <section className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-kelvin-foreground mb-4">Exclusive Content</h1>
-          <p className="text-lg text-kelvin-foreground/80 max-w-3xl mx-auto">
-            Dive deep into Kelvin Creekman&apos;s world with behind-the-scenes videos, unreleased tracks, and more.
-          </p>
-        </section>
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+        <h1 className="text-4xl font-bold">Fan Content</h1>
+        <div className="relative flex-1 md:flex-grow-0 md:w-1/3">
+          <Input placeholder="Search content..." className="pl-8" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
 
-        {userRole !== "premium" && userRole !== "admin" && (
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg mb-12">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                <Icons.crown className="w-6 h-6 text-purple-400" />
-                Unlock More Content
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-kelvin-card-foreground/90">
-                Upgrade to a Fan or Premium membership to access a wider range of exclusive content, including full
-                concert videos, private vlogs, and early song demos.
-              </p>
-              <Button asChild className="w-full bg-purple-500 hover:bg-purple-600 text-white">
-                <Link href="/join">Upgrade Your Membership</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        <section className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-kelvin-foreground mb-6 text-center">
-            Your Accessible Content
-          </h2>
-          {accessibleContent.length === 0 ? (
-            <div className="text-center text-kelvin-foreground/80">No accessible content found.</div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {accessibleContent.map((item) => (
-                <ContentPreview key={item.id} content={item} userRole={userRole} />
-              ))}
+      <div className="flex flex-col md:flex-row gap-8">
+        <Card className="w-full md:w-1/4 shrink-0">
+          <CardHeader>
+            <CardTitle>Filter Content</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2">Content Type</h3>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="videos" />
+                  <Label htmlFor="videos">Videos</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="blogs" />
+                  <Label htmlFor="blogs">Blog Posts</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="audio" />
+                  <Label htmlFor="audio">Audio</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="galleries" />
+                  <Label htmlFor="galleries">Galleries</Label>
+                </div>
+              </div>
             </div>
-          )}
-        </section>
 
-        {inaccessibleContent.length > 0 && (
-          <section>
-            <h2 className="text-3xl md:text-4xl font-bold text-kelvin-foreground mb-6 text-center">
-              Locked Content (Upgrade to Access)
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {inaccessibleContent.map((item) => (
-                <ContentPreview key={item.id} content={item} userRole={userRole} isLocked={true} />
-              ))}
+            <div>
+              <h3 className="font-semibold mb-2">Access Level</h3>
+              <RadioGroup defaultValue="all" className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="access-all" />
+                  <Label htmlFor="access-all">All Content</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="premium" id="access-premium" />
+                  <Label htmlFor="access-premium">Premium Only</Label>
+                </div>
+              </RadioGroup>
             </div>
-          </section>
-        )}
-      </main>
+          </CardContent>
+        </Card>
+
+        <ContentPreview content={mockContent} />
+      </div>
     </div>
   )
 }

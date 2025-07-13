@@ -2,10 +2,17 @@
 
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Product } from "@/types"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "./cart-context"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/use-toast"
+
+interface Product {
+  id: string
+  name: string
+  price: number
+  image: string
+  description: string
+}
 
 interface ProductGridProps {
   products: Product[]
@@ -16,20 +23,21 @@ export function ProductGrid({ products }: ProductGridProps) {
 
   const handleAddToCart = (product: Product) => {
     addToCart(product)
-    toast.success(`${product.name} added to cart!`)
+    toast({
+      title: "Added to Cart!",
+      description: `${product.name} has been added to your cart.`,
+      variant: "default",
+    })
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
-        <Card
-          key={product.id}
-          className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg flex flex-col"
-        >
+        <Card key={product.id} className="flex flex-col">
           <CardHeader className="p-0">
-            <div className="relative w-full h-48">
+            <div className="relative w-full h-60">
               <Image
-                src={product.image || "/placeholder.png"}
+                src={product.image || "/placeholder.svg"}
                 alt={product.name}
                 layout="fill"
                 objectFit="cover"
@@ -37,18 +45,13 @@ export function ProductGrid({ products }: ProductGridProps) {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-1 p-4">
-            <CardTitle className="text-xl font-semibold mb-2">{product.name}</CardTitle>
-            <CardDescription className="text-kelvin-card-foreground/80 line-clamp-3">
-              {product.description}
-            </CardDescription>
-            <p className="text-2xl font-bold text-electric-400 mt-4">${product.price.toFixed(2)}</p>
+          <CardContent className="flex-grow p-4">
+            <CardTitle className="text-lg font-semibold mb-2">{product.name}</CardTitle>
+            <p className="text-muted-foreground text-sm line-clamp-2">{product.description}</p>
+            <p className="text-xl font-bold mt-2">${product.price.toFixed(2)}</p>
           </CardContent>
           <CardFooter className="p-4 pt-0">
-            <Button
-              className="w-full bg-electric-500 hover:bg-electric-600 text-white"
-              onClick={() => handleAddToCart(product)}
-            >
+            <Button className="w-full" onClick={() => handleAddToCart(product)}>
               Add to Cart
             </Button>
           </CardFooter>

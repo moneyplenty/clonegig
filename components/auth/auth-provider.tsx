@@ -1,84 +1,49 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
 interface AuthContextType {
   user: User | null
-  userRole: string | null
   loading: boolean
-  signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  userRole: null,
-  loading: true,
-  signOut: async () => {},
-})
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [userRole, setUserRole] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    const getUser = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-
-      if (session?.user) {
-        // Get user role from database
-        const { data: userData } = await supabase.from("User").select("role").eq("id", session.user.id).single()
-
-        setUserRole(userData?.role || "guest")
-      }
-
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
       setLoading(false)
     }
 
-    getInitialSession()
+    getUser()
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-
-      if (session?.user) {
-        // Get user role from database
-        const { data: userData } = await supabase.from("User").select("role").eq("id", session.user.id).single()
-
-        setUserRole(userData?.role || "guest")
-      } else {
-        setUserRole(null)
-      }
-
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null)
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [supabase])
 
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setUserRole(null)
-  }
-
-  return <AuthContext.Provider value={{ user, userRole, loading, signOut }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context

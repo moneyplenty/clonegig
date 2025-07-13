@@ -2,15 +2,22 @@
 
 import * as React from "react"
 
-import { useMediaQuery } from "@/hooks/use-mobile"
-
-export function useMobile() {
-  const isDesktop = useMediaQuery("(min-width: 768px)")
+export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState(false)
 
   React.useEffect(() => {
-    setIsMobile(!isDesktop)
-  }, [isDesktop])
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    handleResize()
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   return isMobile
 }

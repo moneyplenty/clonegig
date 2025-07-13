@@ -2,28 +2,70 @@
 
 import { useEffect, useRef, useState } from "react"
 import DailyIframe from "@daily-co/daily-js"
-import type { DailyCall } from "@daily-co/daily-react-hooks"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
-import { toast } from "sonner"
+import { toast } from "@/components/ui/use-toast"
+import { Loader2 } from "lucide-react"
 
 interface DailyVideoCallProps {
-  roomUrl: string
+  roomName: string
 }
 
-export function DailyVideoCall({ roomUrl }: DailyVideoCallProps) {
-  const callFrame = useRef<DailyCall | null>(null)
+export function DailyVideoCall({ roomName }: DailyVideoCallProps) {
+  const callFrame = useRef<DailyIframe.DailyCall | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isJoining, setIsJoining] = useState(false)
+  const [roomUrl, setRoomUrl] = useState<string | null>(null)
+
+  const DAILY_DOMAIN = process.env.NEXT_PUBLIC_DAILY_DOMAIN
 
   useEffect(() => {
+    const createRoom = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch("/api/create-daily-room", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ roomName }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || "Failed to create Daily.co room")
+        }
+
+        const data = await response.json()
+        setRoomUrl(data.url)
+      } catch (error: any) {
+        toast({
+          title: "Video Call Error",
+          description: error.message,
+          variant: "destructive",
+        })
+        setRoomUrl(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     if (!roomUrl) {
-      setError("No Daily.co room URL provided.")
-      setIsLoading(false)
+      createRoom()
+    }
+  }, [roomName, roomUrl])
+
+  const joinCall = () => {
+    if (!roomUrl) {
+      toast({
+        title: "Error",
+        description: "Room URL not available. Please try again.",
+        variant: "destructive",
+      })
       return
     }
 
+    setIsJoining(true)
     if (!callFrame.current) {
       callFrame.current = DailyIframe.createFrame({
         url: roomUrl,
@@ -35,78 +77,67 @@ export function DailyVideoCall({ roomUrl }: DailyVideoCallProps) {
           width: "100%",
           height: "100%",
           border: "0",
+          zIndex: 9999,
         },
       })
 
       callFrame.current.join()
 
-      callFrame.current.on("loaded", () => {
-        setIsLoading(false)
-      })
-
-      callFrame.current.on("error", (e) => {
-        console.error("Daily.co error:", e)
-        setError("Failed to load video call. Please try again.")
-        setIsLoading(false)
-        toast.error("Video call error: " + e.errorMsg)
-      })
-
       callFrame.current.on("left-meeting", () => {
-        toast.info("You have left the meeting.")
-        // Optionally redirect or show a post-meeting message
+        callFrame.current?.destroy()
+        callFrame.current = null
+        setIsJoining(false)
+        toast({
+          title: "Call Ended",
+          description: "You have left the meet & greet session.",
+          variant: "default",
+        })
       })
     }
+  }
 
-    return () => {
-      if (callFrame.current) {
-        callFrame.current.destroy()
-        callFrame.current = null
-      }
-    }
-  }, [roomUrl])
-
-  if (error) {
+  if (isLoading) {
     return (
-      <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+      <Card className="w-full max-w-md mx-auto text-center bg-card/50 backdrop-blur-sm border-kelvin-border">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-destructive-foreground">
-            <Icons.alertTriangle className="inline-block h-6 w-6 mr-2" />
-            Video Call Error
-          </CardTitle>
+          <CardTitle>Setting up your call...</CardTitle>
+          <CardDescription>Please wait while we prepare the video session.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-32">
+          <Loader2 className="h-8 w-8 animate-spin text-kelvin-primary" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!roomUrl) {
+    return (
+      <Card className="w-full max-w-md mx-auto text-center bg-card/50 backdrop-blur-sm border-kelvin-border">
+        <CardHeader>
+          <CardTitle>Video Call Unavailable</CardTitle>
+          <CardDescription>Could not create a video room. Please try again later.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-kelvin-card-foreground/80">{error}</p>
-          <Button
-            onClick={() => window.location.reload()}
-            className="mt-4 bg-electric-500 hover:bg-electric-600 text-white"
-          >
-            Retry
-          </Button>
+          <Button onClick={() => setRoomUrl(null)}>Retry</Button>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+    <Card className="w-full max-w-2xl mx-auto bg-card/50 backdrop-blur-sm border-kelvin-border">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">
-          <Icons.video className="inline-block h-6 w-6 mr-2" />
-          Live Meet & Greet
-        </CardTitle>
-        <CardDescription className="text-kelvin-card-foreground/80">
-          {isLoading ? "Loading video call..." : "You are now connected to the session."}
-        </CardDescription>
+        <CardTitle>Join Your Meet & Greet</CardTitle>
+        <CardDescription>Click the button below to join the live video call with Kelvin Creekman.</CardDescription>
       </CardHeader>
-      <CardContent className="relative h-[600px] w-full">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-kelvin-background/80 z-10">
-            <p className="text-kelvin-foreground text-lg">Loading video call...</p>
-          </div>
+      <CardContent className="relative h-[400px] flex items-center justify-center">
+        {!isJoining && (
+          <Button onClick={joinCall} disabled={isJoining} className="text-lg px-8 py-4">
+            Join Call Now
+          </Button>
         )}
-        <div id="daily-iframe-container" className="w-full h-full">
-          {/* Daily.co iframe will be mounted here */}
-        </div>
+        {/* The Daily.co iframe will be injected here */}
+        <div id="daily-iframe-container" className="absolute inset-0" />
       </CardContent>
     </Card>
   )

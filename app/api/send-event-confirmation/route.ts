@@ -1,29 +1,33 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
-import { EmailTemplate } from "@/components/email-template"
-import type * as React from "react"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
-    const { toEmail, eventTitle, eventDate, eventLocation, quantity } = await req.json()
+    const { eventName, quantity, totalPrice, userEmail } = await req.json()
 
-    if (!toEmail || !eventTitle || !eventDate || !eventLocation || !quantity) {
+    if (!eventName || !quantity || !totalPrice || !userEmail) {
       return new NextResponse("Missing required fields", { status: 400 })
     }
 
     const { data, error } = await resend.emails.send({
-      from: "Kelvin Creekman Fan Club <no-reply@yourdomain.com>", // Replace with your verified domain
-      to: [toEmail],
-      subject: `Event Confirmation: ${eventTitle}`,
-      react: EmailTemplate({
-        type: "event-confirmation",
-        eventTitle,
-        eventDate,
-        eventLocation,
-        quantity,
-      }) as React.ReactElement,
+      from: "Kelvin Creekman Fan Club <onboarding@resend.dev>", // Replace with your verified Resend domain
+      to: [userEmail],
+      subject: `Event Ticket Confirmation: ${eventName}`,
+      html: `
+        <h1>Thank You for Your Purchase!</h1>
+        <p>Dear Fan,</p>
+        <p>Your booking for <strong>${eventName}</strong> has been confirmed.</p>
+        <p>Details:</p>
+        <ul>
+          <li>Tickets: ${quantity}</li>
+          <li>Total Paid: $${totalPrice}</li>
+        </ul>
+        <p>We look forward to seeing you there!</p>
+        <p>Best,</p>
+        <p>The Kelvin Creekman Fan Club Team</p>
+      `,
     })
 
     if (error) {
@@ -31,9 +35,9 @@ export async function POST(req: NextRequest) {
       return new NextResponse(`Failed to send email: ${error.message}`, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ message: "Confirmation email sent successfully", data })
   } catch (error: any) {
-    console.error("API error:", error)
-    return new NextResponse(`Internal Server Error: ${error.message}`, { status: 500 })
+    console.error("Error in send-event-confirmation API:", error)
+    return new NextResponse(`Internal server error: ${error.message}`, { status: 500 })
   }
 }

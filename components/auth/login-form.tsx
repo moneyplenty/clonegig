@@ -1,108 +1,84 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
-import { Icons } from "@/components/icons"
-
-const formSchema = z.object({
-  email: z.string().email({ message: "Enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
-})
-
-type LoginFormValues = z.infer<typeof formSchema>
+import { toast } from "@/components/ui/use-toast"
 
 export function LoginForm() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
-  const [loading, setLoading] = useState(false)
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  })
-
-  const onSubmit = async (values: LoginFormValues) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
     setLoading(true)
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      toast({
+        title: "Login Error",
+        description: error.message,
+        variant: "destructive",
       })
-
-      if (error) {
-        throw new Error(error.message)
-      }
-
-      if (data.user) {
-        toast.success("Welcome back!")
-        router.push("/dashboard")
-        router.refresh()
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign in")
-    } finally {
-      setLoading(false)
+    } else {
+      toast({
+        title: "Login Successful",
+        description: "You have been logged in.",
+        variant: "default",
+      })
+      router.push("/dashboard")
+      router.refresh() // Refresh to update session in server components
     }
+    setLoading(false)
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form className="space-y-6" onSubmit={handleLogin}>
       <div>
-        <Label htmlFor="email" className="text-slate-200">
-          Email
-        </Label>
+        <Label htmlFor="email">Email address</Label>
         <Input
           id="email"
+          name="email"
           type="email"
-          placeholder="your@email.com"
-          {...form.register("email")}
-          disabled={loading}
-          className="bg-slate-700/50 border-slate-600 text-white"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
         />
-        {form.formState.errors.email && (
-          <p className="text-sm text-red-400 mt-1">{form.formState.errors.email.message}</p>
-        )}
       </div>
 
       <div>
-        <Label htmlFor="password" className="text-slate-200">
-          Password
-        </Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
+          name="password"
           type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
-          {...form.register("password")}
-          disabled={loading}
-          className="bg-slate-700/50 border-slate-600 text-white"
         />
-        {form.formState.errors.password && (
-          <p className="text-sm text-red-400 mt-1">{form.formState.errors.password.message}</p>
-        )}
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
-        {loading ? (
-          <>
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          "Sign In"
-        )}
-      </Button>
+      <div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing In..." : "Sign In"}
+        </Button>
+      </div>
     </form>
   )
 }

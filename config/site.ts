@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "Kelvin Creekman Fan Club",
-  description: "Official fan club website for rock and metal musician Kelvin Creekman",
+  description: "Official fan club website for Kelvin Creekman",
   mainNav: [
     {
       title: "Home",
@@ -15,6 +15,10 @@ export const siteConfig = {
       href: "/events",
     },
     {
+      title: "Meet & Greet",
+      href: "/meet-and-greet",
+    },
+    {
       title: "Store",
       href: "/store",
     },
@@ -23,15 +27,14 @@ export const siteConfig = {
       href: "/community",
     },
     {
-      title: "Meet & Greet",
-      href: "/meet-and-greet",
+      title: "Dashboard",
+      href: "/dashboard",
     },
   ],
   links: {
-    twitter: "https://twitter.com/kelvincreekman",
-    instagram: "https://instagram.com/kelvincreekman",
-    youtube: "https://youtube.com/kelvincreekman",
-    tiktok: "https://tiktok.com/@kelvincreekman",
+    twitter: "https://twitter.com/vercel",
+    github: "https://github.com/vercel/next.js",
+    docs: "https://nextjs.org",
   },
 }
 

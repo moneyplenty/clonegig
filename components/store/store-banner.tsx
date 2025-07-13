@@ -3,10 +3,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, Zap, Crown, Truck, Shield, Gift, Sparkles } from "lucide-react"
+import { Star, Crown, Zap, Truck, Shield, Gift, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth/auth-provider"
-import Image from "next/image"
 
 const memberBenefits = {
   frost: {
@@ -14,21 +13,21 @@ const memberBenefits = {
     icon: Star,
     color: "text-blue-400",
     bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/50",
+    borderColor: "border-blue-500/30",
   },
   blizzard: {
     discount: 20,
     icon: Zap,
     color: "text-purple-400",
     bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/50",
+    borderColor: "border-purple-500/30",
   },
   avalanche: {
     discount: 30,
     icon: Crown,
     color: "text-yellow-400",
     bgColor: "bg-yellow-500/10",
-    borderColor: "border-yellow-500/50",
+    borderColor: "border-yellow-500/30",
   },
 }
 
@@ -61,22 +60,9 @@ export function StoreBanner() {
   const memberInfo = userTier ? memberBenefits[userTier] : null
 
   return (
-    <div className="relative w-full h-48 bg-gradient-to-r from-electric-500 to-frost-500 flex items-center justify-center text-white overflow-hidden">
-      <Image
-        src="/placeholder.png" // Replace with a relevant store banner image
-        alt="Store Banner"
-        layout="fill"
-        objectFit="cover"
-        className="absolute inset-0 z-0 opacity-30"
-      />
-      <div className="absolute inset-0 bg-black/40 z-10" />
-      <div className="relative z-20 text-center px-4">
-        <h1 className="text-4xl md:text-6xl font-extrabold leading-tight drop-shadow-lg">The Official Store</h1>
-        <p className="text-lg md:text-xl mt-2 opacity-90 drop-shadow-md">
-          Gear up with exclusive Kelvin Creekman merchandise.
-        </p>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 z-20">
+    <section className="relative bg-gradient-to-r from-kelvin-primary to-kelvin-secondary py-12 text-kelvin-primary-foreground md:py-24 lg:py-32 overflow-hidden">
+      <div className="container px-4 md:px-6 text-center relative z-10">
+        {/* Member Benefits Banner */}
         {user && memberInfo ? (
           <Card className={`${memberInfo.bgColor} ${memberInfo.borderColor} border-2`}>
             <CardContent className="p-6">
@@ -104,14 +90,20 @@ export function StoreBanner() {
             </CardContent>
           </Card>
         ) : (
-          <Link href="/store">
-            <Button
-              variant="secondary"
-              className="bg-white text-purple-700 hover:bg-gray-100 hover:text-purple-800 text-lg px-8 py-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              Shop Now
-            </Button>
-          </Link>
+          <div className="w-full bg-gradient-to-r from-electric-600 to-frost-600 text-white p-6 mb-8 text-center shadow-lg">
+            <h2 className="text-3xl font-bold mb-2">Exclusive Merchandise</h2>
+            <p className="mx-auto max-w-[700px] text-kelvin-primary-foreground/90 md:text-xl mt-4">
+              Gear up with official Kelvin Creekman apparel, accessories, and collectibles. Limited stock available!
+            </p>
+            <div className="mt-8">
+              <Button
+                asChild
+                className="bg-kelvin-primary-foreground text-kelvin-primary hover:bg-kelvin-primary-foreground/90"
+              >
+                <Link href="/store">Shop Now</Link>
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Store Features */}
@@ -127,6 +119,12 @@ export function StoreBanner() {
           ))}
         </div>
       </div>
-    </div>
+      {/* Abstract shapes for icy/electrifying feel */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-white/10 rounded-full mix-blend-overlay animate-blob filter blur-xl" />
+        <div className="absolute top-1/2 right-1/4 w-64 h-64 bg-electric-purple/10 rounded-full mix-blend-overlay animate-blob animation-delay-2000 filter blur-xl" />
+        <div className="absolute bottom-1/4 left-1/2 w-56 h-56 bg-ice-blue/10 rounded-full mix-blend-overlay animate-blob animation-delay-4000 filter blur-xl" />
+      </div>
+    </section>
   )
 }

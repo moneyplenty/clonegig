@@ -1,71 +1,41 @@
 import { type NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-04-10",
+  apiVersion: "2023-10-16", // Use your desired API version
 })
 
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
     const { cartItems } = await req.json()
 
     if (!cartItems || cartItems.length === 0) {
-      return NextResponse.json({ error: "Cart is empty" }, { status: 400 })
+      return new NextResponse("No items in cart", { status: 400 })
     }
 
-    const lineItems = cartItems.map((item: any) => ({
+    const line_items = cartItems.map((item: any) => ({
       price_data: {
         currency: "usd",
         product_data: {
           name: item.name,
-          images: item.image ? [item.image] : [],
-          description: item.description || "",
+          images: [item.image], // Assuming item.image is a URL
         },
-        unit_amount: Math.round(item.price * 100), // Price in cents
+        unit_amount: item.price * 100, // Price in cents
       },
       quantity: item.quantity,
     }))
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: lineItems,
+      line_items,
       mode: "payment",
-      success_url: `${req.nextUrl.origin}/store/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.nextUrl.origin}/store?canceled=true`,
-      metadata: {
-        userId: user.id,
-        cartItems: JSON.stringify(
-          cartItems.map((item: any) => ({
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            name: item.name,
-            image: item.image,
-          })),
-        ),
-      },
-      shipping_address_collection: {
-        allowed_countries: ["US", "CA", "GB", "AU", "DE", "FR", "IT", "ES", "NL", "SE", "NO", "DK"],
-      },
-      billing_address_collection: "required",
+      success_url: `${req.nextUrl.origin}/checkout?success=true`,
+      cancel_url: `${req.nextUrl.origin}/checkout?canceled=true`,
     })
 
-    return NextResponse.json({ sessionId: session.id, url: session.url })
+    return NextResponse.json({ url: session.url })
   } catch (error: any) {
     console.error("Stripe checkout error:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return new NextResponse(`Error creating checkout session: ${error.message}`, { status: 500 })
   }
 }

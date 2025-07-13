@@ -3,83 +3,39 @@ import { Icons } from "@/components/icons"
 
 export function SiteFooter() {
   return (
-    <footer className="bg-kelvin-card text-kelvin-card-foreground py-8 px-4 md:px-6 border-t border-kelvin-border">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="flex flex-col items-center md:items-start">
-          <Link href="/" className="flex items-center gap-2 mb-4">
-            <Icons.logo className="h-8 w-8 text-electric-400" />
-            <span className="text-2xl font-bold text-kelvin-card-foreground">Kelvin Creekman</span>
-          </Link>
-          <p className="text-sm text-kelvin-card-foreground/80 text-center md:text-left">
-            &copy; {new Date().getFullYear()} Kelvin Creekman Fan Club. All rights reserved.
+    <footer className="py-6 md:py-0 border-t bg-background/50 backdrop-blur-lg border-electric-700/30">
+      <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+        <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+          <Icons.logo className="hidden h-6 w-6 md:inline-block" />
+          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+            Built by{" "}
+            <a
+              href="https://vercel.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium underline underline-offset-4"
+            >
+              Vercel
+            </a>
+            . The source code is available on{" "}
+            <a
+              href="https://github.com/vercel/v0"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium underline underline-offset-4"
+            >
+              GitHub
+            </a>
+            .
           </p>
         </div>
-
-        <nav className="flex flex-col items-center md:items-start gap-2">
-          <h3 className="text-lg font-semibold mb-2">Quick Links</h3>
-          <Link href="/content" className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors">
-            Content
+        <div className="flex gap-4">
+          <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
+            Privacy Policy
           </Link>
-          <Link href="/events" className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors">
-            Events
+          <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
+            Terms of Service
           </Link>
-          <Link href="/store" className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors">
-            Store
-          </Link>
-          <Link href="/community" className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors">
-            Community
-          </Link>
-          <Link
-            href="/meet-and-greet"
-            className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors"
-          >
-            Meet & Greet
-          </Link>
-        </nav>
-
-        <div className="flex flex-col items-center md:items-start">
-          <h3 className="text-lg font-semibold mb-2">Connect</h3>
-          <div className="flex gap-4 mb-4">
-            <Link
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors"
-            >
-              <Icons.tiktok className="h-6 w-6" />
-              <span className="sr-only">TikTok</span>
-            </Link>
-            <Link
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-kelvin-card-foreground/90 hover:text-frost-400 transition-colors"
-            >
-              <Icons.youtube className="h-6 w-6" />
-              <span className="sr-only">YouTube</span>
-            </Link>
-            <Link
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-kelvin-card-foreground/90 hover:text-purple-400 transition-colors"
-            >
-              <Icons.instagram className="h-6 w-6" />
-              <span className="sr-only">Instagram</span>
-            </Link>
-            <Link
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-kelvin-card-foreground/90 hover:text-electric-400 transition-colors"
-            >
-              <Icons.twitter className="h-6 w-6" />
-              <span className="sr-only">Twitter</span>
-            </Link>
-          </div>
-          <p className="text-sm text-kelvin-card-foreground/80 text-center md:text-left">
-            Stay updated with the latest news and releases.
-          </p>
         </div>
       </div>
     </footer>

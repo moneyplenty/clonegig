@@ -1,16 +1,35 @@
 "use client"
+
+import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Calendar, MapPin } from "lucide-react"
 import { format } from "date-fns"
-import { Icons } from "@/components/icons"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import type { Event as EventType } from "@/types"
 
-const mockEvents: EventType[] = [
+interface Event {
+  id: string
+  title: string
+  description?: string
+  date: string
+  time?: string
+  location: string
+  type?: "concert" | "meetgreet" | "virtual" | "vip"
+  tierRequired?: "public" | "frost" | "blizzard" | "avalanche"
+  price?: number
+  memberPrice?: number
+  capacity?: number
+  registered?: number
+  image?: string
+  featured?: boolean
+  imageUrl: string
+  ticketPrice?: number
+}
+
+const mockEvents: Event[] = [
   {
     id: "1",
     title: "Electric Storm Tour - NYC",
@@ -113,6 +132,30 @@ const mockEvents: EventType[] = [
     featured: false,
     imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
   },
+  {
+    id: "7",
+    title: "Ice Storm Album Launch Party",
+    date: "2025-08-15",
+    time: "7:00 PM",
+    location: "The Electric Venue, New York",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+  },
+  {
+    id: "8",
+    title: "Acoustic Set & Q&A",
+    date: "2025-09-01",
+    time: "3:00 PM",
+    location: "The Frosty Lounge, Los Angeles",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+  },
+  {
+    id: "9",
+    title: "Winter's Embrace Tour - London",
+    date: "2025-10-20",
+    time: "8:00 PM",
+    location: "O2 Academy, London",
+    imageUrl: "/placeholder.svg?height=400&width=600",
+  },
 ]
 
 const additionalEvents = [
@@ -121,86 +164,42 @@ const additionalEvents = [
     title: "Kelvin Creekman Live in Concert",
     date: "2024-10-26T20:00:00Z",
     location: "The Electric Venue, New York, NY",
-    image: "/placeholder.png?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
     ticketPrice: 75.0,
-    isMeetGreet: false,
   },
   {
     id: "2",
     title: "Acoustic Set & Storytelling",
     date: "2024-11-10T18:00:00Z",
     location: "The Blue Note, Chicago, IL",
-    image: "/placeholder.png?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
     ticketPrice: 50.0,
-    isMeetGreet: true,
   },
   {
     id: "3",
     title: "Album Release Party",
     date: "2024-12-05T19:00:00Z",
     location: "Online Stream",
-    image: "/placeholder.png?height=200&width=300",
+    image: "/placeholder.svg?height=200&width=300",
     ticketPrice: 20.0,
-    isMeetGreet: false,
   },
 ]
 
-const upcomingEvents = [
-  {
-    id: "4",
-    title: "Electric Dreams Tour: New York",
-    date: "2025-08-15T20:00:00Z",
-    location: "Madison Square Garden, NYC",
-    description: "Join Kelvin Creekman for an unforgettable night of rock and metal.",
-    isMeetGreet: false,
-  },
-  {
-    id: "5",
-    title: "Exclusive Fan Meet & Greet",
-    date: "2025-09-01T18:00:00Z",
-    location: "Online (Virtual Session)",
-    description: "A rare opportunity to chat live with Kelvin Creekman. Limited spots!",
-    isMeetGreet: true,
-  },
-  {
-    id: "6",
-    title: "Album Launch Party: London",
-    date: "2025-10-20T19:30:00Z",
-    location: "O2 Arena, London",
-    description: "Celebrate the launch of Kelvin's new album with a spectacular show.",
-    isMeetGreet: false,
-  },
-]
-
-export async function UpcomingEvents() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
-
-  const { data: eventsFromSupabase, error } = await supabase
-    .from("Event")
-    .select("*")
-    .order("date", { ascending: true })
-    .limit(3) // Fetch up to 3 upcoming events
-
-  if (error) {
-    console.error("Error fetching upcoming events:", error)
-    return <div>Error loading upcoming events.</div>
-  }
-
-  const events = [...mockEvents, ...additionalEvents, ...upcomingEvents, ...(eventsFromSupabase || [])]
+export function UpcomingEvents() {
+  const [events] = useState<Event[]>([...mockEvents, ...additionalEvents])
 
   const getEventTypeIcon = (type: string) => {
     switch (type) {
       case "concert":
-        return <Icons.calendar className="h-4 w-4" />
+        return <Calendar className="h-4 w-4" />
       case "meetgreet":
-        return <Icons.mapPin className="h-4 w-4" />
+        return <MapPin className="h-4 w-4" />
       case "virtual":
-        return <Icons.mapPin className="h-4 w-4" />
+        return <MapPin className="h-4 w-4" />
       case "vip":
-        return <Icons.mapPin className="h-4 w-4" />
+        return <MapPin className="h-4 w-4" />
       default:
-        return <Icons.calendar className="h-4 w-4" />
+        return <Calendar className="h-4 w-4" />
     }
   }
 
@@ -222,11 +221,11 @@ export async function UpcomingEvents() {
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case "frost":
-        return <Icons.mapPin className="h-3 w-3" />
+        return <MapPin className="h-3 w-3" />
       case "blizzard":
-        return <Icons.mapPin className="h-3 w-3" />
+        return <MapPin className="h-3 w-3" />
       case "avalanche":
-        return <Icons.mapPin className="h-3 w-3" />
+        return <MapPin className="h-3 w-3" />
       default:
         return null
     }
@@ -254,42 +253,41 @@ export async function UpcomingEvents() {
   const nextEvent = sortedEvents.find((event) => new Date(event.date) > new Date())
 
   return (
-    <section className="py-12 bg-kelvin-card text-kelvin-card-foreground">
-      <div className="container mx-auto px-4 md:px-6">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-8">Upcoming Events</h2>
-        <p className="text-lg text-kelvin-card-foreground/80 text-center max-w-3xl mx-auto mb-12">
-          Don&apos;t miss out on Kelvin Creekman&apos;s live performances, virtual meet & greets, and special
-          appearances.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <section className="py-12 md:py-24 lg:py-32 bg-kelvin-card">
+      <div className="container px-4 md:px-6">
+        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-kelvin-foreground">Upcoming Events</h2>
+            <p className="max-w-[900px] text-kelvin-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              Don't miss Kelvin Creekman's next electrifying performance or exclusive fan event.
+            </p>
+          </div>
+        </div>
+        <div className="mx-auto grid max-w-5xl items-start gap-6 py-12 lg:grid-cols-3 lg:gap-12">
           {sortedEvents.map((event) => (
-            <Card key={event.id} className="bg-kelvin-background text-kelvin-foreground border-kelvin-border shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">{event.title}</CardTitle>
-                <CardDescription className="text-kelvin-foreground/80">
-                  <div className="flex items-center gap-1 mt-1">
-                    <Icons.calendar className="w-4 h-4" />
-                    {new Date(event.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Icons.clock className="w-4 h-4" />
-                    {new Date(event.date).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Icons.mapPin className="w-4 h-4" />
-                    {event.location}
-                  </div>
-                </CardDescription>
+            <Card key={event.id} className="flex flex-col bg-card/50 backdrop-blur-sm border-kelvin-border">
+              <CardHeader className="p-0">
+                <div className="relative w-full h-48">
+                  <Image
+                    src={event.image || event.imageUrl}
+                    alt={event.title}
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded-t-lg"
+                  />
+                </div>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-kelvin-foreground/90 line-clamp-3">{event.description}</p>
+              <CardContent className="flex-grow p-4">
+                <CardTitle className="text-lg font-semibold mb-2 text-kelvin-foreground">{event.title}</CardTitle>
+                {event.description && <p className="text-muted-foreground text-sm mb-4">{event.description}</p>}
+                <div className="flex items-center text-kelvin-muted-foreground text-sm mb-1">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>{format(new Date(event.date), "MMM dd, yyyy 'at' p")}</span>
+                </div>
+                <div className="flex items-center text-kelvin-muted-foreground text-sm">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>{event.location}</span>
+                </div>
                 {event.capacity && event.registered && (
                   <div className="space-y-1 mb-4">
                     <div className="flex items-center justify-between text-xs">
@@ -317,15 +315,34 @@ export async function UpcomingEvents() {
                 {event.ticketPrice && (
                   <p className="text-xl font-bold mt-2 text-kelvin-foreground">${event.ticketPrice.toFixed(2)}</p>
                 )}
-                <Button asChild className="w-full bg-electric-500 hover:bg-electric-600 text-white">
-                  <Link href={`/events/${event.id}`}>View Details</Link>
-                </Button>
               </CardContent>
+              <CardFooter className="p-4 pt-0">
+                {event.capacity && event.registered && (
+                  <Button
+                    className="w-full bg-kelvin-primary text-kelvin-primary-foreground hover:bg-kelvin-primary/90"
+                    asChild
+                  >
+                    <Link href={`/events/${event.id}`}>View Details</Link>
+                  </Button>
+                )}
+                {!event.capacity && (
+                  <Button
+                    className="w-full bg-kelvin-primary text-kelvin-primary-foreground hover:bg-kelvin-primary/90"
+                    asChild
+                  >
+                    <Link href={`/events/${event.id}`}>View Details</Link>
+                  </Button>
+                )}
+              </CardFooter>
             </Card>
           ))}
         </div>
-        <div className="text-center mt-12">
-          <Button asChild size="lg" className="bg-frost-500 hover:bg-frost-600 text-white">
+        <div className="text-center mt-8">
+          <Button
+            asChild
+            variant="outline"
+            className="bg-kelvin-background text-kelvin-foreground border-kelvin-border hover:bg-kelvin-muted"
+          >
             <Link href="/events">View All Events</Link>
           </Button>
         </div>

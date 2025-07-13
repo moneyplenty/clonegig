@@ -1,123 +1,125 @@
 "use client"
 
-import Link from "next/link"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import type { Event } from "@/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
 
 interface EventBookingProps {
-  event: Event
+  event: {
+    id: string
+    title: string
+    ticketPrice: number
+    isPremium: boolean
+  }
 }
 
 export function EventBooking({ event }: EventBookingProps) {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(false)
-  const { user, userRole, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
   const handleBooking = async () => {
+    if (authLoading) return
+
     if (!user) {
-      toast.error("You need to be logged in to book events.")
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book tickets.",
+        variant: "destructive",
+      })
       router.push("/login")
       return
     }
 
-    if (event.isMeetGreet && userRole !== "premium") {
-      toast.error("Meet & Greet sessions are exclusive to Premium members. Please upgrade your membership.")
-      router.push("/join")
+    if (event.isPremium && user.user_metadata?.role !== "premium" && user.user_metadata?.role !== "admin") {
+      toast({
+        title: "Premium Access Required",
+        description: "This is a premium event. Please upgrade your membership to book tickets.",
+        variant: "destructive",
+      })
+      router.push("/join") // Redirect to membership page
       return
     }
 
     setLoading(true)
     try {
-      // Simulate booking API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Simulate API call for booking
+      const response = await fetch("/api/send-event-confirmation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          eventName: event.title,
+          quantity,
+          totalPrice: (event.ticketPrice * quantity).toFixed(2),
+          userEmail: user.email,
+        }),
+      })
 
-      // In a real application, you would:
-      // 1. Call a server action or API route to process the booking.
-      // 2. Handle payment if event.price > 0 (e.g., Stripe Checkout).
-      // 3. Store booking details in your database.
-      // 4. Send a confirmation email.
+      if (!response.ok) {
+        throw new Error("Failed to book event")
+      }
 
-      toast.success(`Successfully booked ${quantity} ticket(s) for ${event.title}!`)
-      setQuantity(1) // Reset quantity
-    } catch (error) {
-      console.error("Booking error:", error)
-      toast.error("Failed to book event. Please try again.")
+      toast({
+        title: "Booking Confirmed!",
+        description: `You have successfully booked ${quantity} ticket(s) for ${event.title}. A confirmation email has been sent.`,
+        variant: "default",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Booking Failed",
+        description: error.message || "There was an error processing your booking. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const isBookable = !authLoading && user && (!event.isMeetGreet || userRole === "premium")
-
   return (
-    <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Book Your Spot</CardTitle>
-        <CardDescription className="text-kelvin-card-foreground/80">
-          Secure your tickets for this exciting event.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {event.price > 0 && (
-          <div className="flex items-center justify-between">
-            <Label htmlFor="quantity" className="text-lg">
-              Price per ticket:
-            </Label>
-            <span className="text-xl font-bold text-electric-400">${event.price.toFixed(2)}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="quantity" className="text-lg">
-            Quantity:
-          </Label>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(Number.parseInt(e.target.value))}
-            className="w-24 bg-kelvin-input text-kelvin-foreground border-kelvin-border"
-            disabled={loading || !isBookable}
-          />
-        </div>
-        <div className="flex items-center justify-between text-xl font-bold">
-          <span>Total:</span>
-          <span className="text-frost-400">${(event.price * quantity).toFixed(2)}</span>
-        </div>
-        <Button
-          onClick={handleBooking}
-          className="w-full bg-electric-500 hover:bg-electric-600 text-white"
-          disabled={loading || !isBookable}
-        >
-          {loading ? "Booking..." : event.price > 0 ? "Proceed to Payment" : "Confirm Booking"}
-        </Button>
-        {!user && !authLoading && (
-          <p className="text-center text-sm text-kelvin-card-foreground/70">
-            <Link href="/login" className="text-electric-400 hover:underline">
-              Log in
-            </Link>{" "}
-            to book your tickets.
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="quantity" className="text-lg">
+          Quantity
+        </Label>
+        <Select value={String(quantity)} onValueChange={(value) => setQuantity(Number(value))}>
+          <SelectTrigger className="w-[100px]">
+            <SelectValue placeholder="1" />
+          </SelectTrigger>
+          <SelectContent>
+            {[1, 2, 3, 4, 5].map((num) => (
+              <SelectItem key={num} value={String(num)}>
+                {num}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center justify-between text-xl font-bold">
+        <span>Total:</span>
+        <span>${(event.ticketPrice * quantity).toFixed(2)}</span>
+      </div>
+      <Button onClick={handleBooking} className="w-full" disabled={loading || authLoading}>
+        {loading
+          ? "Booking..."
+          : event.isPremium &&
+              (!user || (user.user_metadata?.role !== "premium" && user.user_metadata?.role !== "admin"))
+            ? "Upgrade to Premium"
+            : "Book Now"}
+      </Button>
+      {event.isPremium &&
+        (!user || (user.user_metadata?.role !== "premium" && user.user_metadata?.role !== "admin")) && (
+          <p className="text-sm text-center text-muted-foreground">
+            This is a premium event. Upgrade your membership to gain access.
           </p>
         )}
-        {event.isMeetGreet && user && userRole !== "premium" && !authLoading && (
-          <p className="text-center text-sm text-kelvin-card-foreground/70">
-            This is a Premium-only event.{" "}
-            <Link href="/join" className="text-electric-400 hover:underline">
-              Upgrade your membership
-            </Link>{" "}
-            to book.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    </div>
   )
 }

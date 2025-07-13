@@ -1,25 +1,26 @@
 import { Input } from "@/components/ui/input"
+import { Search, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Icons } from "@/components/icons"
+import { useCart } from "./cart-context"
+import Link from "next/link"
 
 export function StoreHeader() {
+  const { cart } = useCart()
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-      <div className="text-center md:text-left">
-        <h1 className="text-4xl md:text-5xl font-bold text-kelvin-foreground mb-2">Merchandise Store</h1>
-        <p className="text-lg text-kelvin-foreground/80">Official Kelvin Creekman gear, apparel, and collectibles.</p>
+    <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+      <h1 className="text-4xl font-bold">Merchandise</h1>
+      <div className="relative flex-1 md:flex-grow-0 md:w-1/3">
+        <Input placeholder="Search merchandise..." className="pl-8" />
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="flex w-full max-w-md items-center space-x-2">
-        <Input
-          type="search"
-          placeholder="Search products..."
-          className="flex-1 bg-kelvin-card text-kelvin-card-foreground border-kelvin-border"
-        />
-        <Button type="submit" className="bg-electric-500 hover:bg-electric-600 text-white">
-          <Icons.search className="h-5 w-5" />
-          <span className="sr-only">Search</span>
-        </Button>
-      </div>
+      <Button variant="outline" size="lg" asChild>
+        <Link href="/checkout">
+          <ShoppingCart className="mr-2 h-5 w-5" />
+          Cart ({totalItems})
+        </Link>
+      </Button>
     </div>
   )
 }

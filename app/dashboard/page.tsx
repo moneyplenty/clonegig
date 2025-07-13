@@ -1,125 +1,165 @@
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/icons"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/components/auth/auth-provider"
+import { Loader2, Crown, Star, Zap, ShoppingBag, Calendar, BookOpen, MessageCircle } from "lucide-react"
 import Link from "next/link"
 
-export default async function DashboardPage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+export default function DashboardPage() {
+  const { user, loading } = useAuth()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="sr-only">Loading...</span>
+      </div>
+    )
+  }
 
   if (!user) {
-    redirect("/login")
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 text-center">
+        <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+        <p className="text-lg text-muted-foreground mb-6">Please log in to view your dashboard.</p>
+        <Button asChild>
+          <Link href="/login">Go to Login</Link>
+        </Button>
+      </div>
+    )
   }
 
-  // Fetch user's role from public.users table
-  const { data: profile, error: profileError } = await supabase.from("User").select("role").eq("id", user.id).single()
+  const userRole = user.user_metadata?.role || "fan" // Default to 'fan' if role is not set
 
-  if (profileError || !profile) {
-    console.error("Error fetching user profile:", profileError)
-    // Handle error, maybe redirect to an error page or show a generic message
-    return <div>Error loading user profile.</div>
+  const getTierIcon = (role: string) => {
+    switch (role) {
+      case "guest":
+        return null
+      case "fan":
+        return <Star className="h-5 w-5 text-blue-400" />
+      case "premium":
+        return <Zap className="h-5 w-5 text-purple-400" />
+      case "admin":
+        return <Crown className="h-5 w-5 text-gold-400" />
+      default:
+        return null
+    }
   }
 
-  const userRole = profile.role || "guest"
+  const getTierName = (role: string) => {
+    switch (role) {
+      case "guest":
+        return "Guest"
+      case "fan":
+        return "Frost Fan"
+      case "premium":
+        return "Blizzard VIP"
+      case "admin":
+        return "Avalanche Elite (Admin)"
+      default:
+        return "Unknown Tier"
+    }
+  }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-kelvin-background text-kelvin-foreground">
-      <main className="flex-1 container mx-auto py-12 px-4 md:px-6">
-        <h1 className="text-4xl md:text-5xl font-bold mb-8 text-center">Your Dashboard</h1>
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-8 text-center">Welcome, {user.email}!</h1>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-electric-200">Your Membership Tier</CardTitle>
+            {getTierIcon(userRole)}
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-frost-300">{getTierName(userRole)}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {userRole === "guest" && "Sign up or upgrade to unlock more features!"}
+              {userRole === "fan" && "Enjoy basic fan benefits. Consider upgrading for more!"}
+              {userRole === "premium" && "You have access to exclusive content and priority features!"}
+              {userRole === "admin" && "You have full administrative privileges."}
+            </p>
+            {userRole === "fan" && (
+              <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+                <Link href="/join">Upgrade Membership</Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-electric-200">Recent Orders</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">No recent orders</p>
+            <p className="text-xs text-muted-foreground">Check out the latest merchandise!</p>
+            <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+              <Link href="/store">Go to Store</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-electric-200">Upcoming Events</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">No upcoming events booked</p>
+            <p className="text-xs text-muted-foreground">Find exciting events to join.</p>
+            <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+              <Link href="/events">View Events</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-electric-200">Exclusive Content</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">Access your premium content.</p>
+            <p className="text-xs text-muted-foreground">Dive into behind-the-scenes and more.</p>
+            <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+              <Link href="/content">View Content</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-electric-200">Community Hub</CardTitle>
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">Connect with other fans.</p>
+            <p className="text-xs text-muted-foreground">Join discussions and make new friends.</p>
+            <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+              <Link href="/community">Go to Community</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {userRole === "admin" && (
+          <Card className="bg-background/50 backdrop-blur-lg border-electric-700/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Membership Status</CardTitle>
-              <Icons.crown className="h-6 w-6 text-electric-400" />
+              <CardTitle className="text-sm font-medium text-electric-200">Admin Panel</CardTitle>
+              <Crown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold capitalize">{userRole}</div>
-              <p className="text-sm text-kelvin-card-foreground/80 mt-2">
-                {userRole === "guest" && "Upgrade for more exclusive content!"}
-                {userRole === "fan" && "Enjoy basic membership benefits."}
-                {userRole === "premium" && "You have full access to all features!"}
-              </p>
-              {userRole !== "premium" && (
-                <Button asChild className="mt-4 w-full bg-electric-500 hover:bg-electric-600 text-white">
-                  <Link href="/join">Upgrade Membership</Link>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Recent Orders</CardTitle>
-              <Icons.package className="h-6 w-6 text-frost-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">No recent orders</div>
-              <p className="text-sm text-kelvin-card-foreground/80 mt-2">
-                Looks like you haven&apos;t purchased anything yet.
-              </p>
-              <Button asChild className="mt-4 w-full bg-frost-500 hover:bg-frost-600 text-white">
-                <Link href="/store">Browse Store</Link>
+              <p className="text-2xl font-bold">Manage the fan club website.</p>
+              <p className="text-xs text-muted-foreground">Access all administrative functionalities.</p>
+              <Button asChild className="mt-4 bg-gradient-electric hover:animate-electric-pulse">
+                <Link href="/admin">Go to Admin</Link>
               </Button>
             </CardContent>
           </Card>
-
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Upcoming Events</CardTitle>
-              <Icons.calendar className="h-6 w-6 text-purple-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">No upcoming events</div>
-              <p className="text-sm text-kelvin-card-foreground/80 mt-2">
-                Check out the events page for new announcements.
-              </p>
-              <Button asChild className="mt-4 w-full bg-purple-500 hover:bg-purple-600 text-white">
-                <Link href="/events">View Events</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Exclusive Content</CardTitle>
-              <Icons.fileText className="h-6 w-6 text-electric-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Access Granted</div>
-              <p className="text-sm text-kelvin-card-foreground/80 mt-2">
-                Explore exclusive articles, videos, and music.
-              </p>
-              <Button asChild className="mt-4 w-full bg-electric-500 hover:bg-electric-600 text-white">
-                <Link href="/content">Go to Content</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-kelvin-card text-kelvin-card-foreground border-kelvin-border shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">Community Hub</CardTitle>
-              <Icons.users className="h-6 w-6 text-frost-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Connect with Fans</div>
-              <p className="text-sm text-kelvin-card-foreground/80 mt-2">
-                Join discussions and meet other Kelvin Creekman enthusiasts.
-              </p>
-              <Button asChild className="mt-4 w-full bg-frost-500 hover:bg-frost-600 text-white">
-                <Link href="/community">Visit Community</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   )
 }
