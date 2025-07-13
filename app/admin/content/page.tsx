@@ -1,4 +1,3 @@
-
 import { AdminProtection } from "@/components/admin/admin-protection"
 import { AdminContentManagement } from "@/components/admin/admin-content-management"
 
