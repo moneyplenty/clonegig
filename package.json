@@ -9,7 +9,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@daily-co/daily-js": "latest",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
     "@radix-ui/react-aspect-ratio": "latest",

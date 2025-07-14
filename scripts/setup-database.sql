@@ -1,144 +1,114 @@
--- Create a table for products
-CREATE TABLE products (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  description TEXT,
-  price NUMERIC(10, 2) NOT NULL,
-  image_url TEXT,
-  stock INTEGER,
+-- Enable necessary extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  is_admin BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create a table for events
-CREATE TABLE events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- Create testimonials table
+CREATE TABLE IF NOT EXISTS public.testimonials (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  rating INTEGER DEFAULT 5,
+  image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create events table
+CREATE TABLE IF NOT EXISTS public.events (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  title TEXT NOT NULL,
   description TEXT,
   date TIMESTAMP WITH TIME ZONE NOT NULL,
   location TEXT,
-  price NUMERIC(10, 2) NOT NULL,
-  ticket_count INTEGER,
+  price DECIMAL(10,2) DEFAULT 0,
+  max_attendees INTEGER,
+  current_attendees INTEGER DEFAULT 0,
   image_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create a table for content (e.g., blog posts, videos)
-CREATE TABLE content (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  slug TEXT UNIQUE,
-  type TEXT NOT NULL, -- e.g., 'blog_post', 'video', 'article'
-  content_data JSONB, -- Flexible JSONB field for different content types
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Create event bookings table
+CREATE TABLE IF NOT EXISTS public.event_bookings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  attendees INTEGER DEFAULT 1,
+  total_amount DECIMAL(10,2),
+  payment_status TEXT DEFAULT 'pending',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create a table for testimonials
-CREATE TABLE testimonials (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  author TEXT NOT NULL,
-  content TEXT NOT NULL,
-  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Create meet and greet bookings table (using Signal instead of Daily.co)
+CREATE TABLE IF NOT EXISTS public.meet_and_greet_bookings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  session_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  duration INTEGER DEFAULT 30,
+  signal_link TEXT, -- Signal video call link
+  payment_status TEXT DEFAULT 'pending',
+  status TEXT DEFAULT 'scheduled',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create a table for user profiles
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  username TEXT UNIQUE,
-  full_name TEXT,
-  avatar_url TEXT,
-  email TEXT UNIQUE,
-  membership_tier TEXT DEFAULT 'free', -- e.g., 'free', 'fan', 'super_fan'
-  role TEXT DEFAULT 'user', -- e.g., 'user', 'admin'
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Create products table
+CREATE TABLE IF NOT EXISTS public.products (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  image_url TEXT,
+  category TEXT,
+  in_stock BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS) for profiles table
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+-- Insert sample data
+INSERT INTO public.testimonials (name, content, rating, image_url) VALUES
+('Sarah Johnson', 'Kelvin''s performance was absolutely incredible! A night I''ll never forget.', 5, '/placeholder-user.jpg'),
+('Mike Chen', 'The energy and passion Kelvin brings to the stage is unmatched. Highly recommend!', 5, '/placeholder-user.jpg'),
+('Emily Davis', 'Been following Kelvin for years. Always delivers an amazing show!', 5, '/placeholder-user.jpg')
+ON CONFLICT (id) DO NOTHING;
 
--- Policy for users to view their own profile
-CREATE POLICY "Users can view their own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
+-- Set up Row Level Security (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.meet_and_greet_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- Policy for users to update their own profile
-CREATE POLICY "Users can update their own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+-- Create policies
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Policy for admins to view all profiles
-CREATE POLICY "Admins can view all profiles" ON profiles
-  FOR SELECT USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Testimonials are viewable by everyone" ON public.testimonials FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage testimonials" ON public.testimonials FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
 
--- Policy for admins to update any profile
-CREATE POLICY "Admins can update any profile" ON profiles
-  FOR UPDATE USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Events are viewable by everyone" ON public.events FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage events" ON public.events FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
 
--- Policy for admins to insert profiles (e.g., for new users)
-CREATE POLICY "Admins can insert profiles" ON profiles
-  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Users can view own bookings" ON public.event_bookings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own bookings" ON public.event_bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Policy for admins to delete profiles
-CREATE POLICY "Admins can delete profiles" ON profiles
-  FOR DELETE USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Users can view own meet and greet bookings" ON public.meet_and_greet_bookings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create own meet and greet bookings" ON public.meet_and_greet_bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Set up Triggers for updated_at column
-CREATE OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_products_timestamp
-BEFORE UPDATE ON products
-FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER update_events_timestamp
-BEFORE UPDATE ON events
-FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER update_content_timestamp
-BEFORE UPDATE ON content
-FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER update_testimonials_timestamp
-BEFORE UPDATE ON testimonials
-FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER update_profiles_timestamp
-BEFORE UPDATE ON profiles
-FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-
--- Seed some initial data (optional)
-INSERT INTO products (name, description, price, image_url, stock) VALUES
-('Creekman T-Shirt', 'High-quality cotton t-shirt with Creekman logo.', 25.00, '/placeholder.svg?height=400&width=400', 100),
-('Creekman Mug', 'Ceramic mug for your favorite beverage.', 15.00, '/placeholder.svg?height=400&width=400', 50),
-('Creekman Poster', 'Limited edition signed poster.', 35.00, '/placeholder.svg?height=400&width=400', 20);
-
-INSERT INTO events (name, description, date, location, price, ticket_count, image_url) VALUES
-('Live Stream Q&A', 'Join Creekman for a live Q&A session.', '2025-07-20 19:00:00+00', 'Online', 0.00, 1000, '/placeholder.svg?height=400&width=600'),
-('Fan Meetup NYC', 'Meet Creekman in New York City!', '2025-08-15 14:00:00+00', 'New York, NY', 50.00, 50, '/placeholder.svg?height=400&width=600');
-
-INSERT INTO testimonials (author, content, rating) VALUES
-('Fan123', 'Amazing content, always inspiring!', 5),
-('MusicLover', 'The best artist out there, highly recommend!', 5);
-
--- Function to create a new profile for new users
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, username)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'username');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to call handle_new_user on auth.users inserts
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+CREATE POLICY "Products are viewable by everyone" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Only admins can manage products" ON public.products FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);

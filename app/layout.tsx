@@ -9,9 +9,9 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { CartProvider } from "@/components/store/cart-context"
 
-const fontSans = FontSans({
+const inter = FontSans({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 })
 
 export const metadata = {
@@ -23,7 +23,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <CartProvider>

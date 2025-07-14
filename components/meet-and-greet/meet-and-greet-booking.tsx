@@ -113,7 +113,7 @@ export function MeetAndGreetBooking() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             <CreditCard className="mr-2 h-4 w-4" />
-            {isLoading ? "Processing..." : "Book Session - $50"}
+            {isLoading ? "Book Session - $50"}
           </Button>
         </form>
       </CardContent>
