@@ -15,7 +15,7 @@ typescript = { pattern = "**/{*.ts,*.tsx}" }
 NODE_ENV = "development"
 
 [deployment]
-run = ["sh", "-c", "npm start"]
+run = ["sh", "-c", "npm run start"]
 build = ["sh", "-c", "npm run build"]
 
 [workflows]
