@@ -1,0 +1,159 @@
+Please clean and fix this Next.js + Supabase project so that it works without any errors and can be deployed to Vercel. Follow these exact instructions:
+
+✅ Supabase Setup (Fix Client/Server Imports):
+Ensure the project has ONLY these three files for Supabase:
+
+lib/supabase/client.ts:
+
+ts
+Copy
+Edit
+import { createBrowserClient } from "@supabase/ssr"
+
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+lib/supabase/server.ts:
+
+ts
+Copy
+Edit
+import { createServerClient } from "@supabase/ssr"
+import type { cookies } from "next/headers"
+
+export function createServerSupabaseClient(cookieStore: ReturnType<typeof cookies>) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set() {},
+        remove() {},
+      },
+    }
+  )
+}
+lib/supabase/supabase-server.ts:
+
+ts
+Copy
+Edit
+import { createClient } from "@supabase/supabase-js"
+
+export const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+Ensure all Supabase imports throughout the project use ONLY these files:
+
+@/lib/supabase/client
+
+@/lib/supabase/server
+
+@/lib/supabase/supabase-server
+
+✅ Remove the Following Completely:
+Any broken testimonials table logic.
+
+Any broken profiles.username column logic.
+
+Any broken .featured column queries on products unless the column exists.
+
+Any broken daily.co integration (remove all).
+
+Any broken imports from /components/ui/toaster related to ToastAction.
+
+Any fonts like Mona Sans or non-working font-family references.
+
+✅ SuperFans Component Update:
+Use this exact SuperFans.tsx component and ensure it's displayed in the top-right of the HeroSection.
+
+tsx
+Copy
+Edit
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ExternalLink } from "lucide-react"
+
+const superFans = [
+  { id: 1, name: "Sarah Ice", username: "@sarah_ice_fan", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+  { id: 2, name: "Mike Frost", username: "@mike_frost_kc", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+  { id: 3, name: "Luna Storm", username: "@luna_storm_fan", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+]
+
+export function SuperFans() {
+  return (
+    <Card className="w-full max-w-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">Super Fans</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {superFans.map((fan) => (
+          <div key={fan.id} className="flex items-center justify-between space-x-3">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={fan.avatar} alt={fan.name} />
+                <AvatarFallback>{fan.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{fan.name}</span>
+                <span className="text-xs text-muted-foreground">{fan.username}</span>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="h-8 px-2 bg-transparent" onClick={() => window.open(fan.tiktokUrl, "_blank")}>
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+Integrate this in HeroSection.tsx:
+
+tsx
+Copy
+Edit
+import { SuperFans } from "@/components/super-fans"
+
+<div className="absolute top-4 right-4 z-10 hidden lg:block">
+  <SuperFans />
+</div>
+✅ Video Call / Stripe Integration:
+Remove all Daily.co logic.
+
+Use Stripe Checkout for Meet & Greet booking.
+
+After successful Stripe payment, redirect user to Signal video call link.
+
+✅ Fix Tailwind Config / Fonts:
+Ensure tailwind.config.ts uses valid fonts only:
+
+ts
+Copy
+Edit
+fontFamily: {
+  sans: ["Inter", "sans-serif"],
+}
+Remove any broken imports of Mona Sans or fontFamily.
+
+✅ Fix Videos:
+Ensure all videos are served from valid URLs in /public or valid https links. No blob: URLs.
+
+✅ Final Checklist Before Deployment:
+Ensure .env is correct for Vercel.
+
+Ensure all pages load without errors.
+
+Ensure pnpm build / next build succeeds.
+
+✅ Final Goal:
+Fix every error. Clean every broken component. Ensure clean deployment to Vercel.
+No hydration errors. No Supabase errors. No GoTrueClient duplication errors.
