@@ -35,12 +35,11 @@
 
     --radius: 0.5rem;
 
-    /* Custom colors for icy, electrifying feel */
     --electric-50: 210 100% 98%;
     --electric-100: 210 100% 95%;
     --electric-200: 210 100% 90%;
     --electric-300: 210 100% 80%;
-    --electric-400: 210 100% 70%; /* Main electric blue */
+    --electric-400: 210 100% 70%;
     --electric-500: 210 100% 60%;
     --electric-600: 210 100% 50%;
     --electric-700: 210 100% 40%;
@@ -52,7 +51,7 @@
     --frost-100: 270 100% 95%;
     --frost-200: 270 100% 90%;
     --frost-300: 270 100% 80%;
-    --frost-400: 270 100% 70%; /* Main frost purple */
+    --frost-400: 270 100% 70%;
     --frost-500: 270 100% 60%;
     --frost-600: 270 100% 50%;
     --frost-700: 270 100% 40%;
@@ -60,7 +59,7 @@
     --frost-900: 270 100% 20%;
     --frost-950: 270 100% 10%;
 
-    --gold-400: 40 96% 60%; /* For premium/admin highlights */
+    --gold-400: 40 96% 60%;
   }
 
   .dark {
@@ -103,7 +102,6 @@
   }
 }
 
-/* Custom gradients and animations */
 .bg-gradient-electric {
   background: linear-gradient(to right, hsl(var(--electric-400)), hsl(var(--frost-400)));
 }
@@ -128,7 +126,6 @@
   animation: electric-pulse 1.5s infinite;
 }
 
-/* Custom styles for the About page content */
 .prose h1,
 .prose h2,
 .prose h3,
@@ -159,5 +156,5 @@
 }
 
 .font-heading {
-  font-family: theme("fontFamily.sans"); /* Adjust as needed */
+  font-family: theme("fontFamily.sans");
 }
