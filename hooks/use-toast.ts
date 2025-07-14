@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,13 +27,6 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
 
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
-}
-
 type Action =
   | {
       type: typeof actionTypes.ADD_TOAST
@@ -50,6 +44,13 @@ type Action =
       type: typeof actionTypes.REMOVE_TOAST
       toastId?: string
     }
+
+let count = 0
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
+}
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
