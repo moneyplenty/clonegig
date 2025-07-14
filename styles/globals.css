@@ -153,3 +153,5 @@
 .hover\:animate-electric-pulse:hover {
   animation: electric-pulse 1.5s infinite;
 }
+
+/* You can add global styles to this file, and also import other style files */

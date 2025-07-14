@@ -1,199 +1,150 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import type { Profile } from "@/types/index.d"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
-import { Loader2, Edit, Trash2 } from "lucide-react"
-
-interface Profile {
-  id: string
-  full_name: string | null
-  email: string
-  avatar_url: string | null
-  role: string
-  membership_tier: string
-  created_at: string
-  updated_at: string
-}
+import { Edit, Trash2 } from "lucide-react"
 
 export function AdminUserManagement() {
   const supabase = createClient()
-  const [profiles, setProfiles] = useState<Profile[]>([])
+  const [users, setUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null)
-  const [form, setForm] = useState({
-    full_name: "",
-    email: "",
-    role: "user",
+  const [currentUser, setCurrentUser] = useState<Profile | null>(null)
+  const [formData, setFormData] = useState({
+    username: "",
     membership_tier: "free",
   })
 
   useEffect(() => {
-    fetchProfiles()
+    fetchUsers()
   }, [])
 
-  const fetchProfiles = async () => {
+  const fetchUsers = async () => {
     setLoading(true)
     const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
     if (error) {
-      console.error("Error fetching profiles:", error)
+      console.error("Error fetching users:", error.message)
       toast({
         title: "Error",
-        description: "Failed to load user profiles.",
+        description: "Failed to fetch users.",
         variant: "destructive",
       })
     } else {
-      setProfiles(data || [])
+      setUsers(data || [])
     }
     setLoading(false)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setForm((prev) => ({ ...prev, [name]: value }))
+  const handleSelectChange = (id: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleUpdateProfile = async () => {
-    if (!currentProfile) return
-
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setLoading(true)
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: form.full_name,
-        email: form.email,
-        role: form.role,
-        membership_tier: form.membership_tier,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", currentProfile.id)
 
-    if (error) {
-      console.error("Error updating profile:", error)
-      toast({
-        title: "Error",
-        description: `Failed to update profile: ${error.message}`,
-        variant: "destructive",
-      })
-    } else {
-      toast({
-        title: "Success",
-        description: "Profile updated successfully.",
-      })
-      setIsDialogOpen(false)
-      fetchProfiles()
+    if (currentUser) {
+      // Update existing user
+      const { error } = await supabase.from("profiles").update(formData).eq("id", currentUser.id)
+
+      if (error) {
+        console.error("Error updating user:", error.message)
+        toast({
+          title: "Error",
+          description: "Failed to update user.",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Success",
+          description: "User updated successfully.",
+        })
+        setIsDialogOpen(false)
+        fetchUsers()
+      }
     }
     setLoading(false)
   }
 
-  const handleDeleteProfile = async (id: string) => {
-    if (
-      !confirm("Are you sure you want to delete this user profile and associated user? This action cannot be undone.")
-    )
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this user? This will delete their profile and associated auth user."))
       return
 
     setLoading(true)
-    // Supabase RLS should handle cascading delete from auth.users to public.profiles
-    const { error } = await supabase.rpc("delete_user_and_profile", { user_id_to_delete: id })
+    // Note: Deleting from auth.users will cascade delete from profiles due to RLS.
+    // This operation requires service_role key on the backend or admin privileges.
+    // For client-side, you might need a server action/route handler.
+    // For simplicity, this example assumes admin can delete directly if RLS allows.
+    const { error } = await supabase.rpc("delete_user_by_id", { user_id_to_delete: id })
 
     if (error) {
-      console.error("Error deleting profile and user:", error)
+      console.error("Error deleting user:", error.message)
       toast({
         title: "Error",
-        description: `Failed to delete user: ${error.message}`,
+        description: `Failed to delete user: ${error.message}. Ensure you have a 'delete_user_by_id' function in Supabase.`,
         variant: "destructive",
       })
     } else {
       toast({
         title: "Success",
-        description: "User and profile deleted successfully.",
+        description: "User deleted successfully.",
       })
-      fetchProfiles()
+      fetchUsers()
     }
     setLoading(false)
   }
 
-  const openEditDialog = (profile: Profile) => {
-    setCurrentProfile(profile)
-    setForm({
-      full_name: profile.full_name || "",
-      email: profile.email,
-      role: profile.role,
-      membership_tier: profile.membership_tier,
+  const openEditDialog = (user: Profile) => {
+    setCurrentUser(user)
+    setFormData({
+      username: user.username || "",
+      membership_tier: user.membership_tier || "free",
     })
     setIsDialogOpen(true)
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">User Management</h1>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
-          </DialogHeader>
-          {currentProfile && (
-            <div className="grid gap-4 py-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">User Management</h2>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleFormSubmit} className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="full_name" className="text-right">
-                  Full Name
+                <Label htmlFor="username" className="text-right">
+                  Username
                 </Label>
                 <Input
-                  id="full_name"
-                  name="full_name"
-                  value={form.full_name}
+                  id="username"
+                  value={formData.username}
                   onChange={handleInputChange}
                   className="col-span-3"
+                  required
                 />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleInputChange}
-                  className="col-span-3"
-                  type="email"
-                  disabled // Email usually shouldn't be changed directly here
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <Select value={form.role} onValueChange={(value) => handleSelectChange("role", value)}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="membership_tier" className="text-right">
                   Membership Tier
                 </Label>
                 <Select
-                  value={form.membership_tier}
+                  value={formData.membership_tier}
                   onValueChange={(value) => handleSelectChange("membership_tier", value)}
                 >
                   <SelectTrigger className="col-span-3">
@@ -201,57 +152,46 @@ export function AdminUserManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="vip">VIP</SelectItem>
+                    <SelectItem value="fan">Fan</SelectItem>
+                    <SelectItem value="super_fan">Super Fan</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsDialogOpen(false)} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateProfile} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : profiles.length === 0 ? (
-        <p className="text-center text-muted-foreground">No user profiles found.</p>
+        <p>Loading users...</p>
       ) : (
-        <div className="border rounded-md">
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Full Name</TableHead>
+                <TableHead>Username</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
                 <TableHead>Membership Tier</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {profiles.map((profile) => (
-                <TableRow key={profile.id}>
-                  <TableCell className="font-medium">{profile.full_name || "N/A"}</TableCell>
-                  <TableCell>{profile.email}</TableCell>
-                  <TableCell>{profile.role}</TableCell>
-                  <TableCell>{profile.membership_tier}</TableCell>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell className="capitalize">{user.membership_tier?.replace("_", " ")}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(profile)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Edit</span>
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProfile(profile.id)}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
                       <span className="sr-only">Delete</span>
                     </Button>
                   </TableCell>

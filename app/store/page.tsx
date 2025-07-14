@@ -1,30 +1,28 @@
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { ProductGrid } from "@/components/store/product-grid"
 import { StoreHeader } from "@/components/store/store-header"
-import { CartProvider } from "@/components/store/cart-context"
-import { Suspense } from "react"
-import StoreLoading from "./loading"
+import { StoreBanner } from "@/components/store/store-banner"
 
 export default async function StorePage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = createServerSupabaseClient()
 
-  const { data: products, error } = await supabase.from("products").select("*")
+  const { data: products, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching products:", error)
-    return <div>Error loading products.</div>
+    console.error("Error fetching products:", error.message)
+    return <div className="container py-12 text-center">Failed to load products.</div>
   }
 
   return (
-    <CartProvider>
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <StoreHeader />
-        <Suspense fallback={<StoreLoading />}>
-          <ProductGrid products={products || []} />
-        </Suspense>
-      </div>
-    </CartProvider>
+    <main>
+      <StoreBanner />
+      <StoreHeader />
+      <section className="container py-8">
+        <ProductGrid initialProducts={products || []} />
+      </section>
+    </main>
   )
 }

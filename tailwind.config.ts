@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss"
+import { fontFamily } from "tailwindcss/defaultTheme"
 
 const config = {
   darkMode: ["class"],
@@ -33,6 +34,10 @@ const config = {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -40,10 +45,6 @@ const config = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -53,41 +54,14 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Custom colors for icy, electrifying feel
-        electric: {
-          50: "hsl(var(--electric-50))",
-          100: "hsl(var(--electric-100))",
-          200: "hsl(var(--electric-200))",
-          300: "hsl(var(--electric-300))",
-          400: "hsl(var(--electric-400))",
-          500: "hsl(var(--electric-500))",
-          600: "hsl(var(--electric-600))",
-          700: "hsl(var(--electric-700))",
-          800: "hsl(var(--electric-800))",
-          900: "hsl(var(--electric-900))",
-          950: "hsl(var(--electric-950))",
-        },
-        frost: {
-          50: "hsl(var(--frost-50))",
-          100: "hsl(var(--frost-100))",
-          200: "hsl(var(--frost-200))",
-          300: "hsl(var(--frost-300))",
-          400: "hsl(var(--frost-400))",
-          500: "hsl(var(--frost-500))",
-          600: "hsl(var(--frost-600))",
-          700: "hsl(var(--frost-700))",
-          800: "hsl(var(--frost-800))",
-          900: "hsl(var(--frost-900))",
-          950: "hsl(var(--frost-950))",
-        },
-        gold: {
-          400: "hsl(var(--gold-400))",
-        },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: `var(--radius)`,
+        md: `calc(var(--radius) - 2px)`,
+        sm: `calc(var(--radius) - 4px)`,
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {
@@ -98,15 +72,10 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "electric-pulse": {
-          "0%, 100%": { boxShadow: "0 0 5px hsl(var(--electric-400)), 0 0 10px hsl(var(--frost-400))" },
-          "50%": { boxShadow: "0 0 15px hsl(var(--electric-400)), 0 0 30px hsl(var(--frost-400))" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "electric-pulse": "electric-pulse 1.5s infinite",
       },
     },
   },

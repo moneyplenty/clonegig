@@ -1,32 +1,36 @@
 import {
-  SunIcon,
-  MoonIcon,
-  LaptopIcon,
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  DotsHorizontalIcon,
-  MagnifyingGlassIcon,
-  Cross2Icon,
-  DotFilledIcon,
-  ExclamationTriangleIcon,
-} from "@radix-ui/react-icons"
-import { GitlabIcon as GitHub, Twitter, type ProportionsIcon as IconProps } from "lucide-react"
+  type LightbulbIcon as LucideProps,
+  Moon,
+  SunMedium,
+  Github,
+  Twitter,
+  Laptop,
+  type LucideIcon,
+} from "lucide-react"
+
+export type Icon = LucideIcon
 
 export const Icons = {
-  gitHub: (props: IconProps) => <GitHub {...props} />,
-  twitter: (props: IconProps) => <Twitter {...props} />,
-  sun: SunIcon,
-  moon: MoonIcon,
-  laptop: LaptopIcon,
-  check: CheckIcon,
-  chevronLeft: ChevronLeftIcon,
-  chevronRight: ChevronRightIcon,
-  dotsHorizontal: DotsHorizontalIcon,
-  search: MagnifyingGlassIcon,
-  close: Cross2Icon,
-  dotFilled: DotFilledIcon,
-  warning: ExclamationTriangleIcon,
-  // You can add other icons here as needed, e.g.,
-  // logo: (props: IconProps) => <YourCustomLogoIcon {...props} />,
+  sun: SunMedium,
+  moon: Moon,
+  laptop: Laptop,
+  gitHub: Github,
+  twitter: Twitter,
+  logo: ({ ...props }: LucideProps) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+    </svg>
+  ),
 }

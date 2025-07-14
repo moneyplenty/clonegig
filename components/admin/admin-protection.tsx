@@ -2,53 +2,70 @@
 
 import type React from "react"
 
+import { useAuth } from "@/components/auth/auth-provider"
+import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
-export function AdminProtection({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
+interface AdminProtectionProps {
+  children: React.ReactNode
+}
+
+export function AdminProtection({ children }: AdminProtectionProps) {
+  const { user, loading: authLoading } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
-    async function checkAdminStatus() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const checkAdminStatus = async () => {
+      if (authLoading) return // Wait for auth status to be determined
 
       if (!user) {
-        router.push("/login")
+        router.push("/login") // Redirect to login if not authenticated
         return
       }
 
-      const { data: profile, error } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+      setProfileLoading(true)
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("membership_tier")
+        .eq("id", user.id)
+        .single()
 
-      if (error || profile?.role !== "admin") {
-        router.push("/") // Redirect non-admins to home
-      } else {
+      if (error) {
+        console.error("Error fetching profile for admin check:", error.message)
+        setIsAdmin(false)
+        router.push("/dashboard") // Redirect if profile fetch fails or user is not admin
+      } else if (profile?.membership_tier === "admin") {
         setIsAdmin(true)
+      } else {
+        setIsAdmin(false)
+        router.push("/dashboard") // Redirect if not admin
       }
-      setLoading(false)
+      setProfileLoading(false)
     }
 
     checkAdminStatus()
-  }, [supabase, router])
+  }, [user, authLoading, router, supabase])
 
-  if (loading) {
+  if (authLoading || profileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-14rem)]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="ml-2 text-lg">Loading admin panel...</p>
+      <div className="container py-12 md:py-24">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-40 w-full" />
+        </div>
       </div>
     )
   }
 
-  if (!isAdmin) {
-    return null // Or a message like "Access Denied"
+  if (isAdmin) {
+    return <>{children}</>
   }
 
-  return <>{children}</>
+  return null // Or a message like "You do not have access to this page."
 }

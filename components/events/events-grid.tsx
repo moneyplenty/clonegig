@@ -1,60 +1,52 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
-import { format } from "date-fns"
-
-interface Event {
-  id: string
-  name: string
-  description: string
-  date: string
-  location: string
-  ticket_price: number
-  image_url: string
-}
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Calendar, MapPin } from "lucide-react"
+import type { Event } from "@/types"
 
 interface EventsGridProps {
-  events: Event[]
+  initialEvents: Event[]
 }
 
-export function EventsGrid({ events }: EventsGridProps) {
-  if (events.length === 0) {
-    return <div className="text-center text-muted-foreground py-10">No events found matching your criteria.</div>
-  }
-
+export function EventsGrid({ initialEvents }: EventsGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {events.map((event) => (
-        <Card key={event.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="relative w-full h-48">
-            <Image
-              src={event.image_url || "/placeholder.svg"}
-              alt={event.name}
-              layout="fill"
-              objectFit="cover"
-              className="rounded-t-lg"
-            />
-          </div>
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">{event.name}</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
-              {format(new Date(event.date), "PPP")} at {event.location}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-gray-700 dark:text-gray-300 line-clamp-3">{event.description}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-primary">
-                {event.ticket_price > 0 ? `$${event.ticket_price.toFixed(2)}` : "Free"}
-              </span>
-              <Link href={`/events/${event.id}`}>
-                <Button variant="outline">View Details</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {initialEvents.length === 0 ? (
+        <p className="col-span-full text-center text-muted-foreground">No events found matching your criteria.</p>
+      ) : (
+        initialEvents.map((event) => (
+          <Card key={event.id} className="flex flex-col overflow-hidden rounded-lg shadow-lg">
+            <Link href={`/events/${event.id}`} className="relative h-48 w-full overflow-hidden">
+              <Image
+                src={event.image_url || "/placeholder.svg"}
+                alt={event.name}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 hover:scale-105"
+              />
+            </Link>
+            <CardContent className="flex flex-1 flex-col justify-between p-4">
+              <div>
+                <CardTitle className="text-lg font-semibold">{event.name}</CardTitle>
+                <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <span>{new Date(event.date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  <span>{event.location || "Online"}</span>
+                </div>
+              </div>
+              <Button asChild className="mt-4 w-full">
+                <Link href={`/events/${event.id}`}>View Details</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   )
 }

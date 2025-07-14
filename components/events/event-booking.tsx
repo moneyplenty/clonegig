@@ -3,164 +3,150 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { CalendarIcon, Loader2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
-import { createClient } from "@/lib/supabase/client"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
+import { useAuth } from "@/components/auth/auth-provider"
+import type { Event } from "@/types"
 
-interface MeetAndGreetBookingProps {
-  userId: string
+interface EventBookingProps {
+  event: Event
 }
 
-export function MeetAndGreetBooking({ userId }: MeetAndGreetBookingProps) {
-  const supabase = createClient()
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined)
-  const [selectedType, setSelectedType] = useState<string | undefined>(undefined)
-  const [loading, setLoading] = useState(false)
-
-  const availableTimes = [
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "01:00 PM",
-    "01:30 PM",
-    "02:00 PM",
-    "02:30 PM",
-    "03:00 PM",
-    "03:30 PM",
-    "04:00 PM",
-    "04:30 PM",
-  ]
-
-  const sessionTypes = [
-    { value: "15-min-chat", label: "15-min Chat ($50)", price: 50 },
-    { value: "30-min-qa", label: "30-min Q&A ($90)", price: 90 },
-    { value: "60-min-masterclass", label: "60-min Masterclass ($150)", price: 150 },
-  ]
+export function EventBooking({ event }: EventBookingProps) {
+  const { user } = useAuth()
+  const [quantity, setQuantity] = useState(1)
+  const [isBooking, setIsBooking] = useState(false)
+  const { toast } = useToast()
 
   const handleBooking = async () => {
-    if (!selectedDate || !selectedTime || !selectedType) {
+    if (!user) {
       toast({
-        title: "Missing Information",
-        description: "Please select a date, time, and session type.",
+        title: "Login Required",
+        description: "Please log in to book tickets.",
         variant: "destructive",
       })
       return
     }
 
-    setLoading(true)
-    const sessionPrice = sessionTypes.find((type) => type.value === selectedType)?.price || 0
-    const sessionDateTime = new Date(selectedDate)
-    const [time, ampm] = selectedTime.split(" ")
-    let [hours, minutes] = time.split(":").map(Number)
-
-    if (ampm === "PM" && hours !== 12) {
-      hours += 12
-    }
-    if (ampm === "AM" && hours === 12) {
-      hours = 0
-    }
-
-    sessionDateTime.setHours(hours, minutes, 0, 0)
-
-    const { error } = await supabase.from("meet_and_greet_bookings").insert({
-      user_id: userId,
-      session_time: sessionDateTime.toISOString(),
-      session_type: selectedType,
-      status: "pending", // Admin will confirm later
-      price: sessionPrice,
-    })
-
-    if (error) {
-      console.error("Error booking session:", error)
+    if (event.ticket_count !== null && quantity > event.ticket_count) {
       toast({
-        title: "Booking Failed",
-        description: `There was an error booking your session: ${error.message}`,
+        title: "Not Enough Tickets",
+        description: `Only ${event.ticket_count} tickets available.`,
         variant: "destructive",
       })
-    } else {
-      toast({
-        title: "Booking Confirmed!",
-        description: "Your session request has been sent. Please await confirmation.",
-      })
-      // Optionally clear form or redirect
-      setSelectedDate(new Date())
-      setSelectedTime(undefined)
-      setSelectedType(undefined)
+      return
     }
-    setLoading(false)
+
+    setIsBooking(true)
+    try {
+      // Simulate payment or direct booking for free events
+      if (event.price === 0) {
+        // For free events, directly "book"
+        // In a real app, you might record this booking in a 'user_events' table
+        toast({
+          title: "Booking Confirmed!",
+          description: `You have successfully booked ${quantity} ticket(s) for ${event.name}.`,
+        })
+
+        // Optionally send confirmation email
+        await fetch("/api/send-event-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toEmail: user.email,
+            eventName: event.name,
+            eventDate: event.date,
+            eventLocation: event.location,
+          }),
+        })
+      } else {
+        // For paid events, redirect to Stripe checkout
+        const response = await fetch("/api/stripe-checkout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cartItems: [
+              {
+                id: event.id,
+                name: event.name,
+                price: event.price,
+                quantity: quantity,
+                image_url: event.image_url,
+                description: event.description,
+                stock: event.ticket_count, // Pass stock for potential decrement
+              },
+            ],
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          window.location.href = data.url // Redirect to Stripe Checkout
+        } else {
+          toast({
+            title: "Checkout Failed",
+            description: data.error || "An unexpected error occurred during checkout.",
+            variant: "destructive",
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Error booking event:", error)
+      toast({
+        title: "Booking Error",
+        description: "Could not complete booking. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsBooking(false)
+    }
   }
 
+  const isSoldOut = event.ticket_count !== null && event.ticket_count <= 0
+  const isPastEvent = new Date(event.date) < new Date()
+
   return (
-    <Card className="w-full">
+    <Card className="mb-6">
       <CardHeader>
-        <CardTitle>Book a Session</CardTitle>
+        <CardTitle>Book Your Spot</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Select Date</h3>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Select Time</h3>
-          <Select onValueChange={setSelectedTime} value={selectedTime}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose a time slot" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTimes.map((time) => (
-                <SelectItem key={time} value={time}>
-                  {time}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Select Session Type</h3>
-          <Select onValueChange={setSelectedType} value={selectedType}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose a session type" />
-            </SelectTrigger>
-            <SelectContent>
-              {sessionTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          onClick={handleBooking}
-          className="w-full"
-          disabled={loading || !selectedDate || !selectedTime || !selectedType}
-        >
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Book Session
-        </Button>
+      <CardContent className="space-y-4">
+        {isPastEvent ? (
+          <p className="text-destructive">This event has already passed.</p>
+        ) : isSoldOut ? (
+          <p className="text-destructive">Tickets are sold out for this event.</p>
+        ) : (
+          <>
+            <div>
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={event.ticket_count || undefined}
+                value={quantity}
+                onChange={(e) => setQuantity(Number.parseInt(e.target.value))}
+                className="mt-1"
+              />
+            </div>
+            <Button onClick={handleBooking} className="w-full" disabled={isBooking || quantity <= 0}>
+              {isBooking ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Booking...
+                </>
+              ) : event.price === 0 ? (
+                "Book Free Ticket(s)"
+              ) : (
+                `Book for $${(event.price * quantity).toFixed(2)}`
+              )}
+            </Button>
+          </>
+        )}
       </CardContent>
     </Card>
   )

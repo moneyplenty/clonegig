@@ -1,41 +1,37 @@
 export const siteConfig = {
-  name: "SaaS Starter",
-  description: "A Next.js SaaS starter kit with Supabase and Stripe.",
+  name: "Gigkelvincreek",
+  description: "Your ultimate destination for exclusive content, events, and community.",
+  url: "https://gigkelvincreek.vercel.app", // Replace with your actual domain
+  ogImage: "https://gigkelvincreek.vercel.app/og.jpg", // Replace with your actual OG image
   mainNav: [
     {
       title: "Home",
       href: "/",
     },
     {
-      title: "Store",
-      href: "/store",
-    },
-    {
       title: "Events",
       href: "/events",
     },
     {
-      title: "Meet & Greet",
-      href: "/meet-and-greet",
+      title: "Store",
+      href: "/store",
     },
     {
       title: "Content",
       href: "/content",
     },
     {
-      title: "Community",
-      href: "/community",
+      title: "Meet & Greet",
+      href: "/meet-and-greet",
     },
     {
-      title: "Join",
-      href: "/join",
+      title: "About", // Changed from Community to About
+      href: "/about",
     },
   ],
   links: {
-    twitter: "https://twitter.com/vercel",
-    github: "https://github.com/vercel/next.js",
-    docs: "https://nextjs.org/docs",
+    twitter: "https://twitter.com/vercel", // Replace with your Twitter
+    github: "https://github.com/vercel/next.js", // Replace with your GitHub
+    docs: "/docs",
   },
 }
-
-export type SiteConfig = typeof siteConfig

@@ -1,35 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, Video, CalendarCheck, XCircle } from "lucide-react"
-import { toast } from "@/hooks/use-toast"
-import Link from "next/link"
-import { format } from "date-fns"
-
-interface MeetAndGreetSession {
-  id: string
-  session_time: string
-  session_type: string
-  status: "pending" | "confirmed" | "cancelled" | "completed"
-  room_url: string | null
-  price: number
-}
+import { useToast } from "@/hooks/use-toast"
+import { Loader2, Video } from "lucide-react"
+import { supabase } from "@/lib/supabase/client" // Using client-side singleton
+import { DailyVideoCall } from "@/components/meet-and-greet/daily-video-call"
+import type { MeetAndGreetBooking } from "@/types"
 
 interface UpcomingSessionsProps {
   userId: string
 }
 
 export function UpcomingSessions({ userId }: UpcomingSessionsProps) {
-  const supabase = createClient()
-  const [sessions, setSessions] = useState<MeetAndGreetSession[]>([])
+  const [sessions, setSessions] = useState<MeetAndGreetBooking[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchSessions()
-  }, [userId])
+  const [activeRoomUrl, setActiveRoomUrl] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const fetchSessions = async () => {
     setLoading(true)
@@ -37,98 +25,74 @@ export function UpcomingSessions({ userId }: UpcomingSessionsProps) {
       .from("meet_and_greet_bookings")
       .select("*")
       .eq("user_id", userId)
+      .gte("session_time", new Date().toISOString()) // Only future sessions
       .order("session_time", { ascending: true })
 
     if (error) {
-      console.error("Error fetching sessions:", error)
       toast({
         title: "Error",
-        description: "Failed to load upcoming sessions.",
+        description: `Failed to fetch sessions: ${error.message}`,
         variant: "destructive",
       })
     } else {
-      setSessions(data || [])
+      setSessions(data as MeetAndGreetBooking[])
     }
     setLoading(false)
   }
 
-  const handleCancelSession = async (sessionId: string) => {
-    if (!confirm("Are you sure you want to cancel this session?")) return
+  useEffect(() => {
+    fetchSessions()
+  }, [userId])
 
-    setLoading(true)
-    const { error } = await supabase
-      .from("meet_and_greet_bookings")
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("id", sessionId)
+  const handleJoinSession = (roomUrl: string) => {
+    setActiveRoomUrl(roomUrl)
+  }
 
-    if (error) {
-      console.error("Error cancelling session:", error)
-      toast({
-        title: "Error",
-        description: `Failed to cancel session: ${error.message}`,
-        variant: "destructive",
-      })
-    } else {
-      toast({
-        title: "Success",
-        description: "Session cancelled successfully.",
-      })
-      fetchSessions()
-    }
-    setLoading(false)
+  const handleCallEnded = () => {
+    setActiveRoomUrl(null)
+    fetchSessions() // Refresh sessions after a call ends
+  }
+
+  if (activeRoomUrl) {
+    return <DailyVideoCall roomUrl={activeRoomUrl} onCallEnded={handleCallEnded} />
   }
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle>Your Upcoming Sessions</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex justify-center items-center h-32">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading sessions...</span>
           </div>
         ) : sessions.length === 0 ? (
-          <p className="text-center text-muted-foreground">No upcoming sessions booked.</p>
+          <p className="text-muted-foreground">You have no upcoming Meet & Greet sessions.</p>
         ) : (
           <div className="space-y-4">
             {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="flex items-center justify-between border-b pb-3 last:border-b-0 last:pb-0"
-              >
+              <Card key={session.id} className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-semibold">{session.session_type} Session</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(session.session_time), "PPP p")}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Status:{" "}
-                    <span
-                      className={`font-medium ${session.status === "confirmed" ? "text-green-600" : session.status === "cancelled" ? "text-red-600" : "text-orange-500"}`}
-                    >
-                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                    </span>
+                  <p className="font-medium">
+                    {new Date(session.session_time).toLocaleDateString()} at{" "}
+                    {new Date(session.session_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    Type: {session.session_type.replace(/_/g, " ")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Status: {session.status}</p>
                 </div>
-                <div className="flex gap-2">
-                  {session.status === "confirmed" && session.room_url && (
-                    <Link href={`/meet-and-greet?room=${session.room_url}`} passHref>
-                      <Button size="sm" className="flex items-center gap-1">
-                        <Video className="h-4 w-4" /> Join Call
-                      </Button>
-                    </Link>
-                  )}
-                  {session.status === "pending" && (
-                    <Button size="sm" variant="outline" onClick={() => handleCancelSession(session.id)}>
-                      <XCircle className="h-4 w-4 mr-1" /> Cancel
-                    </Button>
-                  )}
-                  {session.status === "confirmed" && !session.room_url && (
-                    <Button size="sm" variant="outline" disabled>
-                      <CalendarCheck className="h-4 w-4 mr-1" /> Confirmed
-                    </Button>
-                  )}
-                </div>
-              </div>
+                {session.room_url && (
+                  <Button
+                    onClick={() => handleJoinSession(session.room_url!)}
+                    disabled={session.status !== "confirmed"}
+                  >
+                    <Video className="mr-2 h-4 w-4" /> Join Call
+                  </Button>
+                )}
+              </Card>
             ))}
           </div>
         )}

@@ -1,22 +1,47 @@
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { AdminStoreManagement } from "@/components/admin/admin-store-management"
 import { AdminProtection } from "@/components/admin/admin-protection"
+import { AdminStoreManagement } from "@/components/admin/admin-store-management"
+import { SidebarComponentFunction } from "@/components/ui/sidebar" // Renamed to avoid conflict
 
-export default async function AdminStorePage() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+const sidebarNavItems = [
+  {
+    title: "Dashboard",
+    href: "/admin",
+  },
+  {
+    title: "Users",
+    href: "/admin/users",
+  },
+  {
+    title: "Content",
+    href: "/admin/content",
+  },
+  {
+    title: "Events",
+    href: "/admin/events",
+  },
+  {
+    title: "Store",
+    href: "/admin/store",
+  },
+]
 
-  const { data: products, error } = await supabase.from("products").select("*")
-
-  if (error) {
-    console.error("Error fetching products:", error)
-    return <div>Error loading products.</div>
-  }
-
+export default function AdminStorePage() {
   return (
     <AdminProtection>
-      <AdminStoreManagement initialProducts={products || []} />
+      <div className="hidden space-y-6 p-10 pb-16 md:block">
+        <div className="space-y-0.5">
+          <h2 className="text-2xl font-bold tracking-tight">Store Management</h2>
+          <p className="text-muted-foreground">Manage products, inventory, and store settings.</p>
+        </div>
+        <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+          <aside className="-mx-4 lg:w-1/5">
+            <SidebarComponentFunction items={sidebarNavItems} />
+          </aside>
+          <div className="flex-1 lg:max-w-2xl">
+            <AdminStoreManagement />
+          </div>
+        </div>
+      </div>
     </AdminProtection>
   )
 }

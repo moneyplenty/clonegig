@@ -1,64 +1,58 @@
 "use client"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { useContext } from "react"
-import { CartContext } from "./cart-context"
+import Link from "next/link"
+import type { Product } from "@/types/index.d"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { formatPrice } from "@/lib/utils"
+import { useCart } from "@/components/store/cart-context"
 import { toast } from "@/hooks/use-toast"
 
-interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  image_url: string
-  stock: number
-}
-
 interface ProductGridProps {
-  products: Product[]
+  initialProducts: Product[]
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
-  const { addToCart } = useContext(CartContext)
+export function ProductGrid({ initialProducts }: ProductGridProps) {
+  const { addToCart } = useCart()
 
   const handleAddToCart = (product: Product) => {
-    addToCart(product)
+    addToCart(product, 1)
     toast({
       title: "Added to cart!",
       description: `${product.name} has been added to your cart.`,
     })
   }
 
+  if (!initialProducts || initialProducts.length === 0) {
+    return (
+      <div className="flex items-center justify-center rounded-md border border-dashed p-8 text-muted-foreground">
+        No products available at the moment.
+      </div>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
-      {products.map((product) => (
-        <Card key={product.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <div className="relative w-full h-48">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {initialProducts.map((product) => (
+        <Card key={product.id} className="flex flex-col overflow-hidden">
+          <Link href={`/store/${product.id}`} className="relative block aspect-square overflow-hidden">
             <Image
               src={product.image_url || "/placeholder.svg"}
               alt={product.name}
-              layout="fill"
-              objectFit="cover"
-              className="rounded-t-lg"
+              fill
+              className="object-cover transition-all hover:scale-105"
             />
-          </div>
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">{product.name}</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">{product.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-primary">${product.price.toFixed(2)}</span>
-              <Button onClick={() => handleAddToCart(product)} disabled={product.stock === 0}>
-                {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-              </Button>
-            </div>
-            {product.stock > 0 && product.stock <= 10 && (
-              <p className="text-orange-500 text-sm font-medium">Only {product.stock} left in stock!</p>
-            )}
+          </Link>
+          <CardContent className="flex-1 p-4">
+            <h3 className="text-lg font-semibold">{product.name}</h3>
+            <p className="text-muted-foreground">{product.description}</p>
+            <p className="mt-2 text-xl font-bold">{formatPrice(product.price)}</p>
           </CardContent>
+          <CardFooter className="p-4 pt-0">
+            <Button className="w-full" onClick={() => handleAddToCart(product)}>
+              Add to Cart
+            </Button>
+          </CardFooter>
         </Card>
       ))}
     </div>

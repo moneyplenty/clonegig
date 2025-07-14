@@ -11,14 +11,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { toast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
 
 export function LoginForm() {
+  const router = useRouter()
+  const supabase = createClient()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,14 +30,14 @@ export function LoginForm() {
 
     if (error) {
       toast({
-        title: "Login Error",
+        title: "Login Failed",
         description: error.message,
         variant: "destructive",
       })
     } else {
       toast({
-        title: "Success",
-        description: "Logged in successfully!",
+        title: "Login Successful",
+        description: "You have been logged in.",
       })
       router.push("/dashboard")
     }
@@ -46,14 +45,14 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center">
+    <Card className="mx-auto max-w-sm">
+      <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>Enter your credentials to access your account.</CardDescription>
+        <CardDescription>Enter your email below to login to your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
+        <form onSubmit={handleLogin} className="grid gap-4">
+          <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -64,8 +63,13 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <div>
-            <Label htmlFor="password">Password</Label>
+          <div className="grid gap-2">
+            <div className="flex items-center">
+              <Label htmlFor="password">Password</Label>
+              <Link href="#" className="ml-auto inline-block text-sm underline">
+                Forgot your password?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"
@@ -75,9 +79,11 @@ export function LoginForm() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Login
+            {loading ? "Logging in..." : "Login"}
           </Button>
+          {/* <Button variant="outline" className="w-full bg-transparent">
+            Login with Google
+          </Button> */}
         </form>
         <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{" "}

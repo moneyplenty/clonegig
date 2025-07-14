@@ -30,7 +30,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 47.4% 11.2%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
 
@@ -90,33 +90,6 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-
-    /* Custom colors for icy, electrifying feel in dark mode */
-    --electric-50: 210 100% 5%;
-    --electric-100: 210 100% 10%;
-    --electric-200: 210 100% 20%; /* Main electric blue for dark mode */
-    --electric-300: 210 100% 30%;
-    --electric-400: 210 100% 40%;
-    --electric-500: 210 100% 50%;
-    --electric-600: 210 100% 60%;
-    --electric-700: 210 100% 70%;
-    --electric-800: 210 100% 80%;
-    --electric-900: 210 100% 90%;
-    --electric-950: 210 100% 95%;
-
-    --frost-50: 270 100% 5%;
-    --frost-100: 270 100% 10%;
-    --frost-200: 270 100% 20%; /* Main frost purple for dark mode */
-    --frost-300: 270 100% 30%;
-    --frost-400: 270 100% 40%;
-    --frost-500: 270 100% 50%;
-    --frost-600: 270 100% 60%;
-    --frost-700: 170 100% 70%;
-    --frost-800: 270 100% 80%;
-    --frost-900: 270 100% 90%;
-    --frost-950: 270 100% 95%;
-
-    --gold-400: 40 96% 60%; /* For premium/admin highlights */
   }
 }
 
@@ -152,4 +125,38 @@
 
 .hover\:animate-electric-pulse:hover {
   animation: electric-pulse 1.5s infinite;
+}
+
+/* Custom styles for the About page content */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  @apply font-bold text-foreground;
+}
+
+.prose p {
+  @apply text-muted-foreground leading-relaxed;
+}
+
+.prose ul {
+  @apply list-disc pl-5;
+}
+
+.prose ol {
+  @apply list-decimal pl-5;
+}
+
+.prose a {
+  @apply text-primary underline;
+}
+
+.prose img {
+  @apply rounded-lg shadow-md;
+}
+
+.font-heading {
+  font-family: theme("fontFamily.sans"); /* Adjust as needed */
 }

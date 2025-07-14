@@ -1,150 +1,132 @@
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
+import type { Content } from "@/types"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import Image from "next/image"
-import { Suspense } from "react"
-import ContentLoading from "./loading"
-import { PlayCircle, BookOpen, ImageIcon, Music } from "lucide-react"
+import { Video, FileText, Music, Lock } from "lucide-react"
+import { getMembershipLevel } from "@/lib/utils"
 
-interface ContentItem {
-  id: string
-  title: string
-  description: string
-  type: string
-  url: string
-  access_level: string
-  image_url?: string
-}
+export const revalidate = 60
 
-export default async function ContentPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+export default async function ContentPage() {
+  const supabase = createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const { data: user } = await supabase.auth.getUser()
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("membership_tier")
-    .eq("id", user.user?.id)
-    .single()
+  let userMembershipTier = "free"
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("membership_tier")
+      .eq("id", user.id)
+      .single()
 
-  const userMembershipTier = profile?.membership_tier || "free"
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError.message)
+    } else if (profile) {
+      userMembershipTier = profile.membership_tier || "free"
+    }
+  }
 
   const { data: content, error } = await supabase.from("content").select("*").order("created_at", { ascending: false })
 
   if (error) {
-    console.error("Error fetching content:", error)
-    return <div>Error loading content.</div>
+    console.error("Error fetching content:", error.message)
+    return <div className="container py-12 text-center">Failed to load content.</div>
   }
 
-  const filterType = searchParams.type as string | undefined
-  const filteredContent = content.filter((item) => {
-    if (!filterType) return true
-    return item.type === filterType
-  })
-
-  const getAccessLevelOrder = (level: string) => {
-    if (level === "vip") return 3
-    if (level === "premium") return 2
-    return 1
-  }
-
-  const canAccess = (itemAccessLevel: string) => {
-    return getAccessLevelOrder(userMembershipTier) >= getAccessLevelOrder(itemAccessLevel)
+  const canAccess = (accessLevel: string) => {
+    const userLevel = getMembershipLevel(userMembershipTier)
+    const requiredLevel = getMembershipLevel(accessLevel)
+    return userLevel >= requiredLevel
   }
 
   const getIcon = (type: string) => {
     switch (type) {
       case "video":
-        return <PlayCircle className="h-5 w-5 text-primary" />
+        return <Video className="h-5 w-5" />
+      case "article":
+        return <FileText className="h-5 w-5" />
       case "audio":
-        return <Music className="h-5 w-5 text-primary" />
-      case "blog":
-        return <BookOpen className="h-5 w-5 text-primary" />
-      case "image":
-        return <ImageIcon className="h-5 w-5 text-primary" />
+        return <Music className="h-5 w-5" />
       default:
         return null
     }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      <h1 className="text-4xl font-bold text-center mb-8">Exclusive Content</h1>
-      <p className="text-lg text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-        Access a library of exclusive videos, audio, blogs, and more, available only to our members.
-      </p>
+    <main className="container py-12 md:py-24">
+      <section className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">Exclusive Content</h1>
+        <p className="mx-auto mt-4 max-w-[700px] text-lg text-muted-foreground md:text-xl">
+          Dive into a world of exclusive videos, articles, and audio tracks available only to our members.
+        </p>
+      </section>
 
-      <div className="flex justify-center gap-4 mb-8">
-        <Link href="/content">
-          <Button variant={!filterType ? "default" : "outline"}>All</Button>
-        </Link>
-        <Link href="/content?type=video">
-          <Button variant={filterType === "video" ? "default" : "outline"}>Videos</Button>
-        </Link>
-        <Link href="/content?type=audio">
-          <Button variant={filterType === "audio" ? "default" : "outline"}>Audio</Button>
-        </Link>
-        <Link href="/content?type=blog">
-          <Button variant={filterType === "blog" ? "default" : "outline"}>Blogs</Button>
-        </Link>
-        <Link href="/content?type=image">
-          <Button variant={filterType === "image" ? "default" : "outline"}>Images</Button>
-        </Link>
+      <div className="mb-8 flex flex-wrap justify-center gap-2">
+        <Badge variant="secondary">Your Access: {userMembershipTier.replace("_", " ")}</Badge>
+        {/* Add filter buttons here if needed */}
       </div>
 
-      <Suspense fallback={<ContentLoading />}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredContent.map((item) => (
-            <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <div className="relative w-full h-48">
-                <Image
-                  src={item.image_url || "/placeholder.svg"}
-                  alt={item.title}
-                  layout="fill"
-                  objectFit="cover"
-                  className="rounded-t-lg"
-                />
-              </div>
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                  {getIcon(item.type)} {item.title}
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400">
-                  Access Level: {item.access_level.toUpperCase()}
-                </CardDescription>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {content.map((item: Content) => {
+          const hasAccess = canAccess(item.access_level)
+          return (
+            <Card key={item.id} className="flex flex-col overflow-hidden">
+              <CardHeader className="relative p-0">
+                {item.type === "video" && (
+                  <div className="relative aspect-video w-full bg-muted">
+                    {hasAccess ? (
+                      <video controls className="h-full w-full object-cover">
+                        <source src={item.url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-black/50 text-white">
+                        <Lock className="h-12 w-12" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {item.type === "article" && (
+                  <div className="relative aspect-video w-full bg-muted flex items-center justify-center">
+                    <FileText className="h-24 w-24 text-muted-foreground" />
+                  </div>
+                )}
+                {item.type === "audio" && (
+                  <div className="relative aspect-video w-full bg-muted flex items-center justify-center">
+                    <Music className="h-24 w-24 text-muted-foreground" />
+                  </div>
+                )}
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-gray-700 dark:text-gray-300 line-clamp-3">{item.description}</p>
-                <div className="flex items-center justify-between">
-                  {canAccess(item.access_level) ? (
-                    <Link href={item.url} target="_blank" rel="noopener noreferrer">
-                      <Button>View Content</Button>
-                    </Link>
-                  ) : (
-                    <Link href="/join">
-                      <Button variant="outline">Unlock Access</Button>
-                    </Link>
-                  )}
-                  <span
-                    className={`text-sm font-medium ${canAccess(item.access_level) ? "text-green-600" : "text-red-500"}`}
-                  >
-                    {canAccess(item.access_level) ? "Accessible" : "Locked"}
-                  </span>
-                </div>
+              <CardContent className="flex-1 p-4">
+                <CardTitle className="text-xl font-semibold">{item.title}</CardTitle>
+                <p className="mt-2 text-muted-foreground line-clamp-3">{item.description}</p>
               </CardContent>
+              <CardFooter className="flex items-center justify-between p-4 pt-0">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {getIcon(item.type)}
+                  <span>{item.type}</span>
+                  <Badge variant="outline">{item.access_level.replace("_", " ")}</Badge>
+                </div>
+                {hasAccess ? (
+                  <Button asChild>
+                    <Link href={item.url} target={item.type === "article" ? "_blank" : "_self"}>
+                      View Content
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="secondary">
+                    <Link href="/join">Unlock Access</Link>
+                  </Button>
+                )}
+              </CardFooter>
             </Card>
-          ))}
-        </div>
-        {filteredContent.length === 0 && (
-          <div className="text-center text-muted-foreground py-10">No content found for this category.</div>
-        )}
-      </Suspense>
-    </div>
+          )
+        })}
+      </div>
+    </main>
   )
 }

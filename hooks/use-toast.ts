@@ -134,8 +134,9 @@ type Toast = Omit<ToastProps, "id"> & {
   id?: string
 }
 
-function toast({ ...props }: Toast) {
-  const id = genId()
+// Define the toast function that will be exported
+export function toast(props: Toast) {
+  const id = props.id || genId()
 
   const update = (props: ToastProps) =>
     dispatch({
@@ -185,4 +186,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { useToast }

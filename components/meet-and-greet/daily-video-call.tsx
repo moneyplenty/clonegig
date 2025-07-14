@@ -1,178 +1,137 @@
 "use client"
 
-import { DailyProvider, useDaily, useDailyEvent, useParticipant } from "@daily-co/daily-react-hooks"
+import { useEffect, useRef, useState } from "react"
+import DailyIframe from "@daily-co/daily-js"
 import type { DailyCall } from "@daily-co/daily-js"
-import { useEffect, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Loader2 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 interface DailyVideoCallProps {
   roomUrl: string
-  userName?: string
-  onLeave?: () => void
+  onCallEnded: () => void
 }
 
-export function DailyVideoCall({ roomUrl, userName, onLeave }: DailyVideoCallProps) {
-  const callRef = useRef<DailyCall | null>(null)
+export function DailyVideoCall({ roomUrl, onCallEnded }: DailyVideoCallProps) {
+  const callFrameRef = useRef<HTMLDivElement>(null)
+  const dailyCallRef = useRef<DailyCall | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [isJoining, setIsJoining] = useState(false)
+  const [isJoined, setIsJoined] = useState(false)
+  const { toast: showToast } = toast
 
   useEffect(() => {
-    if (!roomUrl) {
-      setError("No Daily.co room URL provided.")
+    if (!callFrameRef.current) return
+
+    const callFrame = DailyIframe.createFrame(callFrameRef.current, {
+      url: roomUrl,
+      showLeaveButton: true,
+      showFullscreenButton: true,
+      iframeStyle: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        border: "0",
+      },
+    })
+
+    dailyCallRef.current = callFrame
+
+    const handleLoaded = () => {
       setIsLoading(false)
-      return
+      showToast({
+        title: "Call Ready",
+        description: "The video call is ready to join.",
+      })
     }
 
-    const createCallObject = async () => {
-      try {
-        const Daily = await import("@daily-co/daily-js")
-        const call = Daily.createCallObject()
-        callRef.current = call
-        await call.join({ url: roomUrl, userName })
-        setIsLoading(false)
-      } catch (e: any) {
-        console.error("Failed to create or join Daily.co call:", e)
-        setError(`Failed to start video call: ${e.message || "Unknown error"}`)
-        setIsLoading(false)
-      }
+    const handleJoinedMeeting = () => {
+      setIsJoined(true)
+      setIsJoining(false)
+      showToast({
+        title: "Joined Call",
+        description: "You have successfully joined the session.",
+      })
     }
 
-    createCallObject()
+    const handleLeftMeeting = () => {
+      setIsJoined(false)
+      onCallEnded()
+      showToast({
+        title: "Call Ended",
+        description: "You have left the video call.",
+      })
+    }
+
+    callFrame.on("loaded", handleLoaded)
+    callFrame.on("joined-meeting", handleJoinedMeeting)
+    callFrame.on("left-meeting", handleLeftMeeting)
 
     return () => {
-      if (callRef.current) {
-        callRef.current.leave()
-        callRef.current.destroy()
-        callRef.current = null
+      callFrame.off("loaded", handleLoaded)
+      callFrame.off("joined-meeting", handleJoinedMeeting)
+      callFrame.off("left-meeting", handleLeftMeeting)
+      callFrame.destroy().then(() => (dailyCallRef.current = null))
+    }
+  }, [roomUrl, onCallEnded, showToast])
+
+  const handleJoinCall = async () => {
+    if (dailyCallRef.current && !isJoined) {
+      setIsJoining(true)
+      try {
+        await dailyCallRef.current.join()
+      } catch (error) {
+        console.error("Error joining Daily call:", error)
+        showToast({
+          title: "Join Error",
+          description: "Failed to join the call. Please try again.",
+          variant: "destructive",
+        })
+        setIsJoining(false)
       }
     }
-  }, [roomUrl, userName])
-
-  if (isLoading) {
-    return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[400px]">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="mt-4 text-lg text-muted-foreground">Loading video call...</p>
-        </CardContent>
-      </Card>
-    )
   }
 
-  if (error) {
-    return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="flex flex-col items-center justify-center p-6 min-h-[400px] text-red-500">
-          <p className="text-lg font-semibold">Error:</p>
-          <p className="text-center">{error}</p>
-          <Button onClick={onLeave} className="mt-4">
-            Go Back
-          </Button>
-        </CardContent>
-      </Card>
-    )
+  const handleLeaveCall = async () => {
+    if (dailyCallRef.current && isJoined) {
+      await dailyCallRef.current.leave()
+    }
   }
 
   return (
-    <DailyProvider callObject={callRef.current}>
-      <VideoCallUI onLeave={onLeave} />
-    </DailyProvider>
-  )
-}
-
-function VideoCallUI({ onLeave }: { onLeave?: () => void }) {
-  const daily = useDaily()
-  const localParticipant = useParticipant("local")
-  const remoteParticipants = Object.values(daily?.participants() || {}).filter(
-    (p) => p.session_id !== localParticipant?.session_id,
-  )
-
-  const [isMicOn, setIsMicOn] = useState(true)
-  const [isCameraOn, setIsCameraOn] = useState(true)
-
-  useEffect(() => {
-    if (localParticipant) {
-      setIsMicOn(localParticipant.audio)
-      setIsCameraOn(localParticipant.video)
-    }
-  }, [localParticipant])
-
-  const toggleMic = useCallback(() => {
-    if (daily) {
-      daily.setLocalAudio(!isMicOn)
-      setIsMicOn(!isMicOn)
-    }
-  }, [daily, isMicOn])
-
-  const toggleCamera = useCallback(() => {
-    if (daily) {
-      daily.setLocalVideo(!isCameraOn)
-      setIsCameraOn(!isCameraOn)
-    }
-  }, [daily, isCameraOn])
-
-  const leaveCall = useCallback(() => {
-    if (daily) {
-      daily.leave()
-      onLeave?.()
-    }
-  }, [daily, onLeave])
-
-  useDailyEvent("left-meeting", () => {
-    onLeave?.()
-  })
-
-  return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="h-[600px] flex flex-col">
       <CardHeader>
-        <CardTitle className="text-center">Video Call</CardTitle>
+        <CardTitle>Live Meet & Greet Session</CardTitle>
+        <CardDescription>Connect with Gigkelvincreek live!</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center p-6">
-        <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4">
-          {localParticipant?.videoTrack && (
-            <video
-              autoPlay
-              muted
-              playsInline
-              ref={(video) => {
-                if (video) video.srcObject = new MediaStream([localParticipant.videoTrack])
-              }}
-              className="absolute bottom-2 right-2 w-1/4 h-auto rounded-md border-2 border-white z-10"
-            />
+      <CardContent className="flex-1 relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="ml-2">Loading call...</p>
+          </div>
+        )}
+        <div ref={callFrameRef} className="h-full w-full rounded-md overflow-hidden relative"></div>
+        <div className="mt-4 flex justify-center space-x-2">
+          {!isJoined && (
+            <Button onClick={handleJoinCall} disabled={isLoading || isJoining}>
+              {isJoining ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Joining...
+                </>
+              ) : (
+                "Join Call"
+              )}
+            </Button>
           )}
-          {remoteParticipants.length > 0 ? (
-            remoteParticipants.map((p) => (
-              <video
-                key={p.session_id}
-                autoPlay
-                playsInline
-                ref={(video) => {
-                  if (video && p.videoTrack) video.srcObject = new MediaStream([p.videoTrack])
-                }}
-                className="w-full h-full object-cover"
-              />
-            ))
-          ) : (
-            <div className="flex items-center justify-center w-full h-full text-white text-lg">
-              Waiting for other participant...
-            </div>
+          {isJoined && (
+            <Button variant="destructive" onClick={handleLeaveCall}>
+              Leave Call
+            </Button>
           )}
-        </div>
-        <div className="flex gap-4">
-          <Button variant="outline" size="icon" onClick={toggleMic}>
-            {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-red-500" />}
-            <span className="sr-only">{isMicOn ? "Mute Mic" : "Unmute Mic"}</span>
-          </Button>
-          <Button variant="outline" size="icon" onClick={toggleCamera}>
-            {isCameraOn ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5 text-red-500" />}
-            <span className="sr-only">{isCameraOn ? "Turn Off Camera" : "Turn On Camera"}</span>
-          </Button>
-          <Button variant="destructive" size="icon" onClick={leaveCall}>
-            <PhoneOff className="h-5 w-5" />
-            <span className="sr-only">Leave Call</span>
-          </Button>
         </div>
       </CardContent>
     </Card>

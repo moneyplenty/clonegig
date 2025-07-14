@@ -1,78 +1,51 @@
 "use client"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 
-import * as React from "react"
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  Bar,
-  BarChart,
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from "recharts"
-import { cn } from "@/lib/utils"
+const data = [
+  { month: "January", desktop: 186, mobile: 80 },
+  { month: "February", desktop: 305, mobile: 200 },
+  { month: "March", desktop: 237, mobile: 120 },
+  { month: "April", desktop: 73, mobile: 190 },
+  { month: "May", desktop: 209, mobile: 130 },
+  { month: "June", desktop: 214, mobile: 140 },
+]
 
-interface ChartProps extends React.HTMLAttributes<HTMLDivElement> {
-  data: any[]
-  type: "line" | "bar" | "area"
-  xAxisKey: string
-  yAxisKey: string | string[]
-  tooltip?: boolean
-  legend?: boolean
-  grid?: boolean
-  colors?: string[]
-}
-
-const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
-  (
-    {
-      data,
-      type,
-      xAxisKey,
-      yAxisKey,
-      tooltip = true,
-      legend = true,
-      grid = true,
-      colors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"],
-      className,
-      ...props
-    },
-    ref,
-  ) => {
-    const ChartComponent = type === "line" ? LineChart : type === "bar" ? BarChart : AreaChart
-    const DataComponent = type === "line" ? Line : type === "bar" ? Bar : Area
-
-    const yKeys = Array.isArray(yAxisKey) ? yAxisKey : [yAxisKey]
-
-    return (
-      <div ref={ref} className={cn("h-[400px] w-full", className)} {...props}>
-        <ResponsiveContainer width="100%" height="100%">
-          <ChartComponent data={data}>
-            {grid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis dataKey={xAxisKey} />
-            <YAxis />
-            {tooltip && <Tooltip />}
-            {legend && <Legend />}
-            {yKeys.map((key, index) => (
-              <DataComponent
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={colors[index % colors.length]}
-                fill={type === "area" ? colors[index % colors.length] : undefined}
-              />
-            ))}
-          </ChartComponent>
-        </ResponsiveContainer>
-      </div>
-    )
+const chartConfig = {
+  desktop: {
+    label: "Desktop",
+    color: "hsl(var(--chart-1))",
   },
-)
-Chart.displayName = "Chart"
+  mobile: {
+    label: "Mobile",
+    color: "hsl(var(--chart-2))",
+  },
+} satisfies ChartConfig
 
-export { Chart }
+export function Component() {
+  return (
+    <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+      <LineChart
+        accessibilityLayer
+        data={data}
+        margin={{
+          left: 12,
+          right: 12,
+        }}
+      >
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tickFormatter={(value) => value.slice(0, 3)}
+        />
+        <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+        <Line dataKey="desktop" type="monotone" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
+        <Line dataKey="mobile" type="monotone" stroke="var(--color-mobile)" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ChartContainer>
+  )
+}

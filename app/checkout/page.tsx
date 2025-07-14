@@ -2,68 +2,49 @@
 
 import type React from "react"
 
-import { useContext, useState } from "react"
-import { CartContext } from "@/components/store/cart-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useCart } from "@/components/store/cart-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
+import { formatPrice } from "@/lib/utils"
+import Image from "next/image"
 import { toast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth/auth-provider"
 
 export default function CheckoutPage() {
-  const { cartItems, totalPrice, clearCart } = useContext(CartContext)
+  const { cartItems, totalPrice, clearCart } = useCart()
+  const { user } = useAuth()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [shippingInfo, setShippingInfo] = useState({
-    fullName: "",
-    address: "",
+
+  const [formData, setFormData] = useState({
+    email: user?.email || "",
+    name: "",
+    address1: "",
+    address2: "",
     city: "",
     state: "",
     zip: "",
     country: "",
   })
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardName: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-  })
+  const [loading, setLoading] = useState(false)
 
-  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setShippingInfo((prev) => ({ ...prev, [name]: value }))
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setPaymentInfo((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleCheckout = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     if (cartItems.length === 0) {
       toast({
-        title: "Cart is Empty",
+        title: "Cart is empty",
         description: "Please add items to your cart before checking out.",
-        variant: "destructive",
-      })
-      setLoading(false)
-      return
-    }
-
-    // Basic validation for shipping and payment info
-    const isShippingValid = Object.values(shippingInfo).every((info) => info.trim() !== "")
-    const isPaymentValid = Object.values(paymentInfo).every((info) => info.trim() !== "")
-
-    if (!isShippingValid || !isPaymentValid) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all shipping and payment details.",
         variant: "destructive",
       })
       setLoading(false)
@@ -78,20 +59,30 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           items: cartItems,
-          customerEmail: "customer@example.com", // Replace with actual user email
+          customerEmail: formData.email,
+          // You might want to send shipping address details to Stripe as well
+          // For simplicity, we're focusing on payment session creation here.
         }),
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        clearCart() // Clear cart after successful checkout session creation
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create checkout session")
+      }
+
+      if (data.url) {
+        clearCart() // Clear cart after successful session creation
         router.push(data.url) // Redirect to Stripe Checkout page
       } else {
-        throw new Error(data.error || "Failed to create checkout session.")
+        toast({
+          title: "Checkout Error",
+          description: "Could not get Stripe checkout URL.",
+          variant: "destructive",
+        })
       }
     } catch (error: any) {
-      console.error("Checkout error:", error)
+      console.error("Checkout failed:", error)
       toast({
         title: "Checkout Failed",
         description: error.message || "An unexpected error occurred during checkout.",
@@ -103,136 +94,100 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 md:py-20">
-      <h1 className="text-4xl font-bold text-center mb-8">Checkout</h1>
-      <form onSubmit={handleCheckout} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+    <main className="container grid gap-6 py-12 md:grid-cols-2 lg:gap-12">
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Order Summary</h2>
+        {cartItems.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">Your cart is empty.</CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {cartItems.map((item) => (
+              <Card key={item.id} className="flex items-center p-4">
+                <Image
+                  src={item.image_url || "/placeholder.svg"}
+                  alt={item.name}
+                  width={80}
+                  height={80}
+                  className="mr-4 rounded-md object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold">{item.name}</h3>
+                  <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                  <p className="text-sm font-medium">{formatPrice(item.price)} each</p>
+                </div>
+                <div className="text-lg font-bold">{formatPrice(item.price * item.quantity)}</div>
+              </Card>
+            ))}
+            <Separator />
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total:</span>
+              <span>{formatPrice(totalPrice)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Shipping & Payment</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Shipping Information</CardTitle>
-              <CardDescription>Enter your shipping address.</CardDescription>
+              <CardTitle>Contact Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  value={shippingInfo.fullName}
-                  onChange={handleShippingChange}
-                  required
-                />
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={formData.email} onChange={handleInputChange} required />
               </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  name="address"
-                  value={shippingInfo.address}
-                  onChange={handleShippingChange}
-                  required
-                />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Shipping Address</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" value={formData.name} onChange={handleInputChange} required />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+              <div className="grid gap-2">
+                <Label htmlFor="address1">Address Line 1</Label>
+                <Input id="address1" value={formData.address1} onChange={handleInputChange} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="address2">Address Line 2 (Optional)</Label>
+                <Input id="address2" value={formData.address2} onChange={handleInputChange} />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="grid gap-2">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" name="city" value={shippingInfo.city} onChange={handleShippingChange} required />
+                  <Input id="city" value={formData.city} onChange={handleInputChange} required />
                 </div>
-                <div>
-                  <Label htmlFor="state">State/Province</Label>
-                  <Input id="state" name="state" value={shippingInfo.state} onChange={handleShippingChange} required />
+                <div className="grid gap-2">
+                  <Label htmlFor="state">State / Province</Label>
+                  <Input id="state" value={formData.state} onChange={handleInputChange} required />
                 </div>
-                <div>
-                  <Label htmlFor="zip">Zip/Postal Code</Label>
-                  <Input id="zip" name="zip" value={shippingInfo.zip} onChange={handleShippingChange} required />
+                <div className="grid gap-2">
+                  <Label htmlFor="zip">Zip / Postal Code</Label>
+                  <Input id="zip" value={formData.zip} onChange={handleInputChange} required />
                 </div>
               </div>
-              <div>
+              <div className="grid gap-2">
                 <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  name="country"
-                  value={shippingInfo.country}
-                  onChange={handleShippingChange}
-                  required
-                />
+                <Input id="country" value={formData.country} onChange={handleInputChange} required />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
-              <CardDescription>Enter your payment details.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="cardName">Name on Card</Label>
-                <Input
-                  id="cardName"
-                  name="cardName"
-                  value={paymentInfo.cardName}
-                  onChange={handlePaymentChange}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="cardNumber">Card Number</Label>
-                <Input
-                  id="cardNumber"
-                  name="cardNumber"
-                  value={paymentInfo.cardNumber}
-                  onChange={handlePaymentChange}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiryDate">Expiry Date (MM/YY)</Label>
-                  <Input
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={paymentInfo.expiryDate}
-                    onChange={handlePaymentChange}
-                    placeholder="MM/YY"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input id="cvv" name="cvv" value={paymentInfo.cvv} onChange={handlePaymentChange} required />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="lg:col-span-1 h-fit sticky top-20">
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {cartItems.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span>
-                    {item.name} (x{item.quantity})
-                  </span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between font-bold text-lg border-t pt-4">
-              <span>Total</span>
-              <span>${totalPrice.toFixed(2)}</span>
-            </div>
-            <Button type="submit" className="w-full" disabled={loading || cartItems.length === 0}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Place Order
-            </Button>
-          </CardContent>
-        </Card>
-      </form>
-    </div>
+          {/* Stripe handles payment details on their hosted page, so no need for card inputs here */}
+          <Button type="submit" className="w-full" size="lg" disabled={loading || cartItems.length === 0}>
+            {loading ? "Processing..." : `Pay ${formatPrice(totalPrice)}`}
+          </Button>
+        </form>
+      </div>
+    </main>
   )
 }

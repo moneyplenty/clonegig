@@ -1,4 +1,4 @@
-import type { User } from "./user" // Assuming User type is defined in a separate file
+import type { User } from "@supabase/supabase-js"
 import type { Icons } from "./icons" // Assuming Icons object is defined in a separate file
 import type { Database as DB } from "./database.types"
 
@@ -63,35 +63,19 @@ export type UserSubscriptionPlan = SubscriptionPlan &
     isPro: boolean
   }
 
-export type Product = {
-  id: string
-  name: string
-  price: number
-  image: string
-  description: string
-}
+export type Tables<T extends keyof DB["public"]["Tables"]> = DB["public"]["Tables"][T]["Row"]
+export type Enums<T extends keyof DB["public"]["Enums"]> = DB["public"]["Enums"][T]
 
-export type Event = {
-  id: string
-  title: string
-  date: string
-  time: string
-  location: string
-  description: string
-  image: string
+export type Product = DB["public"]["Tables"]["products"]["Row"]
+export type Event = DB["public"]["Tables"]["events"]["Row"]
+export type Testimonial = DB["public"]["Tables"]["testimonials"]["Row"]
+export type Profile = DB["public"]["Tables"]["profiles"]["Row"] & {
+  is_admin?: boolean
 }
-
-export type Content = {
-  id: string
-  title: string
-  description: string
-  type: "video" | "audio" | "blog" | "image" | "text"
-  url: string
-  access_level: "free" | "premium" | "vip"
-  image_url?: string
-  created_at: string
-  updated_at: string
-}
+export type Content = DB["public"]["Tables"]["content"]["Row"]
+export type Order = Tables<"orders">
+export type OrderItem = Tables<"order_items">
+export type MembershipTier = "free" | "fan" | "super_fan" | "admin"
 
 export type MeetAndGreetBooking = {
   id: string
@@ -112,6 +96,20 @@ export type UserProfile = {
   // Add other profile fields as needed
 }
 
+export type CartItem = Product & {
+  quantity: number
+}
+
+export type CheckoutSession = {
+  id: string
+  url: string
+}
+
+export type DailyRoom = {
+  url: string
+  name: string
+}
+
 declare module "@supabase/supabase-js" {
   interface UserMetadata {
     role?: "user" | "admin"
@@ -123,5 +121,5 @@ declare module "@supabase/supabase-js" {
 }
 
 declare global {
-  type Database = DB
+  type GlobalDatabase = DB
 }
