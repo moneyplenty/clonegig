@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -71,14 +70,46 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply font-bold text-foreground;
+  }
+
+  .prose p {
+    @apply text-muted-foreground leading-relaxed;
+  }
+
+  .prose ul {
+    @apply list-disc pl-5;
+  }
+
+  .prose ol {
+    @apply list-decimal pl-5;
+  }
+
+  .prose a {
+    @apply text-primary underline;
+  }
+
+  .prose img {
+    @apply rounded-lg shadow-md;
+  }
+
+  .font-heading {
+    font-family: theme("fontFamily.sans");
   }
 }
 
@@ -94,9 +125,11 @@
   0% {
     box-shadow: 0 0 5px hsl(var(--electric-400)), 0 0 10px hsl(var(--frost-400));
   }
+
   50% {
     box-shadow: 0 0 15px hsl(var(--electric-400)), 0 0 30px hsl(var(--frost-400));
   }
+
   100% {
     box-shadow: 0 0 5px hsl(var(--electric-400)), 0 0 10px hsl(var(--frost-400));
   }
@@ -104,37 +137,4 @@
 
 .hover\:animate-electric-pulse:hover {
   animation: electric-pulse 1.5s infinite;
-}
-
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
-  @apply font-bold text-foreground;
-}
-
-.prose p {
-  @apply text-muted-foreground leading-relaxed;
-}
-
-.prose ul {
-  @apply list-disc pl-5;
-}
-
-.prose ol {
-  @apply list-decimal pl-5;
-}
-
-.prose a {
-  @apply text-primary underline;
-}
-
-.prose img {
-  @apply rounded-lg shadow-md;
-}
-
-.font-heading {
-  font-family: theme("fontFamily.sans");
 }
