@@ -1,50 +1,42 @@
+
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Crown } from "lucide-react"
-import type { Profile } from "@/types"
+import { ExternalLink } from "lucide-react"
 
-interface SuperFansProps {
-  initialSuperFans: Profile[]
-}
+const superFans = [
+  { id: 1, name: "Sarah Ice", username: "@sarah_ice_fan", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+  { id: 2, name: "Mike Frost", username: "@mike_frost_kc", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+  { id: 3, name: "Luna Storm", username: "@luna_storm_fan", avatar: "/placeholder.svg", tiktokUrl: "https://www.tiktok.com/@lk_larr_?_t=ZS-8xyuzCdnwMk&_r=1" },
+]
 
-export function SuperFans({ initialSuperFans }: SuperFansProps) {
-  const superFans = initialSuperFans.filter((fan) => fan.membership_tier === "super_fan")
-
+export function SuperFans() {
   return (
-    <section className="container mx-auto px-4 py-12 md:py-20">
-      <div className="mb-12 text-center">
-        <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">Our Super Fans</h2>
-        <p className="mt-4 text-lg text-muted-foreground">
-          A special shoutout to our most dedicated community members!
-        </p>
-      </div>
-
-      {superFans.length === 0 ? (
-        <p className="text-center text-muted-foreground">No Super Fans yet. Become one today!</p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          {superFans.map((fan) => (
-            <Card key={fan.id} className="flex flex-col items-center text-center">
-              <CardHeader>
-                <Avatar className="h-24 w-24 border-4 border-gold-400">
-                  <AvatarImage
-                    src={fan.avatar_url || "/placeholder-user.jpg"}
-                    alt={fan.username || fan.full_name || "Super Fan"}
-                  />
-                  <AvatarFallback>{(fan.username || fan.full_name || "SF").charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center">
-                <Crown className="h-6 w-6 text-gold-400 mb-2" />
-                <CardTitle className="text-lg font-semibold">{fan.username || fan.full_name || "Super Fan"}</CardTitle>
-                <p className="text-sm text-muted-foreground">Super Fan</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </section>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold">Super Fans</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {superFans.map((fan) => (
+          <div key={fan.id} className="flex items-center justify-between space-x-3">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={fan.avatar} alt={fan.name} />
+                <AvatarFallback>{fan.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{fan.name}</span>
+                <span className="text-xs text-muted-foreground">{fan.username}</span>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="h-8 px-2 bg-transparent" onClick={() => window.open(fan.tiktokUrl, "_blank")}>
+              <ExternalLink className="h-3 w-3 ml-1" />
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   )
 }
